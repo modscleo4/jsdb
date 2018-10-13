@@ -1,6 +1,20 @@
 {
   "name": "jsdb",
+  "description": "A simple Database manager written in JavaScript",
   "version": "1.0.0",
+  "author": {
+    "name": "Dhiego Cassiano Fogaça Barbosa",
+    "email": "modscleo4@outlook.com"
+  },
+  "directories": {
+    "commands": "./commands",
+    "sql": "./sql"
+  },
   "dependencies": {
+    "sql-parser": "^0.5.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/modscleo4/jsdb.git"
   }
 }
