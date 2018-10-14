@@ -12,6 +12,10 @@ function createScheme(dbName, schemeName) {
             SCHList.push(schemeName);
             writeSchemeFile(dbName, JSON.stringify(SCHList));
             createSchemeFolder(dbName, schemeName);
+
+            return "Created scheme " + schemeName;
+        } else {
+            return "Scheme " + schemeName + " already exists in DB " + dbName;
         }
     }
 }
@@ -53,7 +57,7 @@ function readSchemeFile(dbName) {
                 });
 
                 fs.readdirSync("dbs/" + dbName + "/").forEach(schName => {
-                    if (schName !== "schlist.json") {
+                    if (schName !== f_schlist) {
                         if (r.indexOf(schName) === -1) {
                             r.push(schName);
                             writeSchemeFile(dbName, JSON.stringify(r));

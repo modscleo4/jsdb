@@ -16,7 +16,11 @@ function createTable(dbName, schemeName, tableName, tableStruct) {
             createTableFolder(dbName, schemeName, tableName);
 
             writeTableStructure(dbName, schemeName, tableName, tableStruct);
-            writeTableContent(dbName, schemeName, tableName, null)
+            writeTableContent(dbName, schemeName, tableName, null);
+
+            return "Created table " + schemeName + "." + tableName + " in DB " + dbName;
+        } else {
+            return "Table " + schemeName + "." + tableName + " already exists in DB " + dbName;
         }
     }
 }
@@ -58,7 +62,7 @@ function readTableFile(dbName, schemeName) {
             TableList = JSON.parse(fs.readFileSync("dbs/" + dbName + "/" + schemeName + "/" + f_tablelist, 'utf8'));
 
             fs.readdirSync("dbs/" + dbName + "/" + schemeName).forEach(tablename => {
-                if (tablename !== "tablelist.json") {
+                if (tablename !== f_tablelist) {
                     if (TableList.indexOf(tablename) === -1) {
                         TableList.push(tablename);
                         writeTableFile(dbName, schemeName, JSON.stringify(TableList));
@@ -140,6 +144,8 @@ function writeTableContent(dbName, schemeName, tableName, content) {
         }
 
         fs.writeFileSync("dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tabledata, JSON.stringify(TableContent));
+
+        return "Line inserted.";
     } catch (e) {
         console.error(e.message);
     }
@@ -192,13 +198,22 @@ function insertTableContent(dbName, schemeName, tableName, content) {
             let i = 0;
 
             for (let key in TableStruct) {
+                /*
+                * @todo Make sequences
+                * */
+                /*if (content[i] === 'DEFAULT' && TableStruct[key]['type'] === 'number' && TableStruct[key]['autoIncrement'] === 'yes') {
+                    let TableSequences = readTableSequences(dbName, schemeName, tableName);
+
+                    content[i] = TableSequences[TableContent.length - 1][i];
+                } else {*/
                 if (typeof content[i] !== TableStruct[key]['type']) {
                     throw "Invalid type";
                 }
+                //}
                 i++;
             }
 
-            writeTableContent(dbName, schemeName, tableName, content);
+            return writeTableContent(dbName, schemeName, tableName, content);
         }
 
     } catch (e) {

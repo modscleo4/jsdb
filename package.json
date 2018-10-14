@@ -2,15 +2,19 @@
   "name": "jsdb",
   "description": "A simple Database manager written in JavaScript",
   "version": "1.0.0",
+
   "author": {
     "name": "Dhiego Cassiano Fogaça Barbosa",
     "email": "modscleo4@outlook.com"
   },
+
   "directories": {
-    "commands": "./commands",
-    "sql": "./sql"
+    "server": "server",
+    "client": "client"
   },
   "dependencies": {
+    "express": "^4.16.4",
+    "socket.io": "^2.1.1",
     "sql-parser": "^0.5.0"
   },
   "repository": {
