@@ -2,7 +2,6 @@ const db = require("./commands/db");
 const scheme = require("./commands/scheme");
 const table = require("./commands/table");
 const sql = require("./sql/sql");
-const sql_parser = require("sql-parser/lib/sql_parser");
 
 const net = require('net');
 

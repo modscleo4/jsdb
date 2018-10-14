@@ -1,7 +1,8 @@
 {
   "name": "jsdb",
-  "description": "A simple Database manager written in JavaScript",
+  "description": "A simple database manager written in JavaScript",
   "version": "1.0.0",
+  "bin": "./server.js",
 
   "author": {
     "name": "Dhiego Cassiano Fogaça Barbosa",
@@ -9,9 +10,11 @@
   },
 
   "directories": {
-    "server": "server",
-    "client": "client"
+    "commands": "./commands",
+    "sql": "./sql"
   },
+  "license": "Apache-2.0",
+
   "dependencies": {
     "express": "^4.16.4",
     "socket.io": "^2.1.1",
