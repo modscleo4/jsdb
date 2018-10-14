@@ -1,6 +1,7 @@
 const fs = require('fs');
 const db = require('./db');
 const scheme = require('./scheme');
+const server = require('../server');
 
 const f_tablelist = 'tablelist.json';
 const f_tablestruct = 'tablestruct.json';
@@ -32,7 +33,7 @@ function readTableStructure(dbName, schemeName, tableName) {
         let TableList = readTableFile(dbName, schemeName);
 
         if (TableList.indexOf(tableName) !== -1) {
-            r = JSON.parse(fs.readFileSync("dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tablestruct, 'utf8'));
+            r = JSON.parse(fs.readFileSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tablestruct, 'utf8'));
         }
 
         return r;
@@ -45,7 +46,7 @@ function readTableStructure(dbName, schemeName, tableName) {
 
 function writeTableStructure(dbName, schemeName, tableName, tableStruct) {
     try {
-        fs.writeFileSync("dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tablestruct, JSON.stringify(tableStruct));
+        fs.writeFileSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tablestruct, JSON.stringify(tableStruct));
     } catch (e) {
         console.error(e.message);
     }
@@ -59,9 +60,9 @@ function readTableFile(dbName, schemeName) {
         let TableList = [];
 
         if (DBList.indexOf(dbName) !== -1 && SCHList.indexOf(schemeName) !== -1) {
-            TableList = JSON.parse(fs.readFileSync("dbs/" + dbName + "/" + schemeName + "/" + f_tablelist, 'utf8'));
+            TableList = JSON.parse(fs.readFileSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + f_tablelist, 'utf8'));
 
-            fs.readdirSync("dbs/" + dbName + "/" + schemeName).forEach(tablename => {
+            fs.readdirSync(server.startDir + "dbs/" + dbName + "/" + schemeName).forEach(tablename => {
                 if (tablename !== f_tablelist) {
                     if (TableList.indexOf(tablename) === -1) {
                         TableList.push(tablename);
@@ -71,7 +72,7 @@ function readTableFile(dbName, schemeName) {
             });
 
             TableList.forEach(tablename => {
-                if (!fs.existsSync("dbs/" + dbName + "/" + schemeName + "/" + tablename)) {
+                if (!fs.existsSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tablename)) {
                     createTableFolder(tablename);
                 }
             });
@@ -86,7 +87,7 @@ function readTableFile(dbName, schemeName) {
 
 function writeTableFile(dbName, schemeName, content) {
     try {
-        fs.writeFileSync("dbs/" + dbName + "/" + schemeName + "/" + f_tablelist, content);
+        fs.writeFileSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + f_tablelist, content);
     } catch (e) {
         console.error(e.message);
     }
@@ -94,19 +95,19 @@ function writeTableFile(dbName, schemeName, content) {
 
 function createTableFolder(dbName, schemeName, tableName) {
     try {
-        if (!fs.existsSync("dbs/")) {
-            fs.mkdirSync("dbs/");
+        if (!fs.existsSync(server.startDir + "dbs/")) {
+            fs.mkdirSync(server.startDir + "dbs/");
         }
 
-        if (!fs.existsSync("dbs/" + dbName)) {
+        if (!fs.existsSync(server.startDir + "dbs/" + dbName)) {
             throw "DB not created.";
         }
 
-        if (!fs.existsSync("dbs/" + dbName + "/" + schemeName)) {
+        if (!fs.existsSync(server.startDir + "dbs/" + dbName + "/" + schemeName)) {
             throw "Scheme not created.";
         }
 
-        fs.mkdirSync("dbs/" + dbName + "/" + schemeName + "/" + tableName);
+        fs.mkdirSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tableName);
     } catch (e) {
         console.error(e.message);
     }
@@ -119,7 +120,7 @@ function readTableContent(dbName, schemeName, tableName) {
         let TableList = readTableFile(dbName, schemeName);
 
         if (TableList.indexOf(tableName) !== -1) {
-            r = JSON.parse(fs.readFileSync("dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tabledata, 'utf8'));
+            r = JSON.parse(fs.readFileSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tabledata, 'utf8'));
         }
         return r;
     } catch (e) {
@@ -135,7 +136,7 @@ function writeTableContent(dbName, schemeName, tableName, content) {
         /*
         * Checks if tabledata.json exists to avoid loops
         * */
-        if (fs.existsSync("dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tabledata)) {
+        if (fs.existsSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tabledata)) {
             TableContent = readTableContent(dbName, schemeName, tableName);
         }
 
@@ -143,7 +144,7 @@ function writeTableContent(dbName, schemeName, tableName, content) {
             TableContent.push(content);
         }
 
-        fs.writeFileSync("dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tabledata, JSON.stringify(TableContent));
+        fs.writeFileSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tabledata, JSON.stringify(TableContent));
 
         return "Line inserted.";
     } catch (e) {
@@ -229,3 +230,6 @@ exports.create = createTable;
 exports.select = selectTableContent;
 exports.insert = insertTableContent;
 exports.update = updateTableContent;
+
+exports.readFile = readTableFile;
+exports.writeFile = writeTableFile;

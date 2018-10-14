@@ -1,5 +1,6 @@
 const fs = require('fs');
 const scheme = require('./scheme');
+const server = require('../server');
 
 const f_dblist = 'dblist.json';
 
@@ -24,11 +25,11 @@ function createDB(dbName) {
 
 function createDBFolder(dbname) {
     try {
-        if (!fs.existsSync("dbs/")) {
-            fs.mkdirSync("dbs/");
+        if (!fs.existsSync(server.startDir + "dbs/")) {
+            fs.mkdirSync(server.startDir + "dbs/");
         }
 
-        fs.mkdirSync("dbs/" + dbname);
+        fs.mkdirSync(server.startDir + "dbs/" + dbname);
     } catch (e) {
         console.error(e.message);
     }
@@ -38,10 +39,10 @@ function readDBFile() {
     try {
         let DBList = [];
 
-        if (fs.existsSync("dbs/" + f_dblist)) {
-            DBList = JSON.parse(fs.readFileSync("dbs/" + f_dblist, 'utf8'));
+        if (fs.existsSync(server.startDir + "dbs/" + f_dblist)) {
+            DBList = JSON.parse(fs.readFileSync(server.startDir + "dbs/" + f_dblist, 'utf8'));
 
-            fs.readdirSync("dbs/").forEach(dbname => {
+            fs.readdirSync(server.startDir + "dbs/").forEach(dbname => {
                 if (dbname !== f_dblist) {
                     if (DBList.indexOf(dbname) === -1) {
                         DBList.push(dbname);
@@ -51,11 +52,19 @@ function readDBFile() {
             });
 
             DBList.forEach(dbname => {
-                if (!fs.existsSync("dbs/" + dbname)) {
+                if (!fs.existsSync(server.startDir + "dbs/" + dbname)) {
                     createDBFolder(dbname);
                     scheme.create(dbname, "public");
                 }
             });
+
+            /*
+            * Creates JSDB admin database
+            * */
+            if (DBList.indexOf("jsdb") === -1) {
+                DBList.push("jsdb");
+                writeDBFile(JSON.stringify(DBList));
+            }
         }
 
         return DBList;
@@ -67,7 +76,7 @@ function readDBFile() {
 
 function writeDBFile(content) {
     try {
-        fs.writeFileSync("dbs/" + f_dblist, content);
+        fs.writeFileSync(server.startDir + "dbs/" + f_dblist, content);
     } catch (e) {
         console.error(e.message);
     }

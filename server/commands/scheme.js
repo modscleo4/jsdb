@@ -1,6 +1,7 @@
 const fs = require('fs');
 
 const db = require("./db");
+const server = require('../server');
 
 const f_schlist = 'schlist.json';
 
@@ -22,16 +23,16 @@ function createScheme(dbName, schemeName) {
 
 function createSchemeFolder(dbname, schemeName) {
     try {
-        if (!fs.existsSync("dbs/")) {
+        if (!fs.existsSync(server.startDir + "dbs/")) {
             db.readFile();
         }
 
-        if (!fs.existsSync("dbs/" + dbname)) {
+        if (!fs.existsSync(server.startDir + "dbs/" + dbname)) {
             throw "DB not created.";
         }
 
-        if (!fs.existsSync("dbs/" + dbname + "/" + schemeName)) {
-            fs.mkdirSync("dbs/" + dbname + "/" + schemeName);
+        if (!fs.existsSync(server.startDir + "dbs/" + dbname + "/" + schemeName)) {
+            fs.mkdirSync(server.startDir + "dbs/" + dbname + "/" + schemeName);
         }
     } catch (e) {
         console.error(e.message);
@@ -48,15 +49,15 @@ function readSchemeFile(dbName) {
             * Checking if the database exists
             * */
             if (DBList.indexOf(dbName) !== -1) {
-                r = JSON.parse(fs.readFileSync("dbs/" + dbName + "/" + f_schlist, 'utf8'));
+                r = JSON.parse(fs.readFileSync(server.startDir + "dbs/" + dbName + "/" + f_schlist, 'utf8'));
 
                 r.forEach(schName => {
-                    if (!fs.existsSync("dbs/" + dbName + "/" + schName)) {
+                    if (!fs.existsSync(server.startDir + "dbs/" + dbName + "/" + schName)) {
                         createSchemeFolder(dbName, schName);
                     }
                 });
 
-                fs.readdirSync("dbs/" + dbName + "/").forEach(schName => {
+                fs.readdirSync(server.startDir + "dbs/" + dbName + "/").forEach(schName => {
                     if (schName !== f_schlist) {
                         if (r.indexOf(schName) === -1) {
                             r.push(schName);
@@ -78,7 +79,7 @@ function readSchemeFile(dbName) {
 
 function writeSchemeFile(dbname, content) {
     try {
-        fs.writeFileSync("dbs/" + dbname + "/" + f_schlist, content);
+        fs.writeFileSync(server.startDir + "dbs/" + dbname + "/" + f_schlist, content);
     } catch (e) {
         console.error(e.message);
     }
