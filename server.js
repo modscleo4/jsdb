@@ -38,19 +38,32 @@ let server = net.createServer(function (socket) {
         } else {
             try {
                 let r = sql.run(sqlCmd, dbS, schemeS);
+
                 if (typeof r === "object") {
                     r = JSON.stringify(r);
                 }
                 socket.write(r);
-            } catch (e) {
-                console.error(e.message);
+            } catch (err) {
+                socket.write(err.message);
             }
         }
     });
 
     socket.on('error', function (err) {
-        console.log(err.message);
-    });
+        if (err.code === 'EADDRINUSE') {
+            console.error('Address in use, retrying...');
+            setTimeout(() => {
+                server.close();
+                server.listen(port, address);
+            }, 1000);
+        } else if (err.code === 'ECONNRESET') {
+            console.error('Connection reset');
+        } else {
+            console.error(err.message);
+        }
+
+
+    })
 });
 
 let address = "";

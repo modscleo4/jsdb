@@ -4,6 +4,9 @@ const server = require('../server');
 
 const f_dblist = 'dblist.json';
 
+/**
+ *
+ * */
 function createDB(dbName) {
     if (typeof dbName === "string") {
         let DBList = readDBFile();
@@ -23,48 +26,48 @@ function createDB(dbName) {
     }
 }
 
+/**
+ *
+ * */
 function createDBFolder(dbname) {
-    try {
-        if (!fs.existsSync(server.startDir + "dbs/")) {
-            fs.mkdirSync(server.startDir + "dbs/");
-        }
-
-        fs.mkdirSync(server.startDir + "dbs/" + dbname);
-    } catch (e) {
-        console.error(e.message);
+    if (!fs.existsSync(server.startDir + "dbs/")) {
+        fs.mkdirSync(server.startDir + "dbs/");
     }
+
+    fs.mkdirSync(server.startDir + "dbs/" + dbname);
 }
 
+/**
+ *
+ * */
 function readDBFile() {
     try {
         let DBList = [];
 
-        if (fs.existsSync(server.startDir + "dbs/" + f_dblist)) {
-            DBList = JSON.parse(fs.readFileSync(server.startDir + "dbs/" + f_dblist, 'utf8'));
+        DBList = JSON.parse(fs.readFileSync(server.startDir + "dbs/" + f_dblist, 'utf8'));
 
-            fs.readdirSync(server.startDir + "dbs/").forEach(dbname => {
-                if (dbname !== f_dblist) {
-                    if (DBList.indexOf(dbname) === -1) {
-                        DBList.push(dbname);
-                        writeDBFile(JSON.stringify(DBList));
-                    }
+        fs.readdirSync(server.startDir + "dbs/").forEach(dbname => {
+            if (dbname !== f_dblist) {
+                if (DBList.indexOf(dbname) === -1) {
+                    DBList.push(dbname);
+                    writeDBFile(JSON.stringify(DBList));
                 }
-            });
-
-            DBList.forEach(dbname => {
-                if (!fs.existsSync(server.startDir + "dbs/" + dbname)) {
-                    createDBFolder(dbname);
-                    scheme.create(dbname, "public");
-                }
-            });
-
-            /*
-            * Creates JSDB admin database
-            * */
-            if (DBList.indexOf("jsdb") === -1) {
-                DBList.push("jsdb");
-                writeDBFile(JSON.stringify(DBList));
             }
+        });
+
+        DBList.forEach(dbname => {
+            if (!fs.existsSync(server.startDir + "dbs/" + dbname)) {
+                createDBFolder(dbname);
+                scheme.create(dbname, "public");
+            }
+        });
+
+        /*
+        * Creates JSDB admin database
+        * */
+        if (DBList.indexOf("jsdb") === -1) {
+            DBList.push("jsdb");
+            writeDBFile(JSON.stringify(DBList));
         }
 
         return DBList;
@@ -74,12 +77,14 @@ function readDBFile() {
     }
 }
 
+/**
+ *
+ * */
 function writeDBFile(content) {
-    try {
-        fs.writeFileSync(server.startDir + "dbs/" + f_dblist, content);
-    } catch (e) {
-        console.error(e.message);
+    if (!fs.existsSync(server.startDir + "dbs/")) {
+        fs.mkdirSync(server.startDir + "dbs");
     }
+    fs.writeFileSync(server.startDir + "dbs/" + f_dblist, content);
 }
 
 exports.create = createDB;
