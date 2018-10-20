@@ -11,7 +11,7 @@ function createSequence(dbName, schemeName, tableName, seqName) {
     if (typeof dbName === "string" && typeof schemeName === "string" && typeof tableName === "string") {
         let SequenceList = readSequenceFile(dbName, schemeName, tableName);
 
-        if (SequenceList[seqName] !== undefined) {
+        if (SequenceList[seqName] === undefined) {
             SequenceList[seqName] = ['start', 'inc'];
             SequenceList[seqName]['start'] = 1;
             SequenceList[seqName]['inc'] = 1;
