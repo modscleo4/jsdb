@@ -1,4 +1,7 @@
 # JSDB
+
+[![Build Status](https://travis-ci.org/modscleo4/jsdb.svg?branch=master)](https://travis-ci.org/modscleo4/jsdb)
+
 JSDB is a Node.js database manager which supports SQL
 
 ## Installation
