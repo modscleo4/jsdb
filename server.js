@@ -33,10 +33,10 @@ let server = net.createServer(function (socket) {
         let sqlCmd = data.toLocaleString();
         if (sqlCmd.includes("db ")) {
             setDB(sqlCmd.slice(3));
-            socket.write(JSON.stringify(scheme.readFile(dbS)));
+            //socket.write(JSON.stringify(scheme.readFile(dbS)));
         } else if (sqlCmd.toUpperCase().includes("SET SEARCH_PATH TO")) {
             setScheme(sqlCmd.slice("SET SEARCH_PATH TO ".length));
-            socket.write(JSON.stringify(table.readFile(dbS, schemeS)));
+            //socket.write(JSON.stringify(table.readFile(dbS, schemeS)));
         } else {
             try {
                 let r = sql.run(sqlCmd, dbS, schemeS);
@@ -59,7 +59,7 @@ let server = net.createServer(function (socket) {
                 server.listen(port, address);
             }, 1000);
         } else if (err.code === 'ECONNRESET') {
-            console.error('Connection reset');
+            console.error('Connection reset. Maybe a client disconnected');
         } else {
             console.error(err.message);
         }

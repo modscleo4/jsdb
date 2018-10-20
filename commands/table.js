@@ -150,7 +150,7 @@ function readTableContent(dbName, schemeName, tableName) {
 /**
  *
  * */
-function writeTableContent(dbName, schemeName, tableName, content) {
+function writeTableContent(dbName, schemeName, tableName, content, override = false) {
     let TableContent = [];
     /*
     * Checks if tabledata.json exists to avoid loops
@@ -160,7 +160,14 @@ function writeTableContent(dbName, schemeName, tableName, content) {
     }
 
     if (content !== null) {
-        TableContent.push(content);
+        if (typeof override === "boolean") {
+            if (override) {
+                TableContent = content;
+            } else {
+                TableContent.push(content);
+            }
+        }
+
     }
 
     fs.writeFileSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tabledata, JSON.stringify(TableContent));
@@ -182,42 +189,43 @@ function dropTable() {
  *
  * */
 function selectTableContent(dbName, schemeName, tableName, columns) {
-    try {
-        let TableContent = readTableContent(dbName, schemeName, tableName);
-        let TableStruct = readTableStructure(dbName, schemeName, tableName);
+    let TableList = readTableFile(dbName, schemeName);
 
-        let r = {};
-        if (columns[0] === "*") {
-            for (let i = 0; i < TableContent.length; i++) {
-                let j = 0;
-                r[i] = {};
-                for (let key in TableStruct) {
-                    r[i][key] = TableContent[i][j];
-                    j++;
-                }
+    if (TableList.indexOf(tableName) === -1) {
+        throw new Error("Table does not exist");
+    }
+
+    let TableContent = readTableContent(dbName, schemeName, tableName);
+    let TableStruct = readTableStructure(dbName, schemeName, tableName);
+
+    let r = {};
+    if (columns[0] === "*") {
+        for (let i = 0; i < TableContent.length; i++) {
+            let j = 0;
+            r[i] = {};
+            for (let key in TableStruct) {
+                r[i][key] = TableContent[i][j];
+                j++;
             }
-
-            return r;
-        } else {
-            for (let i = 0; i < TableContent.length; i++) {
-                let j = 0;
-                r[i] = {};
-                columns.forEach(column => {
-                    for (let key in TableStruct) {
-                        if (key === column) {
-                            r[i][key] = TableContent[i][j];
-                            j++;
-                        }
-                    }
-                });
-
-            }
-
-            return r;
         }
 
-    } catch (e) {
-        console.error(e);
+        return r;
+    } else {
+        for (let i = 0; i < TableContent.length; i++) {
+            let j = 0;
+            r[i] = {};
+            columns.forEach(column => {
+                for (let key in TableStruct) {
+                    if (key === column) {
+                        r[i][key] = TableContent[i][j];
+                        j++;
+                    }
+                }
+            });
+
+        }
+
+        return r;
     }
 }
 
@@ -225,6 +233,12 @@ function selectTableContent(dbName, schemeName, tableName, columns) {
  *
  * */
 function insertTableContent(dbName, schemeName, tableName, content) {
+    let TableList = readTableFile(dbName, schemeName);
+
+    if (TableList.indexOf(tableName) === -1) {
+        throw new Error("Table does not exist");
+    }
+
     let TableStruct = readTableStructure(dbName, schemeName, tableName);
     if (content !== null) {
         let i = 0;
@@ -265,17 +279,34 @@ function insertTableContent(dbName, schemeName, tableName, content) {
 /**
  *
  * */
-function updateTableContent(dbName, schemeName, tableName, content) {
+function updateTableContent(dbName, schemeName, tableName, options) {
+    let TableList = readTableFile(dbName, schemeName);
+
+    if (TableList.indexOf(tableName) === -1) {
+        throw new Error("Table does not exist");
+    }
+
     /*
-    * @todo: Make SQL UPDATE
+    * @todo: Make UPDATE command
     * */
 }
 
 /**
  *
  * */
-function deleteTableContent(dbName, schemeName, tableName, content) {
+function deleteTableContent(dbName, schemeName, tableName, options) {
+    /*
+    * @todo: Make DELETE command
+    * */
 
+    let TableList = readTableFile(dbName, schemeName);
+
+    if (TableList.indexOf(tableName) === -1) {
+        throw new Error("Table does not exist");
+    }
+
+    let TableContent = [];
+    writeTableContent(dbName, schemeName, tableName, TableContent, true);
 }
 
 exports.create = createTable;
