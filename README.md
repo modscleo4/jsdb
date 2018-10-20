@@ -2,11 +2,10 @@
 JSDB is a Node.js database manager which supports SQL
 
 ## Installation
-To install JSDB from github (latest build), just run
+To install JSDB from GitHub (latest build), just run
 ```
 $ git clone https://github.com/modscleo4/jsdb
-$ cd jsdb
-$ npm install
+$ npm install jsdb
 ```
 
 For stable releases, install from NPM
