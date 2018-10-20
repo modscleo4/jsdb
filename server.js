@@ -5,9 +5,11 @@ const sql = require("./sql/sql");
 
 const net = require('net');
 
-db.readFile();
-
 let server = net.createServer(function (socket) {
+    socket.on('connection', function () {
+        db.readFile();
+    });
+
     let dbS = null;
     let schemeS = null;
 
@@ -96,4 +98,5 @@ if (address !== "" && port !== 0 && dir !== "") {
     server.listen(port, address);
     console.log("Running server on " + address + ":" + port + ", " + dir);
     exports.startDir = dir;
+    db.readFile();
 }
