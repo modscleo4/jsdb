@@ -2,6 +2,9 @@ const db = require("./commands/db");
 const scheme = require("./commands/scheme");
 const table = require("./commands/table");
 const sql = require("./sql/sql");
+const sql_parser = require("sql-parser/lib/sql_parser");
+
+console.log(sql_parser.lexer.tokenize(`SELECT * FROM adm WHERE a = b AND b = c ORDER BY a, b`));
 
 const net = require('net');
 

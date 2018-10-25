@@ -23,7 +23,7 @@ function run(sql, dbName, schemeName) {
         *   {
         *     "code": 1,
         *     "message": "Unique ID error: Already exists",
-        *     "sql": "INSERT INTO adm '[\"DEFAULT\"]'"
+        *     "sql": "INSERT INTO adm '["DEFAULT"]'"
         *   }
         * ]
         * */
@@ -87,6 +87,68 @@ function run(sql, dbName, schemeName) {
                                 break;
                             } else if (t[i][0] === "LITERAL") {
                                 cols.push(t[i][1]);
+                            }
+                        }
+
+                        /*
+                        * Get options
+                        * */
+                        let options = {};
+                        for (let i = a + 1; i < t.length; i++) {
+                            /*
+                            * "where": {
+                            *   0: {
+                            *       "conditional": "and",
+                            *
+                            *       0: {
+                            *           "val": "a",
+                            *           "condition": "=",
+                            *           "val": "b"
+                            *       },
+
+                            *       1: {
+                            *           "val": "b",
+                            *           "condition": "=",
+                            *           "val": "a"
+                            *       }
+                            *   },
+                            *
+                            *   1:  {
+                            *       "conditional": "or",
+                            *
+                            *       0: {
+                            *           "val": "a",
+                            *           "condition": ">",
+                            *           "val": "b"
+                            *       },
+                            *
+                            *       1: {
+                            *           "val": "b",
+                            *           "condition": "<=",
+                            *           "val": "a"
+                            *       }
+                            *   }
+                            * }
+                            * */
+                            if (t[i][0] === "WHERE") {
+                                options['where'] = {};
+                                for (let j = i + 1; i < t.length; i++) {
+                                    let val = {};
+                                    if (t[j][0] === "LITERAL") {
+                                        val['val'].push(t[j][0]);
+                                    } else if (t[j][0] === "OPERATOR") {
+                                        val['condition'] = t[j][1];
+                                    }
+                                    options['where'].push(val);
+                                }
+                            } else if (t[i][1] + " " + t[i + 1][1] === "ORDER BY") {
+                                for (let j = i + 1; i < t.length; i++) {
+                                    if (t[j][0] === "LITERAL") {
+                                        options['orderby'].push(t[j][1]);
+                                    } else if (t[j][0] !== "SEPARATOR") {
+                                        break;
+                                    }
+                                }
                             }
                         }
 
