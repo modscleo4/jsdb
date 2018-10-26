@@ -14,7 +14,7 @@ exports.f_tabledata = f_tabledata;
 /**
  *
  * */
-function createTable(dbName, schemeName, tableName, tableStruct) {
+function createTable(dbName, schemeName, tableName, tableStruct, metadata = null) {
     if (typeof dbName === "string" && typeof schemeName === "string" && typeof tableName === "string") {
         let TableList = readTableFile(dbName, schemeName);
 
@@ -23,14 +23,19 @@ function createTable(dbName, schemeName, tableName, tableStruct) {
             writeTableFile(dbName, schemeName, JSON.stringify(TableList));
             createTableFolder(dbName, schemeName, tableName);
 
-            writeTableStructure(dbName, schemeName, tableName, tableStruct);
-            writeTableContent(dbName, schemeName, tableName, null);
+            if (metadata !== null) {
+                tableStruct[tableName + '.metadata'] = metadata;
+            }
 
             for (let key in tableStruct) {
                 if (tableStruct[key]['type'] === 'number' && tableStruct[key]['autoIncrement'] === 'yes') {
+                    delete(tableStruct[key]['autoIncrement']);
+                    tableStruct[key]['default'] = 'sequence(' + key + '_seq)';
                     sequence.create(dbName, schemeName, tableName, key + '_seq');
                 }
             }
+            writeTableStructure(dbName, schemeName, tableName, tableStruct);
+            writeTableContent(dbName, schemeName, tableName, null);
 
             return "Created table " + schemeName + "." + tableName + " in DB " + dbName;
         } else {
@@ -186,7 +191,14 @@ function dropTable() {
 /* SQL Commands */
 
 /**
+ * @summary This is the table SELECT function scope
  *
+ * @param dbName The name of DB
+ * @param schemeName The name of the scheme
+ * @param tableName The table name
+ * @param columns The desired columns in an indexed array
+ *
+ * @returns This returns an indexed array with multiple named arrays containg the data of each cell
  * */
 function selectTableContent(dbName, schemeName, tableName, columns) {
     let TableList = readTableFile(dbName, schemeName);
@@ -204,7 +216,9 @@ function selectTableContent(dbName, schemeName, tableName, columns) {
             let j = 0;
             r[i] = {};
             for (let key in TableStruct) {
-                r[i][key] = TableContent[i][j];
+                if (key !== tableName + '.metadata') {
+                    r[i][key] = TableContent[i][j];
+                }
                 j++;
             }
         }
@@ -212,14 +226,16 @@ function selectTableContent(dbName, schemeName, tableName, columns) {
         return r;
     } else {
         for (let i = 0; i < TableContent.length; i++) {
-            let j = 0;
             r[i] = {};
             columns.forEach(column => {
+                let j = 0;
                 for (let key in TableStruct) {
-                    if (key === column) {
-                        r[i][key] = TableContent[i][j];
-                        j++;
+                    if (key !== tableName + '.metadata') {
+                        if (key === column) {
+                            r[i][key] = TableContent[i][j];
+                        }
                     }
+                    j++;
                 }
             });
 
@@ -245,31 +261,45 @@ function insertTableContent(dbName, schemeName, tableName, content) {
 
         for (let key in TableStruct) {
             /*
-            * @todo Make sequences
+            * Ignore tablename.metadata array to avoid errors
             * */
-            if (TableStruct[key]['unique'] === 'yes') {
-                let TableContent = readTableContent(dbName, schemeName, tableName);
-                TableContent.forEach(c => {
-                    if (c[i] === content[i]) {
-                        throw new Error("Value already exists");
-                    }
-                });
-            }
-
-            if (content[i] === 'DEFAULT' && TableStruct[key]['type'] === 'number' && TableStruct[key]['autoIncrement'] === 'yes') {
-                let seqName = key + "_seq";
-                let Seq = sequence.read(dbName, schemeName, tableName, seqName);
-                content[i] = Seq['start'];
-
-                Seq['start'] = Seq['start'] + Seq['inc'];
-
-                sequence.update(dbName, schemeName, tableName, seqName, Seq);
-            } else {
-                if (typeof content[i] !== TableStruct[key]['type']) {
-                    throw Error("Invalid type");
+            if (key !== tableName + ".metadata") {
+                /*
+                * @todo Make sequences
+                * */
+                if (TableStruct[key]['unique'] === 'yes') {
+                    let TableContent = readTableContent(dbName, schemeName, tableName);
+                    TableContent.forEach(c => {
+                        if (c[i] === content[i]) {
+                            throw new Error("Value already exists");
+                        }
+                    });
                 }
+
+                if (content[i].toUpperCase() === 'DEFAULT') {
+                    let a;
+                    /*
+                    * If true, it's a sequence
+                    * */
+                    if (typeof TableStruct[key]['default'] === "string" && (a = TableStruct[key]['default'].search("sequence[(].*[)]")) !== -1) {
+                        let seqName = TableStruct[key]['default'].slice(a + "sequence(".length, TableStruct[key]['default'].length - 1);
+                        let Seq = sequence.read(dbName, schemeName, tableName, seqName);
+
+                        content[i] = Seq['start'];
+
+                        Seq['start'] = Seq['start'] + Seq['inc'];
+
+                        sequence.update(dbName, schemeName, tableName, seqName, Seq);
+                    } else {
+                        content[i] = TableStruct[key]['default'];
+                    }
+                } else {
+                    if (typeof content[i] !== TableStruct[key]['type']) {
+                        throw Error("Invalid type");
+                    }
+                }
+                i++;
             }
-            i++;
         }
 
         return writeTableContent(dbName, schemeName, tableName, content);

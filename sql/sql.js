@@ -42,6 +42,7 @@ function run(sql, dbName, schemeName) {
                 o['code'] = 0;
 
                 let t = sql_parser.lexer.tokenize(sqlString);
+                t = t.splice(0, t.length - 1);
 
                 if (schemeName === null) {
                     schemeName = "public";
@@ -133,15 +134,16 @@ function run(sql, dbName, schemeName) {
                             if (t[i][0] === "WHERE") {
                                 options['where'] = {};
                                 for (let j = i + 1; i < t.length; i++) {
+                                    let aaaa = 0;
                                     let val = {};
                                     if (t[j][0] === "LITERAL") {
                                         val['val'].push(t[j][0]);
                                     } else if (t[j][0] === "OPERATOR") {
                                         val['condition'] = t[j][1];
                                     }
-                                    options['where'].push(val);
+                                    options['where'][a++] = val;
                                 }
-                            } else if (t[i][1] + " " + t[i + 1][1] === "ORDER BY") {
+                            } else if (t[i][0] === "ORDER" && t[i + 1][0] === "BY") {
                                 for (let j = i + 1; i < t.length; i++) {
                                     if (t[j][0] === "LITERAL") {
                                         options['orderby'].push(t[j][1]);

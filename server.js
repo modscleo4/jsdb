@@ -3,8 +3,24 @@ const scheme = require("./commands/scheme");
 const table = require("./commands/table");
 const sql = require("./sql/sql");
 const sql_parser = require("sql-parser/lib/sql_parser");
+const md5 = require('md5');
 
-console.log(sql_parser.lexer.tokenize(`SELECT * FROM adm WHERE a = b AND b = c ORDER BY a, b`));
+//console.log(sql_parser.lexer.tokenize(`SELECT * FROM adm WHERE a = b AND b = c ORDER BY a, b`));
+
+function authUser(username, password) {
+    let users = table.select('jsdb', 'public', 'users', ["username", "password"]);
+    for (let key in users) {
+        if (users[key]['username'] === username) {
+            if (users[key]['password'] === md5(password)) {
+                return users[key]['privileges'];
+            } else {
+                throw new Error("Wrong password");
+            }
+        }
+    }
+
+    throw new Error("Invalid username");
+}
 
 const net = require('net');
 
@@ -13,8 +29,10 @@ let server = net.createServer(function (socket) {
         db.readFile();
     });
 
-    let dbS = null;
-    let schemeS = null;
+    let userPrivileges = null;
+
+    let dbS = 'jsdb';
+    let schemeS = 'public';
 
     function setDB(dbName) {
         let DBList = db.readFile();
@@ -34,12 +52,32 @@ let server = net.createServer(function (socket) {
 
     socket.on('data', function (data) {
         let sqlCmd = data.toLocaleString();
+
+        if (userPrivileges === null) {
+            try {
+                if (!sqlCmd.includes("credentials: ")) {
+                    throw new Error("Username and password not informed");
+                } else {
+                    let credentials = JSON.parse(sqlCmd.slice("credentials: ".length));
+                    userPrivileges = authUser(credentials['username'], credentials['password']);
+                    exports.userPrivileges = userPrivileges;
+                    socket.write("AUTHOK");
+                    return;
+                }
+            } catch (e) {
+                socket.write(e.message);
+                socket.destroy();
+            }
+        }
+
         if (sqlCmd.includes("db ")) {
             setDB(sqlCmd.slice(3));
-            //socket.write(JSON.stringify(scheme.readFile(dbS)));
         } else if (sqlCmd.toUpperCase().includes("SET SEARCH_PATH TO")) {
             setScheme(sqlCmd.slice("SET SEARCH_PATH TO ".length));
-            //socket.write(JSON.stringify(table.readFile(dbS, schemeS)));
+        } else if (sqlCmd.toUpperCase().includes("SHOW SCHEMES")) {
+            socket.write(JSON.stringify(scheme.readFile(dbS)));
+        } else if (sqlCmd.toUpperCase().includes("SHOW TABLES")) {
+            socket.write(JSON.stringify(table.readFile(dbS, schemeS)));
         } else {
             try {
                 let r = sql.run(sqlCmd, dbS, schemeS);
@@ -47,9 +85,10 @@ let server = net.createServer(function (socket) {
                 if (typeof r === "object") {
                     r = JSON.stringify(r);
                 }
+
                 socket.write(r);
             } catch (err) {
-                socket.write(err.message);
+                socket.write("ERROR: " + err.message);
             }
         }
     });
@@ -71,9 +110,9 @@ let server = net.createServer(function (socket) {
     })
 });
 
-let address = "";
-let port = 0;
-let dir = "";
+let address = "localhost";
+let port = 6637;
+let dir = "./";
 
 for (let i = 0; i < process.argv.length; i++) {
     if (process.argv[i] === "-d") {
