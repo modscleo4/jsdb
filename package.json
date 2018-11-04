@@ -1,7 +1,7 @@
 {
   "name": "@modscleo4/jsdb",
   "description": "A simple database manager written in JavaScript",
-  "version": "1.0.7",
+  "version": "1.0.0",
   "bin": "./bin/jsdb",
   "author": {
     "name": "Dhiego Cassiano Fogaça Barbosa",

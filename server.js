@@ -2,27 +2,32 @@ const db = require("./commands/db");
 const scheme = require("./commands/scheme");
 const table = require("./commands/table");
 const sql = require("./sql/sql");
+
 const sql_parser = require("sql-parser/lib/sql_parser");
 const md5 = require('md5');
+const net = require('net');
 
-//console.log(sql_parser.lexer.tokenize(`SELECT * FROM adm WHERE a = b AND b = c ORDER BY a, b`));
+//console.log(sql_parser.lexer.tokenize(`SELECT * FROM adm WHERE username = 'jsdbadmin' ORDER BY id, username ASC`));
 
 function authUser(username, password) {
-    let users = table.select('jsdb', 'public', 'users', ["username", "password"]);
+    let users = table.select('jsdb', 'public', 'users', ["username", "password", "privileges"], {
+        "where": [['username', '=', 'jsdbadmin']],
+        "orderby": [{"column": 'username', "mode": 'ASC'}]
+    });
     for (let key in users) {
-        if (users[key]['username'] === username) {
-            if (users[key]['password'] === md5(password)) {
-                return users[key]['privileges'];
-            } else {
-                throw new Error("Wrong password");
+        if (users.hasOwnProperty(key)) {
+            if (users[key]['username'] === username) {
+                if (users[key]['password'] === md5(password)) {
+                    return users[key]['privileges'];
+                } else {
+                    throw new Error("Wrong password");
+                }
             }
         }
     }
 
     throw new Error("Invalid username");
 }
-
-const net = require('net');
 
 let server = net.createServer(function (socket) {
     socket.on('connection', function () {
@@ -103,10 +108,8 @@ let server = net.createServer(function (socket) {
         } else if (err.code === 'ECONNRESET') {
             console.error('Connection reset. Maybe a client disconnected');
         } else {
-            console.error(err.message);
+            console.error(err.code + ": " + err.message);
         }
-
-
     })
 });
 
@@ -117,8 +120,6 @@ let dir = "./";
 for (let i = 0; i < process.argv.length; i++) {
     if (process.argv[i] === "-d") {
         dir = process.argv[i + 1];
-    } else if (process.argv[i] === "-a") {
-        address = process.argv[i + 1];
     } else if (process.argv[i] === "-p") {
         port = parseInt(process.argv[i + 1]);
     }
@@ -126,10 +127,6 @@ for (let i = 0; i < process.argv.length; i++) {
 
 if (dir === "") {
     dir = "./";
-}
-
-if (address === "") {
-    address = "localhost";
 }
 
 if (port === 0) {

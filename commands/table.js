@@ -28,10 +28,12 @@ function createTable(dbName, schemeName, tableName, tableStruct, metadata = null
             }
 
             for (let key in tableStruct) {
-                if (tableStruct[key]['type'] === 'number' && tableStruct[key]['autoIncrement'] === 'yes') {
-                    delete(tableStruct[key]['autoIncrement']);
-                    tableStruct[key]['default'] = 'sequence(' + key + '_seq)';
-                    sequence.create(dbName, schemeName, tableName, key + '_seq');
+                if (tableStruct.hasOwnProperty(key)) {
+                    if (tableStruct[key]['type'] === 'number' && tableStruct[key]['autoIncrement'] === 'yes') {
+                        delete(tableStruct[key]['autoIncrement']);
+                        tableStruct[key]['default'] = 'sequence(' + key + '_seq)';
+                        sequence.create(dbName, schemeName, tableName, key + '_seq');
+                    }
                 }
             }
             writeTableStructure(dbName, schemeName, tableName, tableStruct);
@@ -197,10 +199,11 @@ function dropTable() {
  * @param schemeName The name of the scheme
  * @param tableName The table name
  * @param columns The desired columns in an indexed array
+ * @param options Options like WHERE, ORDER BY, etc.
  *
- * @returns This returns an indexed array with multiple named arrays containg the data of each cell
+ * @returns Array returns an indexed array with multiple named arrays containg the data of each cell
  * */
-function selectTableContent(dbName, schemeName, tableName, columns) {
+function selectTableContent(dbName, schemeName, tableName, columns, options) {
     let TableList = readTableFile(dbName, schemeName);
 
     if (TableList.indexOf(tableName) === -1) {
@@ -210,39 +213,113 @@ function selectTableContent(dbName, schemeName, tableName, columns) {
     let TableContent = readTableContent(dbName, schemeName, tableName);
     let TableStruct = readTableStructure(dbName, schemeName, tableName);
 
-    let r = {};
+    let r = [];
     if (columns[0] === "*") {
         for (let i = 0; i < TableContent.length; i++) {
             let j = 0;
             r[i] = {};
             for (let key in TableStruct) {
-                if (key !== tableName + '.metadata') {
-                    r[i][key] = TableContent[i][j];
+                if (TableStruct.hasOwnProperty(key)) {
+                    if (key !== tableName + '.metadata') {
+                        r[i][key] = TableContent[i][j];
+                    }
+                    j++;
                 }
-                j++;
             }
         }
-
-        return r;
     } else {
         for (let i = 0; i < TableContent.length; i++) {
             r[i] = {};
             columns.forEach(column => {
                 let j = 0;
                 for (let key in TableStruct) {
-                    if (key !== tableName + '.metadata') {
-                        if (key === column) {
-                            r[i][key] = TableContent[i][j];
+                    if (TableStruct.hasOwnProperty(key)) {
+                        if (key !== tableName + '.metadata') {
+                            if (key === column) {
+                                r[i][key] = TableContent[i][j];
+                            }
                         }
+                        j++;
                     }
-                    j++;
                 }
             });
+        }
+    }
 
+    if (typeof options['where'] !== "undefined") {
+        /*
+        * @todo SQL WHERE
+        * */
+        //options['where'].forEach(o => {
+
+        //});
+    }
+
+    if (typeof options['orderby'] !== "undefined") {
+        function getC(orderby) {
+            if (typeof orderby[0]['column'] === "undefined") {
+                if (typeof TableStruct[tableName + '.metadata']['primaryKey'] === "undefined") {
+                    let key;
+                    for (key in TableStruct) {
+                        break;
+                    }
+
+                    return TableStruct[key];
+                } else {
+                    return TableStruct[tableName + '.metadata']['primaryKey'][0];
+                }
+            } else {
+                if (typeof TableStruct[orderby[0]['column']] === "undefined") {
+                    throw new Error("Column " + orderby[0]['column'] + " does not exist");
+                }
+                return orderby[0]['column'];
+            }
         }
 
-        return r;
+        function getM(orderby) {
+            if (typeof orderby[0]['mode'] === "undefined") {
+                return "ASC";
+            } else {
+                return orderby[0]['mode'];
+            }
+        }
+
+        function sorting(orderby) {
+            return function (a, b) {
+                let c = getC(orderby);
+                let m = getM(orderby);
+
+                if (m.toUpperCase() === "DESC") {
+                    if (a[c] < b[c]) {
+                        return 1;
+                    } else if (a[c] > b[c]) {
+                        return -1;
+                    } else {
+                        if (orderby.length > 1) {
+                            return sorting(orderby.slice(1))(a, b);
+                        }
+                    }
+                } else {
+                    if (a[c] < b[c]) {
+                        return -1;
+                    } else if (a[c] > b[c]) {
+                        return 1;
+                    } else {
+                        if (orderby.length > 1) {
+                            return sorting(orderby.slice(1))(a, b);
+                        }
+                    }
+                }
+
+                return 0;
+            }
+        }
+
+        r = r.sort(sorting(options['orderby']));
     }
+
+
+    return r;
 }
 
 /**
@@ -254,51 +331,56 @@ function insertTableContent(dbName, schemeName, tableName, content) {
     if (TableList.indexOf(tableName) === -1) {
         throw new Error("Table does not exist");
     }
-
     let TableStruct = readTableStructure(dbName, schemeName, tableName);
     if (content !== null) {
         let i = 0;
 
         for (let key in TableStruct) {
-            /*
-            * Ignore tablename.metadata array to avoid errors
-            * */
-            if (key !== tableName + ".metadata") {
+            if (TableStruct.hasOwnProperty(key)) {
+                if (content[i] === undefined) {
+                    throw new Error("Invalid number of data");
+                }
+
                 /*
-                * @todo Make sequences
+                * Ignore tablename.metadata array to avoid errors
                 * */
-                if (TableStruct[key]['unique'] === 'yes') {
-                    let TableContent = readTableContent(dbName, schemeName, tableName);
-                    TableContent.forEach(c => {
-                        if (c[i] === content[i]) {
-                            throw new Error("Value already exists");
-                        }
-                    });
-                }
-
-                if (content[i].toUpperCase() === 'DEFAULT') {
-                    let a;
+                if (key !== tableName + ".metadata") {
                     /*
-                    * If true, it's a sequence
+                    * @todo Make sequences
                     * */
-                    if (typeof TableStruct[key]['default'] === "string" && (a = TableStruct[key]['default'].search("sequence[(].*[)]")) !== -1) {
-                        let seqName = TableStruct[key]['default'].slice(a + "sequence(".length, TableStruct[key]['default'].length - 1);
-                        let Seq = sequence.read(dbName, schemeName, tableName, seqName);
+                    if (TableStruct[key]['unique'] === 'yes') {
+                        let TableContent = readTableContent(dbName, schemeName, tableName);
+                        TableContent.forEach(c => {
+                            if (c[i] === content[i]) {
+                                throw new Error("Value already exists");
+                            }
+                        });
+                    }
 
-                        content[i] = Seq['start'];
+                    if (typeof content[i] === "string" && content[i].toUpperCase() === 'DEFAULT') {
+                        let a;
+                        /*
+                        * If true, it's a sequence
+                        * */
+                        if (typeof TableStruct[key]['default'] === "string" && (a = TableStruct[key]['default'].search("sequence[(].*[)]")) !== -1) {
+                            let seqName = TableStruct[key]['default'].slice(a + "sequence(".length, TableStruct[key]['default'].length - 1);
+                            let Seq = sequence.read(dbName, schemeName, tableName, seqName);
 
-                        Seq['start'] = Seq['start'] + Seq['inc'];
+                            content[i] = Seq['start'];
 
-                        sequence.update(dbName, schemeName, tableName, seqName, Seq);
+                            Seq['start'] = Seq['start'] + Seq['inc'];
+
+                            sequence.update(dbName, schemeName, tableName, seqName, Seq);
+                        } else {
+                            content[i] = TableStruct[key]['default'];
+                        }
                     } else {
-                        content[i] = TableStruct[key]['default'];
+                        if (typeof content[i] !== TableStruct[key]['type']) {
+                            throw Error("Invalid type");
+                        }
                     }
-                } else {
-                    if (typeof content[i] !== TableStruct[key]['type']) {
-                        throw Error("Invalid type");
-                    }
+                    i++;
                 }
-                i++;
             }
         }
 
@@ -319,6 +401,10 @@ function updateTableContent(dbName, schemeName, tableName, options) {
     /*
     * @todo: Make UPDATE command
     * */
+
+    if (options['where'] !== null) {
+
+    }
 }
 
 /**
@@ -333,6 +419,10 @@ function deleteTableContent(dbName, schemeName, tableName, options) {
 
     if (TableList.indexOf(tableName) === -1) {
         throw new Error("Table does not exist");
+    }
+
+    if (options['where'] !== null) {
+
     }
 
     let TableContent = [];
