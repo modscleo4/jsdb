@@ -213,6 +213,34 @@ function selectTableContent(dbName, schemeName, tableName, columns, options) {
     let TableContent = readTableContent(dbName, schemeName, tableName);
     let TableStruct = readTableStructure(dbName, schemeName, tableName);
 
+    if (typeof options['limoffset'] !== "undefined") {
+        let limit = options['limoffset']['limit'];
+        let offset = options['limoffset']['offset'];
+
+        if (typeof TableContent[limit] === "undefined") {
+            throw new Error("LIMIT greater than number of rows");
+        }
+
+        TableContent = TableContent.splice(offset, limit);
+    }
+
+    /*
+    * Auxiliary array for WHERE
+    * */
+    let aaa = [];
+    for (let i = 0; i < TableContent.length; i++) {
+        let j = 0;
+        aaa[i] = {};
+        for (let key in TableStruct) {
+            if (TableStruct.hasOwnProperty(key)) {
+                if (key !== tableName + '.metadata') {
+                    aaa[i][key] = TableContent[i][j];
+                }
+                j++;
+            }
+        }
+    }
+
     let r = [];
     if (columns[0] === "*") {
         for (let i = 0; i < TableContent.length; i++) {
@@ -245,14 +273,26 @@ function selectTableContent(dbName, schemeName, tableName, columns, options) {
             });
         }
     }
-
     if (typeof options['where'] !== "undefined") {
         /*
         * @todo SQL WHERE
         * */
-        //options['where'].forEach(o => {
+        for (let i = 0; i < r.length; i++) {
+            let e = options['where'];
+            for (let key in aaa[i]) {
+                if (aaa[i].hasOwnProperty(key)) {
+                    if (e.search(new RegExp(`\`${key}\``, 'g')) !== -1) {
+                        e = e.replace(new RegExp(`\`${key}\``, 'g'), "'" + aaa[i][key].toString() + "'");
+                    }
+                }
+            }
 
-        //});
+            if (!eval(e)) {
+                aaa.splice(i, 1);
+                r.splice(i, 1);
+                i = -1;
+            }
+        }
     }
 
     if (typeof options['orderby'] !== "undefined") {

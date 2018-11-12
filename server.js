@@ -3,30 +3,24 @@ const scheme = require("./commands/scheme");
 const table = require("./commands/table");
 const sql = require("./sql/sql");
 
-const sql_parser = require("sql-parser/lib/sql_parser");
 const md5 = require('md5');
 const net = require('net');
 
-//console.log(sql_parser.lexer.tokenize(`SELECT * FROM adm WHERE username = 'jsdbadmin' ORDER BY id, username ASC`));
-
 function authUser(username, password) {
     let users = table.select('jsdb', 'public', 'users', ["username", "password", "privileges"], {
-        "where": [['username', '=', 'jsdbadmin']],
+        "where": "\`username\` == '" + username + "'",
         "orderby": [{"column": 'username', "mode": 'ASC'}]
     });
-    for (let key in users) {
-        if (users.hasOwnProperty(key)) {
-            if (users[key]['username'] === username) {
-                if (users[key]['password'] === md5(password)) {
-                    return users[key]['privileges'];
-                } else {
-                    throw new Error("Wrong password");
-                }
-            }
-        }
+
+    if (users.length === 0) {
+        throw new Error("AUTHERR: Invalid username: " + username);
     }
 
-    throw new Error("Invalid username");
+    if (users[0]['password'] === md5(password)) {
+        return users[0]['privileges'];
+    } else {
+        throw new Error("AUTHERR: Wrong password");
+    }
 }
 
 let server = net.createServer(function (socket) {

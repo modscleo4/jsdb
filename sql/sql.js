@@ -96,69 +96,33 @@ function run(sql, dbName, schemeName) {
                         * */
                         let options = {};
                         for (let i = a + 1; i < t.length; i++) {
-                            /* SQL: WHERE a = b AND c = d AND e > f AND g <= h
-                            * "where": {
-                            *   "and": [
-                            *       [
-                            *           {
-                            *               "val0": "a",
-                            *               "operator": "=",
-                            *               "val1": "b"
-                            *           },
-                            *
-                            *           {
-                            *               "val0": "c",
-                            *               "condition": "=",
-                            *               "val1": "d"
-                            *           }
-                            *       ],
-                            *
-                            *       [
-                            *           {
-                            *               "val0": "e",
-                            *               "operator": ">",
-                            *               "val1": "f"
-                            *           },
-                            *
-                            *           {
-                            *               "val0": "g",
-                            *               "operator": "<=",
-                            *               "val1": "h"
-                            *           }
-                            *       ]
-                            *   ]
-                            * }
-                            * */
                             if (t[i][0] === "WHERE") {
-                                options['where'] = {};
+                                options['where'] = "";
                                 /*
                                 * @todo: SQL WHERE parameter
                                 * */
                                 let b = 0;
-                                for (let k = i; k < t.length; k++) {
+                                for (let k = i + 1; k < t.length; k++) {
                                     /*
                                     * Stop when find something that is not on WHERE params
                                     * */
-                                    if (t[k][0] !== "LITERAL" && t[k][0] !== "OPERATOR" && t[k][0] !== "CONDITIONAL") {
+                                    if (t[k][0] !== "LITERAL" && t[k][0] !== "OPERATOR" && t[k][0] !== "CONDITIONAL" && t[k][0] !== "STRING" && t[k][0] !== "NUMBER" && t[k][0] !== "BOOLEAN") {
                                         break;
                                     }
 
-                                    let val = {};
-                                    let count = 0;
-                                    for (let j = i + 1; j < t.length; j++) {
-                                        /*
-                                        * Find the params for [b]
-                                        * */
-                                        if (t[j][0] === "LITERAL" || t[j][0] === "NUMBER" || t[j][0] === "STRING") {
-                                            val['val' + count++] = t[j][0];
-                                        } else if (t[j][0] === "OPERATOR") {
-                                            val['operator'] = t[j][1];
-                                        } else if (t[j][0] === "CONDITIONAL") {
-                                            break;
-                                        }
+                                    if (t[k][1] === '=') {
+                                        t[k][1] = '==';
+                                    } else if (t[k][1] === '<>') {
+                                        t[k][1] = '!=';
+                                    } else if (t[k][0] === 'LITERAL') {
+                                        t[k][1] = '`' + t[k][1] + '`';
+                                    } else if (t[k][0] === 'CONDITIONAL') {
+                                        t[k][1] = (t[k][1] === 'AND') ? '&&' : '||';
+                                    } else if (t[k][0] === "STRING") {
+                                        t[k][1] = "'" + t[k][1] + "'";
                                     }
 
-                                    options['where'][b++] = val;
+                                    options['where'] += t[k][1];
                                 }
                             } else if (t[i][0] === "ORDER" && t[i + 1][0] === "BY") {
                                 options['orderby'] = [];
@@ -174,6 +138,21 @@ function run(sql, dbName, schemeName) {
                                     } else if (t[j][0] === "SEPARATOR") {
                                         count++;
                                     } else if (t[j][0] !== "DIRECTION") {
+                                        break;
+                                    }
+                                }
+                            } else if (t[i][0] === "LIMIT") {
+                                options['limoffset'] = {};
+                                for (let j = i + 1; j < t.length; j++) {
+                                    if (t[j][0] === "NUMBER") {
+                                        options['limoffset']['limit'] = t[j][1];
+                                    } else if (t[j][0] === "SEPARATOR") {
+                                        options['limoffset']['limit'] = t[j + 1][1];
+                                        options['limoffset']['offset'] = t[j - 1][1];
+                                        break;
+                                    } else if (t[j][0] === "OFFSET") {
+                                        options['limoffset']['limit'] = t[j - 1][1];
+                                        options['limoffset']['offset'] = t[j + 1][1];
                                         break;
                                     }
                                 }
