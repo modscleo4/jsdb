@@ -386,9 +386,13 @@ function insertTableContent(dbName, schemeName, tableName, content, columns = nu
     let ContentW = [];
 
     if (content !== null) {
+        if (columns === null && content.length !== TColumns.length) {
+            throw new Error("Number of columns does not match with provided values (required: " + TColumns.length + ")");
+        }
+
         if (columns !== null) {
             if (content.length !== columns.length) {
-                throw new Error("Columns length does not match with provided values");
+                throw new Error("Number of columns does not match with provided values");
             }
         }
 
