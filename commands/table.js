@@ -273,6 +273,7 @@ function selectTableContent(dbName, schemeName, tableName, columns, options) {
             });
         }
     }
+
     if (typeof options['where'] !== "undefined") {
         /*
         * @todo SQL WHERE
@@ -365,73 +366,178 @@ function selectTableContent(dbName, schemeName, tableName, columns, options) {
 /**
  *
  * */
-function insertTableContent(dbName, schemeName, tableName, content) {
+function insertTableContent(dbName, schemeName, tableName, content, columns = null) {
     let TableList = readTableFile(dbName, schemeName);
 
     if (TableList.indexOf(tableName) === -1) {
         throw new Error("Table does not exist");
     }
-    let TableStruct = readTableStructure(dbName, schemeName, tableName);
-    if (content !== null) {
-        let i = 0;
 
-        for (let key in TableStruct) {
-            if (TableStruct.hasOwnProperty(key)) {
-                if (content[i] === undefined) {
-                    throw new Error("Invalid number of data");
+    let TableStruct = readTableStructure(dbName, schemeName, tableName);
+    let TColumns = Object.keys(TableStruct);
+    /*
+    * Remove <tableName>.metadata from Columns list
+    * */
+    for (let c = 0; c < TColumns.length; c++) {
+        if (TColumns[c] === tableName + ".metadata") {
+            TColumns.splice(c, 1);
+        }
+    }
+    let ContentW = [];
+
+    if (content !== null) {
+        if (columns !== null) {
+            if (content.length !== columns.length) {
+                throw new Error("Columns length does not match with provided values");
+            }
+        }
+
+        let i = 0;
+        let F = false;
+
+        if (columns !== null) {
+            for (let c = 0; c < TColumns.length; c++) {
+                for (let aux = 0; aux < columns.length; aux++) {
+                    if (TColumns.indexOf(columns[aux]) === -1) {
+                        throw new Error("Invalid column: " + columns[aux]);
+                    }
+
+                    /*
+                    * Get first index
+                    * */
+                    if (TColumns[c] === columns[aux]) {
+                        i = aux;
+                        F = true;
+                        break;
+                    }
                 }
 
-                /*
-                * Ignore tablename.metadata array to avoid errors
-                * */
-                if (key !== tableName + ".metadata") {
-                    /*
-                    * @todo Make sequences
-                    * */
-                    if (TableStruct[key]['unique'] === 'yes') {
-                        let TableContent = readTableContent(dbName, schemeName, tableName);
-                        TableContent.forEach(c => {
-                            if (c[i] === content[i]) {
-                                throw new Error("Value already exists");
-                            }
-                        });
-                    }
-
-                    if (typeof content[i] === "string" && content[i].toUpperCase() === 'DEFAULT') {
-                        let a;
-                        /*
-                        * If true, it's a sequence
-                        * */
-                        if (typeof TableStruct[key]['default'] === "string" && (a = TableStruct[key]['default'].search("sequence[(].*[)]")) !== -1) {
-                            let seqName = TableStruct[key]['default'].slice(a + "sequence(".length, TableStruct[key]['default'].length - 1);
-                            let Seq = sequence.read(dbName, schemeName, tableName, seqName);
-
-                            content[i] = Seq['start'];
-
-                            Seq['start'] = Seq['start'] + Seq['inc'];
-
-                            sequence.update(dbName, schemeName, tableName, seqName, Seq);
-                        } else {
-                            content[i] = TableStruct[key]['default'];
-                        }
-                    } else {
-                        if (typeof content[i] !== TableStruct[key]['type']) {
-                            throw Error("Invalid type");
-                        }
-                    }
-                    i++;
+                if (F) {
+                    F = false;
+                    break;
                 }
             }
         }
 
-        return writeTableContent(dbName, schemeName, tableName, content);
+        for (let c = 0; c < TColumns.length; c++) {
+            let key = TColumns[c];
+
+            /*
+            * Add null val to content if column does not match key
+            * */
+            if (columns !== null) {
+                if (key !== columns[i]) {
+                    content.push(null);
+                    columns.push(key);
+                    i = columns.length - 1;
+                }
+
+                columns[i] = ".ignore";
+            }
+
+            /*
+            * Ignore tablename.metadata array to avoid errors
+            * */
+            if (key !== tableName + ".metadata") {
+                if (typeof content[i] === "undefined") {
+                    content[i] = null;
+                }
+
+                if (content[i] === null) {
+                    if (TableStruct[key]['notNull']) {
+                        throw new Error("`" + key + "` cannot be null");
+                    }
+                }
+
+                if (TableStruct[key]['unique'] === 'yes') {
+                    let TableContent = readTableContent(dbName, schemeName, tableName);
+                    TableContent.forEach(c => {
+                        if (c[i] === content[i]) {
+                            throw new Error("Value already exists: " + c[i]);
+                        }
+                    });
+                }
+
+                if (typeof content[i] === "string" && content[i].toUpperCase() === 'DEFAULT') {
+                    let a;
+
+                    /*
+                    * If true, it's a sequence
+                    * */
+                    if (typeof TableStruct[key]['default'] === "string" && (a = TableStruct[key]['default'].search("sequence[(].*[)]")) !== -1) {
+                        let seqName = TableStruct[key]['default'].slice(a + "sequence(".length, TableStruct[key]['default'].length - 1);
+                        let Seq = sequence.read(dbName, schemeName, tableName, seqName);
+
+                        content[i] = Seq['start'];
+
+                        Seq['start'] = Seq['start'] + Seq['inc'];
+
+                        sequence.update(dbName, schemeName, tableName, seqName, Seq);
+                    } else {
+                        content[i] = TableStruct[key]['default'];
+                    }
+                }
+
+                if (typeof content[i] !== TableStruct[key]['type']) {
+                    throw new Error("Invalid type for column `" + key + "`: " + content[i] + " (" + typeof content[i] + ")");
+                }
+
+                if (typeof content[i] !== "undefined") {
+                    ContentW[c] = content[i];
+                    delete(content[i]);
+                }
+
+                if (columns === null) {
+                    i++;
+                } else {
+                    i = 0;
+
+                    let f = true;
+                    for (let j = 0; j < columns.length; j++) {
+                        if (columns[j] !== ".ignore") {
+                            f = false;
+                            break;
+                        }
+                    }
+
+                    if (f) {
+                        columns = null;
+                        i++;
+                    } else {
+                        for (let ca = 0; ca < TColumns.length; ca++) {
+                            for (let aux = 0; aux < columns.length; aux++) {
+                                if (columns[aux] !== ".ignore" && TColumns.indexOf(columns[aux]) === -1) {
+                                    throw new Error("Invalid column: " + columns[aux]);
+                                }
+
+                                /*
+                                * Get the next index
+                                * */
+                                if (TColumns[ca] === columns[aux]) {
+                                    i = aux;
+                                    F = true;
+                                    break;
+                                }
+                            }
+
+                            if (F) {
+                                F = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
+
+    return writeTableContent(dbName, schemeName, tableName, ContentW);
 }
 
 /**
  *
  * */
-function updateTableContent(dbName, schemeName, tableName, options) {
+function updateTableContent(dbName, schemeName, tableName, update, options) {
     let TableList = readTableFile(dbName, schemeName);
 
     if (TableList.indexOf(tableName) === -1) {
@@ -441,10 +547,110 @@ function updateTableContent(dbName, schemeName, tableName, options) {
     /*
     * @todo: Make UPDATE command
     * */
+    let TableContent = readTableContent(dbName, schemeName, tableName);
+    let TableStruct = readTableStructure(dbName, schemeName, tableName);
+    let TableIndexes = [];
 
-    if (options['where'] !== null) {
-
+    /*
+    * Auxiliary array for WHERE
+    * */
+    let aaa = [];
+    for (let i = 0; i < TableContent.length; i++) {
+        let j = 0;
+        aaa[i] = {};
+        for (let key in TableStruct) {
+            if (TableStruct.hasOwnProperty(key)) {
+                if (key !== tableName + '.metadata') {
+                    TableIndexes[j] = key;
+                    aaa[i][key] = TableContent[i][j];
+                }
+                j++;
+            }
+        }
     }
+
+    let c = 0;
+    if (typeof options['where'] !== "undefined") {
+        /*
+        * @todo SQL WHERE
+        * */
+        for (let i = 0; i < TableContent.length; i++) {
+            let e = options['where'];
+            for (let key in aaa[i]) {
+                if (aaa[i].hasOwnProperty(key)) {
+                    if (e.search(new RegExp(`\`${key}\``, 'g')) !== -1) {
+                        e = e.replace(new RegExp(`\`${key}\``, 'g'), "'" + aaa[i][key].toString() + "'");
+                    }
+                }
+            }
+
+            if (eval(e)) {
+                for (let key in update) {
+                    if (update.hasOwnProperty(key)) {
+                        if (!aaa[0].hasOwnProperty(key)) {
+                            throw new Error("Column " + key + " does not exist.");
+                        }
+
+                        let j = 0;
+                        for (j; j < TableIndexes.length; j++) {
+                            if (TableIndexes[j] === key) {
+                                break;
+                            }
+                        }
+
+                        if (TableStruct[key]['unique'] === 'yes') {
+                            let TableContent = readTableContent(dbName, schemeName, tableName);
+                            TableContent.forEach(c => {
+                                if (c[i] === update[key]) {
+                                    throw new Error("Value already exists");
+                                }
+                            });
+                        }
+
+                        if (typeof update[key] === "string" && update[key].toUpperCase() === 'DEFAULT') {
+                            let a;
+                            /*
+                            * If true, it's a sequence
+                            * */
+                            if (typeof TableStruct[key]['default'] === "string" && (a = TableStruct[key]['default'].search("sequence[(].*[)]")) !== -1) {
+                                let seqName = TableStruct[key]['default'].slice(a + "sequence(".length, TableStruct[key]['default'].length - 1);
+                                let Seq = sequence.read(dbName, schemeName, tableName, seqName);
+
+                                update[key] = Seq['start'];
+
+                                Seq['start'] = Seq['start'] + Seq['inc'];
+
+                                sequence.update(dbName, schemeName, tableName, seqName, Seq);
+                            } else {
+                                update[key] = TableStruct[key]['default'];
+                            }
+                        } else {
+                            if (typeof update[key] !== TableStruct[key]['type']) {
+                                throw Error("Invalid type");
+                            }
+                        }
+
+                        if (typeof offset !== "undefined") {
+                            TableContent[i + offset][j] = update[key];
+                        } else {
+                            TableContent[i][j] = update[key];
+                        }
+                    }
+                }
+            }
+
+            c++;
+            if (typeof limit !== "undefined") {
+                if (c === limit) {
+                    break;
+                }
+            }
+        }
+    }
+
+    writeTableContent(dbName, schemeName, tableName, TableContent, true);
+
+    return "Updated " + c + " line(s) from " + dbName + ":" + schemeName + ":" + tableName + ".";
 }
 
 /**
@@ -461,12 +667,72 @@ function deleteTableContent(dbName, schemeName, tableName, options) {
         throw new Error("Table does not exist");
     }
 
-    if (options['where'] !== null) {
+    let TableContent = readTableContent(dbName, schemeName, tableName);
+    let TableStruct = readTableStructure(dbName, schemeName, tableName);
 
+    if (typeof options['limoffset'] !== "undefined") {
+        let limit = options['limoffset']['limit'];
+        let offset = options['limoffset']['offset'];
+
+        if (typeof TableContent[limit] === "undefined") {
+            throw new Error("LIMIT greater than number of rows");
+        }
     }
 
-    let TableContent = [];
+    /*
+    * Auxiliary array for WHERE
+    * */
+    let aaa = [];
+    for (let i = 0; i < TableContent.length; i++) {
+        let j = 0;
+        aaa[i] = {};
+        for (let key in TableStruct) {
+            if (TableStruct.hasOwnProperty(key)) {
+                if (key !== tableName + '.metadata') {
+                    aaa[i][key] = TableContent[i][j];
+                }
+                j++;
+            }
+        }
+    }
+
+    let c = 0;
+    if (options['where'] !== null) {
+        /*
+        * @todo SQL WHERE
+        * */
+        for (let i = 0; i < TableContent.length; i++) {
+            let e = options['where'];
+            for (let key in aaa[i]) {
+                if (aaa[i].hasOwnProperty(key)) {
+                    if (e.search(new RegExp(`\`${key}\``, 'g')) !== -1) {
+                        e = e.replace(new RegExp(`\`${key}\``, 'g'), "'" + aaa[i][key].toString() + "'");
+                    }
+                }
+            }
+
+            if (eval(e)) {
+                if (typeof offset !== "undefined") {
+                    TableContent.splice(i + offset, 1);
+                } else {
+                    TableContent.splice(i, 1);
+                }
+
+                i = -1;
+            }
+
+            c++;
+            if (typeof limit !== "undefined") {
+                if (c === limit) {
+                    break;
+                }
+            }
+        }
+    }
+
     writeTableContent(dbName, schemeName, tableName, TableContent, true);
+
+    return "Deleted " + c + " line(s) from " + dbName + ":" + schemeName + ":" + tableName + ".";
 }
 
 exports.create = createTable;

@@ -76,26 +76,31 @@ function readDBFile() {
                     'id': {
                         'type': 'number',
                         'unique': 'yes',
-                        'autoIncrement': 'yes'
+                        'autoIncrement': 'yes',
+                        'notNull': true
                     },
 
                     'username': {
                         'type': 'string',
-                        'unique': 'yes'
+                        'unique': 'yes',
+                        'notNull': true
                     },
 
                     'password': {
-                        'type': 'string'
+                        'type': 'string',
+                        'notNull': true
                     },
 
                     'valid': {
                         'type': 'boolean',
-                        'default': true
+                        'default': true,
+                        'notNull': true
                     },
 
                     'privileges': {
                         'type': 'object',
-                        'default': {}
+                        'default': {},
+                        'notNull': false
                     },
                 },
 

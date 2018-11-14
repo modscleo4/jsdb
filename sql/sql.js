@@ -5,7 +5,6 @@ const sql_parser = require("sql-parser/lib/sql_parser");
 
 function run(sql, dbName, schemeName) {
     if (typeof sql === "string") {
-
         /* Array of all SQL command outputs
         * Organization:
         * [
@@ -28,6 +27,18 @@ function run(sql, dbName, schemeName) {
         * ]
         * */
         let output = [];
+
+        if (sql.includes("!dbg")) {
+            sql = sql.replace("!dbg", "");
+            let o = {};
+            let t = sql_parser.lexer.tokenize(sql);
+            t = t.splice(0, t.length - 1);
+            o['data'] = t;
+            o['code'] = 0;
+            output.push(o);
+            return output;
+        }
+
         if (sql[sql.length - 1] !== ";") {
             sql += ";";
         }
@@ -200,11 +211,68 @@ function run(sql, dbName, schemeName) {
                     /*
                     * @todo Make INSERT INTO work (need a SQL parser to do that)
                     * */
-                    let tableName = t[2][1];
-                    let content = JSON.parse(t[3][1]);
+                    let tableName;
+                    let a = 0;
+                    let columns = null;
+                    let content;
+
+                    for (let i = 1; i < t.length; i++) {
+                        if (t[i][1].toUpperCase() === "INTO") {
+                            a = i + 1;
+                            tableName = t[i + 1][1];
+
+                            /*
+                            * Get columns order
+                            * */
+                            if (t[i + 2][0] === "LEFT_PAREN") {
+                                columns = [];
+                                for (let j = i + 3; j < t.length; j++) {
+                                    if (t[j][0] === "RIGHT_PAREN") {
+                                        a = j;
+                                        break;
+                                    }
+
+                                    if (t[j][0] === "LITERAL") {
+                                        columns.push(t[j][1]);
+                                    }
+                                }
+                            }
+
+                            break;
+                        }
+                    }
+
+                    for (let i = a + 1; i < t.length; i++) {
+                        if (t[i][1].toUpperCase() === "VALUES" && t[i + 1][0] === "LEFT_PAREN") {
+                            content = [];
+                            for (let j = i + 2; j < t.length; j++) {
+                                if (t[j][0] === "RIGHT_PAREN") {
+                                    a = j;
+                                    break;
+                                }
+
+                                if (t[j][0] === "BOOLEAN" && t[j][1].toUpperCase() === "NULL") {
+                                    t[j][0] = "NULL";
+                                } else if (t[j][0] === "LITERAL" && t[j][1].toUpperCase() === "DEFAULT") {
+                                    t[j][0] = "STRING";
+                                    t[j][1] = "DEFAULT";
+                                }
+
+                                if (t[j][0] === "STRING") {
+                                    content.push(t[j][1]);
+                                } else if (t[j][0] === "NUMBER") {
+                                    content.push(parseFloat(t[j][1]));
+                                } else if (t[j][0] === "BOOLEAN") {
+                                    content.push((t[j][1].toUpperCase() === "TRUE"));
+                                } else if (t[j][0] === "NULL") {
+                                    content.push(null);
+                                }
+                            }
+                        }
+                    }
 
                     try {
-                        o['data'] = table.insert(dbName, schemeName, tableName, content);
+                        o['data'] = table.insert(dbName, schemeName, tableName, content, columns);
                     } catch (e) {
                         o['code'] = 1;
                         o['message'] = e.message;
@@ -215,6 +283,99 @@ function run(sql, dbName, schemeName) {
                     * */
                     let a = 0;
                     let tableName;
+                    let update = {};
+
+                    /*
+                    * Gets the table name
+                    * */
+                    for (let i = 1; i < t.length; i++) {
+                        if (t[i][1].toUpperCase() === "SET") {
+                            a = i + 1;
+                            tableName = t[i - 1][1];
+
+                            /* GET update */
+                            for (let j = 0; j < t.length; j++) {
+                                if (t[j][0] === "LITERAL" && t[j + 1][1] === "=") {
+                                    if (t[j][0] === "BOOLEAN" && t[j][1].toUpperCase() === "NULL") {
+                                        t[j][0] = "NUlL";
+                                    }
+
+                                    if (t[j + 2][0] === "STRING") {
+                                        update[t[j][1]] = t[j + 2][1];
+                                    } else if (t[j + 2][0] === "NUMBER") {
+                                        update[t[j][1]] = parseFloat(t[j + 2][1]);
+                                    } else if (t[j + 2][0] === "BOOLEAN") {
+                                        update[t[j][1]] = (t[j + 2][1].toUpperCase() === "TRUE");
+                                    } else if (t[j + 2][0] === "NULL") {
+                                        update.push(null);
+                                    }
+                                }
+                            }
+
+                            break;
+                        }
+                    }
+
+                    /*
+                    * Get options
+                    * */
+                    let options = {'where': 'true'};
+                    for (let i = a + 1; i < t.length; i++) {
+                        if (t[i][0] === "WHERE") {
+                            options['where'] = "";
+                            /*
+                            * @todo: SQL WHERE parameter
+                            * */
+                            let b = 0;
+                            for (let k = i + 1; k < t.length; k++) {
+                                /*
+                                * Stop when find something that is not on WHERE params
+                                * */
+                                if (t[k][0] !== "LITERAL" && t[k][0] !== "OPERATOR" && t[k][0] !== "CONDITIONAL" && t[k][0] !== "STRING" && t[k][0] !== "NUMBER" && t[k][0] !== "BOOLEAN") {
+                                    break;
+                                }
+
+                                if (t[k][1] === '=') {
+                                    t[k][1] = '==';
+                                } else if (t[k][1] === '<>') {
+                                    t[k][1] = '!=';
+                                } else if (t[k][0] === 'LITERAL') {
+                                    t[k][1] = '`' + t[k][1] + '`';
+                                } else if (t[k][0] === 'CONDITIONAL') {
+                                    t[k][1] = (t[k][1] === 'AND') ? '&&' : '||';
+                                } else if (t[k][0] === "STRING") {
+                                    t[k][1] = "'" + t[k][1] + "'";
+                                }
+
+                                options['where'] += t[k][1];
+                            }
+                        } else if (t[i][0] === "LIMIT") {
+                            options['limoffset'] = {};
+                            for (let j = i + 1; j < t.length; j++) {
+                                if (t[j][0] === "NUMBER") {
+                                    options['limoffset']['limit'] = t[j][1];
+                                } else if (t[j][0] === "SEPARATOR") {
+                                    options['limoffset']['limit'] = t[j + 1][1];
+                                    options['limoffset']['offset'] = t[j - 1][1];
+                                    break;
+                                } else if (t[j][0] === "OFFSET") {
+                                    options['limoffset']['limit'] = t[j - 1][1];
+                                    options['limoffset']['offset'] = t[j + 1][1];
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    try {
+                        o['data'] = table.update(dbName, schemeName, tableName, update, options);
+                    } catch (e) {
+                        o['code'] = 1;
+                        o['message'] = e.message;
+                    }
+                } else if (t[0][1].toUpperCase() === "DELETE") {
+                    let a = 0;
+                    let tableName;
 
                     /*
                     * Gets the table name
@@ -226,19 +387,55 @@ function run(sql, dbName, schemeName) {
                             break;
                         }
                     }
-                } else if (t[0][1].toUpperCase() === "DELETE") {
-                    let a = 0;
-                    let tableName;
-                    let options = {};
 
                     /*
-                    * Gets the table name
+                    * Get options
                     * */
-                    for (let i = 1; i < t.length; i++) {
-                        if (t[i][0] === "FROM") {
-                            a = i - 1;
-                            tableName = t[i + 1][1];
-                            break;
+                    let options = {'where': 'true'};
+                    for (let i = a + 1; i < t.length; i++) {
+                        if (t[i][0] === "WHERE") {
+                            options['where'] = "";
+                            /*
+                            * @todo: SQL WHERE parameter
+                            * */
+                            let b = 0;
+                            for (let k = i + 1; k < t.length; k++) {
+                                /*
+                                * Stop when find something that is not on WHERE params
+                                * */
+                                if (t[k][0] !== "LITERAL" && t[k][0] !== "OPERATOR" && t[k][0] !== "CONDITIONAL" && t[k][0] !== "STRING" && t[k][0] !== "NUMBER" && t[k][0] !== "BOOLEAN") {
+                                    break;
+                                }
+
+                                if (t[k][1] === '=') {
+                                    t[k][1] = '==';
+                                } else if (t[k][1] === '<>') {
+                                    t[k][1] = '!=';
+                                } else if (t[k][0] === 'LITERAL') {
+                                    t[k][1] = '`' + t[k][1] + '`';
+                                } else if (t[k][0] === 'CONDITIONAL') {
+                                    t[k][1] = (t[k][1] === 'AND') ? '&&' : '||';
+                                } else if (t[k][0] === "STRING") {
+                                    t[k][1] = "'" + t[k][1] + "'";
+                                }
+
+                                options['where'] += t[k][1];
+                            }
+                        } else if (t[i][0] === "LIMIT") {
+                            options['limoffset'] = {};
+                            for (let j = i + 1; j < t.length; j++) {
+                                if (t[j][0] === "NUMBER") {
+                                    options['limoffset']['limit'] = t[j][1];
+                                } else if (t[j][0] === "SEPARATOR") {
+                                    options['limoffset']['limit'] = t[j + 1][1];
+                                    options['limoffset']['offset'] = t[j - 1][1];
+                                    break;
+                                } else if (t[j][0] === "OFFSET") {
+                                    options['limoffset']['limit'] = t[j - 1][1];
+                                    options['limoffset']['offset'] = t[j + 1][1];
+                                    break;
+                                }
+                            }
                         }
                     }
 
@@ -248,7 +445,8 @@ function run(sql, dbName, schemeName) {
                         o['code'] = 1;
                         o['message'] = e.message;
                     }
-                } else {
+                }
+                else {
                     continue;
                 }
 
