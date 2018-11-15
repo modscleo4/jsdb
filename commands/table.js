@@ -1,6 +1,6 @@
 const fs = require('fs');
 const db = require('./db');
-const scheme = require('./scheme');
+const schema = require('./schema');
 const sequence = require('./sequence');
 const server = require('../server');
 
@@ -14,14 +14,14 @@ exports.f_tabledata = f_tabledata;
 /**
  *
  * */
-function createTable(dbName, schemeName, tableName, tableStruct, metadata = null) {
-    if (typeof dbName === "string" && typeof schemeName === "string" && typeof tableName === "string") {
-        let TableList = readTableFile(dbName, schemeName);
+function createTable(dbName, schemaName, tableName, tableStruct, metadata = null) {
+    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
+        let TableList = readTableFile(dbName, schemaName);
 
         if (TableList.indexOf(tableName) === -1) {
             TableList.push(tableName);
-            writeTableFile(dbName, schemeName, JSON.stringify(TableList));
-            createTableFolder(dbName, schemeName, tableName);
+            writeTableFile(dbName, schemaName, JSON.stringify(TableList));
+            createTableFolder(dbName, schemaName, tableName);
 
             if (metadata !== null) {
                 tableStruct[tableName + '.metadata'] = metadata;
@@ -29,19 +29,20 @@ function createTable(dbName, schemeName, tableName, tableStruct, metadata = null
 
             for (let key in tableStruct) {
                 if (tableStruct.hasOwnProperty(key)) {
-                    if (tableStruct[key]['type'] === 'number' && tableStruct[key]['autoIncrement'] === 'yes') {
-                        delete(tableStruct[key]['autoIncrement']);
+                    if (tableStruct[key]['type'] === 'number' && tableStruct[key]['autoIncremant']) {
+                        delete(tableStruct[key]['autoIncremant']);
                         tableStruct[key]['default'] = 'sequence(' + key + '_seq)';
-                        sequence.create(dbName, schemeName, tableName, key + '_seq');
+                        sequence.create(dbName, schemaName, tableName, key + '_seq');
                     }
                 }
             }
-            writeTableStructure(dbName, schemeName, tableName, tableStruct);
-            writeTableContent(dbName, schemeName, tableName, null);
 
-            return "Created table " + schemeName + "." + tableName + " in DB " + dbName;
+            writeTableStructure(dbName, schemaName, tableName, tableStruct);
+            writeTableContent(dbName, schemaName, tableName, null);
+
+            return "Created table " + schemaName + "." + tableName + " in DB " + dbName;
         } else {
-            return "Table " + schemeName + "." + tableName + " already exists in DB " + dbName;
+            throw new Error("Table " + schemaName + "." + tableName + " already exists in DB " + dbName);
         }
     }
 }
@@ -49,121 +50,97 @@ function createTable(dbName, schemeName, tableName, tableStruct, metadata = null
 /**
  *
  * */
-function readTableStructure(dbName, schemeName, tableName) {
-    try {
-        let r = [];
-
-        let TableList = readTableFile(dbName, schemeName);
-
-        if (TableList.indexOf(tableName) !== -1) {
-            r = JSON.parse(fs.readFileSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tablestruct, 'utf8'));
+function readTableStructure(dbName, schemaName, tableName) {
+    if (existsTable(dbName, schemaName, tableName)) {
+        if (!fs.existsSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + tableName + "/" + f_tablestruct)) {
+            dropTable(dbName, schemaName, tableName, true);
+            throw new Error("Structure for table " + dbName + ":" + schemaName + ":" + tableName + " is missing. Table dropped");
         }
 
-        return r;
-    } catch (e) {
-        writeTableStructure(dbName, schemeName, tableName, []);
-        return readTableStructure(dbName, schemeName, tableName);
+        return JSON.parse(fs.readFileSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + tableName + "/" + f_tablestruct, 'utf8'));
     }
 }
 
 /**
  *
  * */
-function writeTableStructure(dbName, schemeName, tableName, tableStruct) {
-    fs.writeFileSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tablestruct, JSON.stringify(tableStruct));
+function writeTableStructure(dbName, schemaName, tableName, tableStruct) {
+    if (existsTable(dbName, schemaName, tableName)) {
+        fs.writeFileSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + tableName + "/" + f_tablestruct, JSON.stringify(tableStruct));
+    }
 }
 
 /**
  *
  * */
-function readTableFile(dbName, schemeName) {
-    try {
-        let DBList = db.readFile();
-        let SCHList = scheme.readFile(dbName);
-
-        let TableList = [];
-
-        if (DBList.indexOf(dbName) !== -1 && SCHList.indexOf(schemeName) !== -1) {
-            TableList = JSON.parse(fs.readFileSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + f_tablelist, 'utf8'));
-
-            fs.readdirSync(server.startDir + "dbs/" + dbName + "/" + schemeName).forEach(tablename => {
-                if (tablename !== f_tablelist) {
-                    if (TableList.indexOf(tablename) === -1) {
-                        TableList.push(tablename);
-                        writeTableFile(dbName, schemeName, JSON.stringify(TableList));
-                    }
-                }
-            });
-
-            TableList.forEach(tablename => {
-                if (!fs.existsSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tablename)) {
-                    createTableFolder(tablename);
-                }
-            });
+function readTableFile(dbName, schemaName) {
+    if (schema.exists(dbName, schemaName)) {
+        if (!fs.existsSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + f_tablelist)) {
+            writeTableFile(dbName, schemaName, JSON.stringify([]));
+            return [];
         }
+
+        let TableList = JSON.parse(fs.readFileSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + f_tablelist, 'utf8'));
+
+        fs.readdirSync(server.startDir + "dbs/" + dbName + "/" + schemaName).forEach(tableName => {
+            if (tableName !== f_tablelist) {
+                if (TableList.indexOf(tableName) === -1) {
+                    TableList.push(tableName);
+                    writeTableFile(dbName, schemaName, JSON.stringify(TableList));
+                }
+            }
+        });
+
+        TableList.forEach(tableName => {
+            if (!fs.existsSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + tableName)) {
+                createTableFolder(tableName);
+            }
+        });
 
         return TableList;
-    } catch (e) {
-        writeTableFile(dbName, schemeName, '[]');
-        return readTableFile(dbName, schemeName);
     }
 }
 
 /**
  *
  * */
-function writeTableFile(dbName, schemeName, content) {
-    fs.writeFileSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + f_tablelist, content);
+function writeTableFile(dbName, schemaName, content) {
+    if (schema.exists(dbName, schemaName)) {
+        fs.writeFileSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + f_tablelist, content);
+    }
 }
 
 /**
  *
  * */
-function createTableFolder(dbName, schemeName, tableName) {
-    if (!fs.existsSync(server.startDir + "dbs/")) {
-        fs.mkdirSync(server.startDir + "dbs/");
-    }
-
-    if (!fs.existsSync(server.startDir + "dbs/" + dbName)) {
-        throw Error("DB not created");
-    }
-
-    if (!fs.existsSync(server.startDir + "dbs/" + dbName + "/" + schemeName)) {
-        throw Error("Scheme not created");
-    }
-
-    fs.mkdirSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tableName);
-}
-
-/**
- *
- * */
-function readTableContent(dbName, schemeName, tableName) {
-    try {
-        let r = [];
-
-        let TableList = readTableFile(dbName, schemeName);
-
-        if (TableList.indexOf(tableName) !== -1) {
-            r = JSON.parse(fs.readFileSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tabledata, 'utf8'));
+function createTableFolder(dbName, schemaName, tableName) {
+    if (schema.exists(dbName, schemaName)) {
+        if (!fs.existsSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + tableName)) {
+            fs.mkdirSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + tableName);
         }
-        return r;
-    } catch (e) {
-        writeTableContent(dbName, schemeName, tableName, []);
-        return readTableContent(dbName, schemeName, tableName);
     }
 }
 
 /**
  *
  * */
-function writeTableContent(dbName, schemeName, tableName, content, override = false) {
+function readTableContent(dbName, schemaName, tableName) {
+    if (existsTable(dbName, schemaName, tableName)) {
+        return JSON.parse(fs.readFileSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + tableName + "/" + f_tabledata, 'utf8'));
+    }
+}
+
+/**
+ *
+ * */
+function writeTableContent(dbName, schemaName, tableName, content, override = false) {
     let TableContent = [];
+
     /*
     * Checks if tabledata.json exists to avoid loops
     * */
-    if (fs.existsSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tabledata)) {
-        TableContent = readTableContent(dbName, schemeName, tableName);
+    if (fs.existsSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + tableName + "/" + f_tabledata)) {
+        TableContent = readTableContent(dbName, schemaName, tableName);
     }
 
     if (content !== null) {
@@ -177,7 +154,7 @@ function writeTableContent(dbName, schemeName, tableName, content, override = fa
 
     }
 
-    fs.writeFileSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_tabledata, JSON.stringify(TableContent));
+    fs.writeFileSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + tableName + "/" + f_tabledata, JSON.stringify(TableContent));
 
     return "Line inserted.";
 }
@@ -185,7 +162,22 @@ function writeTableContent(dbName, schemeName, tableName, content, override = fa
 /**
  *
  * */
-function dropTable() {
+function dropTable(dbName, schemaName, tableName, ifExists = false) {
+    /*
+    * @TODO: DROP TABLE
+    * */
+
+    if ((ifExists && readTableFile(dbName, schemaName).indexOf(tableName) !== -1) || (!ifExists && existsTable(dbName, schemaName, tableName))) {
+        let TableList = readTableFile(dbName, schemaName);
+        let i = TableList.indexOf(tableName);
+        TableList.splice(i, 1);
+        writeTableFile(dbName, schemaName, JSON.stringify(TableList));
+        server.rmdirRSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + tableName + "/");
+
+        return "Dropped table " + tableName;
+    } else {
+        return "Table " + tableName + " does not exist";
+    }
 
 }
 
@@ -196,22 +188,22 @@ function dropTable() {
  * @summary This is the table SELECT function scope
  *
  * @param dbName The name of DB
- * @param schemeName The name of the scheme
+ * @param schemaName The name of the schema
  * @param tableName The table name
  * @param columns The desired columns in an indexed array
  * @param options Options like WHERE, ORDER BY, etc.
  *
  * @returns Array returns an indexed array with multiple named arrays containg the data of each cell
  * */
-function selectTableContent(dbName, schemeName, tableName, columns, options) {
-    let TableList = readTableFile(dbName, schemeName);
+function selectTableContent(dbName, schemaName, tableName, columns, options) {
+    let TableList = readTableFile(dbName, schemaName);
 
     if (TableList.indexOf(tableName) === -1) {
         throw new Error("Table does not exist");
     }
 
-    let TableContent = readTableContent(dbName, schemeName, tableName);
-    let TableStruct = readTableStructure(dbName, schemeName, tableName);
+    let TableContent = readTableContent(dbName, schemaName, tableName);
+    let TableStruct = readTableStructure(dbName, schemaName, tableName);
 
     if (typeof options['limoffset'] !== "undefined") {
         let limit = options['limoffset']['limit'];
@@ -364,16 +356,24 @@ function selectTableContent(dbName, schemeName, tableName, columns, options) {
 }
 
 /**
+ * @summary This is the table INSERT INTO function scope
  *
+ * @param dbName The name of DB
+ * @param schemaName The name of the schema
+ * @param tableName The table name
+ * @param content The values to insert
+ * @param columns The columns of content and the order (optional)
+ *
+ * @returns string If inserted, returns a string
  * */
-function insertTableContent(dbName, schemeName, tableName, content, columns = null) {
-    let TableList = readTableFile(dbName, schemeName);
+function insertTableContent(dbName, schemaName, tableName, content, columns = null) {
+    let TableList = readTableFile(dbName, schemaName);
 
     if (TableList.indexOf(tableName) === -1) {
         throw new Error("Table does not exist");
     }
 
-    let TableStruct = readTableStructure(dbName, schemeName, tableName);
+    let TableStruct = readTableStructure(dbName, schemaName, tableName);
     let TColumns = Object.keys(TableStruct);
     /*
     * Remove <tableName>.metadata from Columns list
@@ -443,8 +443,12 @@ function insertTableContent(dbName, schemeName, tableName, content, columns = nu
             * Ignore tablename.metadata array to avoid errors
             * */
             if (key !== tableName + ".metadata") {
+
+                /*
+                * Key is not provided
+                * */
                 if (typeof content[i] === "undefined") {
-                    content[i] = null;
+                    content[i] = "DEFAULT";
                 }
 
                 if (content[i] === null) {
@@ -453,8 +457,8 @@ function insertTableContent(dbName, schemeName, tableName, content, columns = nu
                     }
                 }
 
-                if (TableStruct[key]['unique'] === 'yes') {
-                    let TableContent = readTableContent(dbName, schemeName, tableName);
+                if (TableStruct[key]['unique'] === true) {
+                    let TableContent = readTableContent(dbName, schemaName, tableName);
                     TableContent.forEach(c => {
                         if (c[i] === content[i]) {
                             throw new Error("Value already exists: " + c[i]);
@@ -470,13 +474,13 @@ function insertTableContent(dbName, schemeName, tableName, content, columns = nu
                     * */
                     if (typeof TableStruct[key]['default'] === "string" && (a = TableStruct[key]['default'].search("sequence[(].*[)]")) !== -1) {
                         let seqName = TableStruct[key]['default'].slice(a + "sequence(".length, TableStruct[key]['default'].length - 1);
-                        let Seq = sequence.read(dbName, schemeName, tableName, seqName);
+                        let Seq = sequence.read(dbName, schemaName, tableName, seqName);
 
                         content[i] = Seq['start'];
 
                         Seq['start'] = Seq['start'] + Seq['inc'];
 
-                        sequence.update(dbName, schemeName, tableName, seqName, Seq);
+                        sequence.update(dbName, schemaName, tableName, seqName, Seq);
                     } else {
                         content[i] = TableStruct[key]['default'];
                     }
@@ -535,14 +539,22 @@ function insertTableContent(dbName, schemeName, tableName, content, columns = nu
         }
     }
 
-    return writeTableContent(dbName, schemeName, tableName, ContentW);
+    return writeTableContent(dbName, schemaName, tableName, ContentW);
 }
 
 /**
+ * @summary This is the table UPDATE function scope
  *
+ * @param dbName The name of DB
+ * @param schemaName The name of the schema
+ * @param tableName The table name
+ * @param update The values to update in a named array
+ * @param options Options like WHERE, ORDER BY, etc.
+ *
+ * @returns string Returns a string containing the count of affected rows
  * */
-function updateTableContent(dbName, schemeName, tableName, update, options) {
-    let TableList = readTableFile(dbName, schemeName);
+function updateTableContent(dbName, schemaName, tableName, update, options) {
+    let TableList = readTableFile(dbName, schemaName);
 
     if (TableList.indexOf(tableName) === -1) {
         throw new Error("Table does not exist");
@@ -551,8 +563,8 @@ function updateTableContent(dbName, schemeName, tableName, update, options) {
     /*
     * @todo: Make UPDATE command
     * */
-    let TableContent = readTableContent(dbName, schemeName, tableName);
-    let TableStruct = readTableStructure(dbName, schemeName, tableName);
+    let TableContent = readTableContent(dbName, schemaName, tableName);
+    let TableStruct = readTableStructure(dbName, schemaName, tableName);
     let TableIndexes = [];
 
     /*
@@ -602,8 +614,8 @@ function updateTableContent(dbName, schemeName, tableName, update, options) {
                             }
                         }
 
-                        if (TableStruct[key]['unique'] === 'yes') {
-                            let TableContent = readTableContent(dbName, schemeName, tableName);
+                        if (TableStruct[key]['unique'] === true) {
+                            let TableContent = readTableContent(dbName, schemaName, tableName);
                             TableContent.forEach(c => {
                                 if (c[i] === update[key]) {
                                     throw new Error("Value already exists");
@@ -618,13 +630,13 @@ function updateTableContent(dbName, schemeName, tableName, update, options) {
                             * */
                             if (typeof TableStruct[key]['default'] === "string" && (a = TableStruct[key]['default'].search("sequence[(].*[)]")) !== -1) {
                                 let seqName = TableStruct[key]['default'].slice(a + "sequence(".length, TableStruct[key]['default'].length - 1);
-                                let Seq = sequence.read(dbName, schemeName, tableName, seqName);
+                                let Seq = sequence.read(dbName, schemaName, tableName, seqName);
 
                                 update[key] = Seq['start'];
 
                                 Seq['start'] = Seq['start'] + Seq['inc'];
 
-                                sequence.update(dbName, schemeName, tableName, seqName, Seq);
+                                sequence.update(dbName, schemaName, tableName, seqName, Seq);
                             } else {
                                 update[key] = TableStruct[key]['default'];
                             }
@@ -652,27 +664,34 @@ function updateTableContent(dbName, schemeName, tableName, update, options) {
         }
     }
 
-    writeTableContent(dbName, schemeName, tableName, TableContent, true);
+    writeTableContent(dbName, schemaName, tableName, TableContent, true);
 
-    return "Updated " + c + " line(s) from " + dbName + ":" + schemeName + ":" + tableName + ".";
+    return "Updated " + c + " line(s) from " + dbName + ":" + schemaName + ":" + tableName + ".";
 }
 
 /**
+ * @summary This is the table DELETE function scope
  *
+ * @param dbName The name of DB
+ * @param schemaName The name of the schema
+ * @param tableName The table name
+ * @param options Options like WHERE, ORDER BY, etc.
+ *
+ * @returns string Returns a string containing the count of affected rows
  * */
-function deleteTableContent(dbName, schemeName, tableName, options) {
+function deleteTableContent(dbName, schemaName, tableName, options) {
     /*
     * @todo: Make DELETE command
     * */
 
-    let TableList = readTableFile(dbName, schemeName);
+    let TableList = readTableFile(dbName, schemaName);
 
     if (TableList.indexOf(tableName) === -1) {
         throw new Error("Table does not exist");
     }
 
-    let TableContent = readTableContent(dbName, schemeName, tableName);
-    let TableStruct = readTableStructure(dbName, schemeName, tableName);
+    let TableContent = readTableContent(dbName, schemaName, tableName);
+    let TableStruct = readTableStructure(dbName, schemaName, tableName);
 
     if (typeof options['limoffset'] !== "undefined") {
         let limit = options['limoffset']['limit'];
@@ -734,9 +753,25 @@ function deleteTableContent(dbName, schemeName, tableName, options) {
         }
     }
 
-    writeTableContent(dbName, schemeName, tableName, TableContent, true);
+    writeTableContent(dbName, schemaName, tableName, TableContent, true);
 
-    return "Deleted " + c + " line(s) from " + dbName + ":" + schemeName + ":" + tableName + ".";
+    return "Deleted " + c + " line(s) from " + dbName + ":" + schemaName + ":" + tableName + ".";
+}
+
+/**
+ *
+ * */
+function existsTable(dbName, schemaName, tableName) {
+    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
+        if (schema.exists(dbName, schemaName)) {
+            let TableList = readTableFile(dbName, schemaName);
+            if (TableList.indexOf(tableName) !== -1) {
+                return true;
+            } else {
+                throw new Error("Table " + dbName + ":" + schemaName + ":" + tableName + " does not exist.");
+            }
+        }
+    }
 }
 
 exports.create = createTable;
@@ -748,3 +783,5 @@ exports.delete = deleteTableContent;
 
 exports.readFile = readTableFile;
 exports.writeFile = writeTableFile;
+
+exports.exists = existsTable;

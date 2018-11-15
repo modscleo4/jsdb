@@ -1,10 +1,11 @@
 const db = require("./commands/db");
-const scheme = require("./commands/scheme");
+const schema = require("./commands/schema");
 const table = require("./commands/table");
 const sql = require("./sql/sql");
 
 const md5 = require('md5');
 const net = require('net');
+const fs = require("fs");
 
 function authUser(username, password) {
     let users = table.select('jsdb', 'public', 'users', ["username", "password", "privileges"], {
@@ -31,7 +32,7 @@ let server = net.createServer(function (socket) {
     let userPrivileges = null;
 
     let dbS = 'jsdb';
-    let schemeS = 'public';
+    let schemaS = 'public';
 
     function setDB(dbName) {
         let DBList = db.readFile();
@@ -40,12 +41,12 @@ let server = net.createServer(function (socket) {
         }
     }
 
-    function setScheme(schemeName) {
+    function setSchema(schemaName) {
         let DBList = db.readFile();
-        let SCHList = scheme.readFile(dbS);
+        let SCHList = schema.readFile(dbS);
 
-        if (DBList.indexOf(dbS) !== -1 && SCHList.indexOf(schemeName) !== -1) {
-            schemeS = schemeName;
+        if (DBList.indexOf(dbS) !== -1 && SCHList.indexOf(schemaName) !== -1) {
+            schemaS = schemaName;
         }
     }
 
@@ -72,14 +73,10 @@ let server = net.createServer(function (socket) {
         if (sqlCmd.includes("db ")) {
             setDB(sqlCmd.slice(3));
         } else if (sqlCmd.toUpperCase().includes("SET SEARCH_PATH TO")) {
-            setScheme(sqlCmd.slice("SET SEARCH_PATH TO ".length));
-        } else if (sqlCmd.toUpperCase().includes("SHOW SCHEMES")) {
-            socket.write(JSON.stringify(scheme.readFile(dbS)));
-        } else if (sqlCmd.toUpperCase().includes("SHOW TABLES")) {
-            socket.write(JSON.stringify(table.readFile(dbS, schemeS)));
+            setSchema(sqlCmd.slice("SET SEARCH_PATH TO ".length));
         } else {
             try {
-                let r = sql.run(sqlCmd, dbS, schemeS);
+                let r = sql.run(sqlCmd, dbS, schemaS);
 
                 if (typeof r === "object") {
                     r = JSON.stringify(r);
@@ -133,3 +130,17 @@ if (address !== "" && port !== 0 && dir !== "") {
     exports.startDir = dir;
     db.readFile();
 }
+
+exports.rmdirRSync = function rmdirRSync(path) {
+    if (fs.existsSync(path)) {
+        fs.readdirSync(path).forEach((file, index) => {
+            let curPath = path + "/" + file;
+            if (fs.lstatSync(curPath).isDirectory()) {
+                rmdirRSync(curPath);
+            } else {
+                fs.unlinkSync(curPath);
+            }
+        });
+        fs.rmdirSync(path);
+    }
+};

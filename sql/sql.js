@@ -1,9 +1,10 @@
 const db = require("../commands/db");
-const scheme = require("../commands/scheme");
+const schema = require("../commands/schema");
 const table = require("../commands/table");
+const sequence = require("../commands/sequence");
 const sql_parser = require("sql-parser/lib/sql_parser");
 
-function run(sql, dbName, schemeName) {
+function run(sql, dbName, schemaName) {
     if (typeof sql === "string") {
         /* Array of all SQL command outputs
         * Organization:
@@ -28,17 +29,6 @@ function run(sql, dbName, schemeName) {
         * */
         let output = [];
 
-        if (sql.includes("!dbg")) {
-            sql = sql.replace("!dbg", "");
-            let o = {};
-            let t = sql_parser.lexer.tokenize(sql);
-            t = t.splice(0, t.length - 1);
-            o['data'] = t;
-            o['code'] = 0;
-            output.push(o);
-            return output;
-        }
-
         if (sql[sql.length - 1] !== ";") {
             sql += ";";
         }
@@ -52,19 +42,29 @@ function run(sql, dbName, schemeName) {
                 o['sql'] = sqlString;
                 o['code'] = 0;
 
+                if (sqlString.includes("!dbg")) {
+                    sqlString = sqlString.replace("!dbg", "");
+                    let t = sql_parser.lexer.tokenize(sqlString);
+                    t = t.splice(0, t.length - 1);
+                    o['data'] = t;
+                    o['code'] = 0;
+                    output.push(o);
+                    return output;
+                }
+
                 let t = sql_parser.lexer.tokenize(sqlString);
                 t = t.splice(0, t.length - 1);
 
-                if (schemeName === null) {
-                    schemeName = "public";
+                if (schemaName === null) {
+                    schemaName = "public";
                 }
 
                 for (let i = 0; i < t.length; i++) {
-                    if (t[i][0] === "DOT") {
+                    if (t[0][1].toUpperCase() !== "SHOW" && t[i][0] === "DOT") {
                         /*
-                        * Remove scheme.<table> from array to prevent errors
+                        * Remove schema.<table> from array to prevent errors
                         * */
-                        schemeName = t[i - 1][1];
+                        schemaName = t[i - 1][1];
                         t.splice(i - 1, 2);
                         break;
                     }
@@ -112,7 +112,6 @@ function run(sql, dbName, schemeName) {
                                 /*
                                 * @todo: SQL WHERE parameter
                                 * */
-                                let b = 0;
                                 for (let k = i + 1; k < t.length; k++) {
                                     /*
                                     * Stop when find something that is not on WHERE params
@@ -171,7 +170,7 @@ function run(sql, dbName, schemeName) {
                         }
 
                         try {
-                            o['data'] = table.select(dbName, schemeName, tableName, cols, options);
+                            o['data'] = table.select(dbName, schemaName, tableName, cols, options);
                         } catch (e) {
                             o['code'] = 1;
                             o['message'] = e.message;
@@ -185,9 +184,9 @@ function run(sql, dbName, schemeName) {
                             o['code'] = 1;
                             o['message'] = e.message;
                         }
-                    } else if (t[1][1].toUpperCase() === "SCHEME") {
+                    } else if (t[1][1].toUpperCase() === "SCHEMA") {
                         try {
-                            o['data'] = scheme.create(dbName, t[2][1]);
+                            o['data'] = schema.create(dbName, t[2][1]);
                         } catch (e) {
                             o['code'] = 1;
                             o['message'] = e.message;
@@ -197,15 +196,76 @@ function run(sql, dbName, schemeName) {
                         * @todo Make CREATE TABLE work (need a SQL parser to do that)
                         * */
                         //let cols = {};
-                        let tableName = t[2][1];
-                        let tableStruct = JSON.parse(t[3][1]);
+                        let tableName;
+                        let a;
+                        let tableStruct = {};
+                        let metadata = {};
+
+                        for (let i = 1; i < t.length; i++) {
+                            if (t[i][1].toUpperCase() === "TABLE") {
+                                a = i + 1;
+                                tableName = t[i + 1][1];
+
+                                /*
+                                * Get columns order
+                                * */
+                                if (t[i + 2][0] === "LEFT_PAREN") {
+                                    /*
+                                    * t[i + 3][1] is the name of column
+                                    * */
+                                    tableStruct[t[i + 3][1]] = {};
+                                    metadata['primaryKey'] = [];
+
+                                    for (let j = i + 3; j < t.length; j++) {
+                                        if (t[j][0] === "RIGHT_PAREN" || t[j][0] === "SEPARATOR") {
+                                            break;
+                                        }
+
+                                        if (t[j][0] === "LITERAL" || t[j][0] === "BOOLEAN") {
+                                            if (t[j][1].toUpperCase() === "NUMBER") {
+                                                tableStruct[t[i + 3][1]]['type'] = "number";
+                                            } else if (t[j][1].toUpperCase() === "STRING") {
+                                                tableStruct[t[i + 3][1]]['type'] = "string";
+                                            } else if (t[j][1].toUpperCase() === "BOOLEAN") {
+                                                tableStruct[t[i + 3][1]]['type'] = "boolean";
+                                            } else if (t[j][1].toUpperCase() === "OBJECT") {
+                                                tableStruct[t[i + 3][1]]['type'] = "object";
+                                            } else if (t[j][1].toUpperCase() === "KEY") {
+                                                if (t[j - 1][1].toUpperCase() === "PRIMARY") {
+                                                    metadata['primaryKey'].push(t[i + 3][1]);
+                                                } else if (t[j - 1][1].toUpperCase() === "UNIQUE") {
+                                                    tableStruct[t[i + 3][1]]['unique'] = true;
+                                                }
+                                            } else if (t[j][1].toUpperCase() === "DEFAULT") {
+                                                if (t[j + 1][0] === "STRING") {
+                                                    tableStruct[t[i + 3][1]]['default'] = t[j + 1][1];
+                                                } else if (t[j + 1][0] === "NUMBER") {
+                                                    tableStruct[t[i + 3][1]]['default'] = parseFloat(t[j + 1][1]);
+                                                } else if (t[j + 1][0] === "BOOLEAN") {
+                                                    tableStruct[t[i + 3][1]]['default'] = (t[j + 1][1].toUpperCase() === "TRUE");
+                                                }
+
+                                            } else if (t[j][1].toUpperCase() === "AUTO" && t[j + 1][1].toUpperCase() === "INCRemaNT") {
+                                                tableStruct[t[i + 3][1]]['autoIncremant'] = true;
+                                            } else if (t[j][1].toUpperCase() === "NULL") {
+                                                tableStruct[t[i + 3][1]]['notNull'] = (t[j - 1][1].toUpperCase() === "NOT");
+                                            }
+                                        }
+                                    }
+                                }
+
+                                break;
+                            }
+                        }
 
                         try {
-                            o['data'] = table.create(dbName, schemeName, tableName, tableStruct);
+                            o['data'] = table.create(dbName, schemaName, tableName, tableStruct, metadata);
                         } catch (e) {
                             o['code'] = 1;
                             o['message'] = e.message;
                         }
+                    } else if (t[1][1].toUpperCase() === "SEQUENCE") {
+
                     }
                 } else if (t[0][1].toUpperCase() === "INSERT") {
                     /*
@@ -272,7 +332,7 @@ function run(sql, dbName, schemeName) {
                     }
 
                     try {
-                        o['data'] = table.insert(dbName, schemeName, tableName, content, columns);
+                        o['data'] = table.insert(dbName, schemaName, tableName, content, columns);
                     } catch (e) {
                         o['code'] = 1;
                         o['message'] = e.message;
@@ -326,7 +386,6 @@ function run(sql, dbName, schemeName) {
                             /*
                             * @todo: SQL WHERE parameter
                             * */
-                            let b = 0;
                             for (let k = i + 1; k < t.length; k++) {
                                 /*
                                 * Stop when find something that is not on WHERE params
@@ -368,7 +427,7 @@ function run(sql, dbName, schemeName) {
                     }
 
                     try {
-                        o['data'] = table.update(dbName, schemeName, tableName, update, options);
+                        o['data'] = table.update(dbName, schemaName, tableName, update, options);
                     } catch (e) {
                         o['code'] = 1;
                         o['message'] = e.message;
@@ -398,7 +457,6 @@ function run(sql, dbName, schemeName) {
                             /*
                             * @todo: SQL WHERE parameter
                             * */
-                            let b = 0;
                             for (let k = i + 1; k < t.length; k++) {
                                 /*
                                 * Stop when find something that is not on WHERE params
@@ -440,13 +498,92 @@ function run(sql, dbName, schemeName) {
                     }
 
                     try {
-                        o['data'] = table.delete(dbName, schemeName, tableName, options);
+                        o['data'] = table.delete(dbName, schemaName, tableName, options);
                     } catch (e) {
                         o['code'] = 1;
                         o['message'] = e.message;
                     }
-                }
-                else {
+                } else if (t[0][1].toUpperCase() === "DROP") {
+                    if (t[1][1].toUpperCase() === "DATABASE") {
+
+                    } else if (t[1][1].toUpperCase() === "TABLE") {
+                        let tableName;
+                        let a;
+                        let ifExists = false;
+
+                        /*
+                        * Gets the table name
+                        * */
+                        for (let i = 1; i < t.length; i++) {
+                            if (t[i][1].toUpperCase() === "TABLE") {
+                                a = i + 1;
+                                tableName = t[i + 1][1];
+                            }
+
+                            if (t[i][1].toUpperCase() === "IF" && t[i + 1][1].toUpperCase() === "EXISTS") {
+                                a = i + 2;
+                                tableName = t[i + 2][1];
+                                ifExists = true;
+                                break;
+                            }
+                        }
+
+                        try {
+                            o['data'] = table.drop(dbName, schemaName, tableName, ifExists);
+                        } catch (e) {
+                            o['code'] = 1;
+                            o['message'] = e.message;
+                        }
+                    }
+                } else if (t[0][1].toUpperCase() === "SHOW") {
+                    if (t[1][1].toUpperCase() === "DATABASES") {
+                        try {
+                            o['data'] = db.readFile();
+                        } catch (e) {
+                            o['code'] = 1;
+                            o['message'] = e.message;
+                        }
+                    } else if (t[1][1].toUpperCase() === "SCHEMAS") {
+                        /*
+                        * Gets the DB name
+                        * */
+                        for (let i = 1; i < t.length; i++) {
+                            if (t[i][0] === "FROM") {
+                                dbName = t[i + 1][1];
+                                break;
+                            }
+                        }
+
+                        try {
+                            o['data'] = schema.readFile(dbName);
+                        } catch (e) {
+                            o['code'] = 1;
+                            o['message'] = e.message;
+                        }
+                    } else if (t[1][1].toUpperCase() === "TABLES") {
+                        /*
+                        * Gets the DB name
+                        * */
+                        for (let i = 1; i < t.length; i++) {
+                            if (t[i][0] === "FROM") {
+                                dbName = t[i + 1][1];
+
+                                if (typeof t[i + 2] !== "undefined" && t[i + 2][0] === "DOT") {
+                                    schemaName = t[i + 3][1];
+                                }
+
+                                break;
+                            }
+                        }
+
+                        try {
+                            o['data'] = table.readFile(dbName, schemaName);
+                        } catch (e) {
+                            o['code'] = 1;
+                            o['message'] = e.message;
+                        }
+                    }
+                } else {
                     continue;
                 }
 

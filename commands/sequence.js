@@ -7,17 +7,17 @@ const f_seqlist = 'seqlist.json';
 /**
  *
  * */
-function createSequence(dbName, schemeName, tableName, seqName) {
-    if (typeof dbName === "string" && typeof schemeName === "string" && typeof tableName === "string") {
-        let SequenceList = readSequenceFile(dbName, schemeName, tableName);
+function createSequence(dbName, schemaName, tableName, seqName, options = [1, 1]) {
+    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof seqName === "string") {
+        let SequenceList = readSequenceFile(dbName, schemaName, tableName);
 
-        if (SequenceList[seqName] === undefined) {
-            SequenceList[seqName] = {'start': 1, 'inc': 1};
-            writeSequenceFile(dbName, schemeName, tableName, SequenceList);
+        if (!SequenceList.hasOwnProperty(seqName)) {
+            SequenceList[seqName] = {'start': options[0], 'inc': options[1]};
+            writeSequenceFile(dbName, schemaName, tableName, SequenceList);
 
-            return "Created sequence " + schemeName + "." + tableName + "." + seqName + " in DB " + dbName;
+            return "Created sequence " + schemaName + "." + tableName + "." + seqName + " in DB " + dbName;
         } else {
-            return "Sequence " + schemeName + "." + tableName + "." + seqName + " already exists in DB " + dbName;
+            throw new Error("Sequence " + schemaName + "." + tableName + "." + seqName + " already exists in DB " + dbName);
         }
     }
 }
@@ -25,60 +25,52 @@ function createSequence(dbName, schemeName, tableName, seqName) {
 /**
  *
  * */
-function readSequenceFile(dbName, schemeName, tableName) {
-    try {
-        let TableList = table.readFile(dbName, schemeName);
-        let SequenceList = {};
-
-        if (TableList.indexOf(tableName) !== -1) {
-            SequenceList = JSON.parse(fs.readFileSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_seqlist, 'utf8'));
-        }
-
-        return SequenceList;
-    } catch (e) {
-        writeSequenceFile(dbName, schemeName, tableName, {});
-        return readSequenceFile(dbName, schemeName, tableName);
-    }
-}
-
-/**
- *
- * */
-function writeSequenceFile(dbName, schemeName, tableName, content) {
-    fs.writeFileSync(server.startDir + "dbs/" + dbName + "/" + schemeName + "/" + tableName + "/" + f_seqlist, JSON.stringify(content));
-}
-
-/**
- *
- * */
-function readSequence(dbName, schemeName, tableName, seqName) {
-    try {
-        let SequenceList = readSequenceFile(dbName, schemeName, tableName);
-
-        if (SequenceList[seqName] !== undefined) {
-            return SequenceList[seqName];
-        } else {
+function readSequenceFile(dbName, schemaName, tableName) {
+    if (table.exists(dbName, schemaName, tableName)) {
+        if (!fs.existsSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + tableName + "/" + f_seqlist)) {
+            writeSequenceFile(dbName, JSON.stringify({}));
             return {};
         }
-    } catch (e) {
-        writeSequenceFile(dbName, schemeName, tableName, {});
-        return readSequence(dbName, schemeName, tableName, seqName);
+
+        return JSON.parse(fs.readFileSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + tableName + "/" + f_seqlist, 'utf8'));
     }
 }
 
 /**
  *
  * */
-function updateSequence(dbName, schemeName, tableName, seqName, content) {
+function writeSequenceFile(dbName, schemaName, tableName, content) {
+    if (table.exists(dbName, schemaName, tableName)) {
+        fs.writeFileSync(server.startDir + "dbs/" + dbName + "/" + schemaName + "/" + tableName + "/" + f_seqlist, JSON.stringify(content));
+    }
+}
+
+/**
+ *
+ * */
+function readSequence(dbName, schemaName, tableName, seqName) {
+    let SequenceList = readSequenceFile(dbName, schemaName, tableName);
+
+    if (SequenceList.hasOwnProperty(seqName)) {
+        return SequenceList[seqName];
+    } else {
+        throw new Error("Sequence " + seqName + " does not exist.");
+    }
+}
+
+/**
+ *
+ * */
+function updateSequence(dbName, schemaName, tableName, seqName, content) {
     let SequenceList;
 
-    if ((SequenceList = readSequenceFile(dbName, schemeName, tableName)) !== undefined) {
+    if (typeof (SequenceList = readSequenceFile(dbName, schemaName, tableName)) !== "undefined") {
         if (content !== null) {
             SequenceList[seqName] = content;
         }
     }
 
-    writeSequenceFile(dbName, schemeName, tableName, SequenceList);
+    writeSequenceFile(dbName, schemaName, tableName, SequenceList);
 }
 
 /**
