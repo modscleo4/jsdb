@@ -12,7 +12,11 @@ const f_dblist = 'dblist.json';
 function createDB(dbName) {
     if (typeof dbName === "string") {
         let DBList = readDBFile();
-        if (DBList.indexOf(dbName) === -1) {
+        if (DBList.indexOf(dbName) !== -1) {
+            schema.create(dbName, "public");
+
+            throw new Error("DB " + dbName + " already exists");
+        } else {
             DBList.push(dbName);
             writeDBFile(JSON.stringify(DBList));
             createDBFolder(dbName);
@@ -20,10 +24,6 @@ function createDB(dbName) {
             schema.create(dbName, "public");
 
             return "Created DB " + dbName;
-        } else {
-            schema.create(dbName, "public");
-
-            throw new Error("DB " + dbName + " already exists");
         }
     }
 }
@@ -31,12 +31,14 @@ function createDB(dbName) {
 /**
  *
  * */
-function createDBFolder(dbname) {
-    if (!fs.existsSync(server.startDir + "dbs/")) {
-        fs.mkdirSync(server.startDir + "dbs/");
-    }
+function createDBFolder(dbName) {
+    if (typeof dbName === "string") {
+        if (!fs.existsSync(server.startDir + "dbs/")) {
+            fs.mkdirSync(server.startDir + "dbs/");
+        }
 
-    fs.mkdirSync(server.startDir + "dbs/" + dbname);
+        fs.mkdirSync(server.startDir + "dbs/" + dbName);
+    }
 }
 
 /**
@@ -74,13 +76,15 @@ function readDBFile() {
     if (DBList.indexOf("jsdb") === -1) {
         DBList.push('jsdb');
         writeDBFile(JSON.stringify(DBList));
-        schema.create('jsdb', "public");
+        if (schema.readFile('jsdb').indexOf('public') === -1) {
+            schema.create('jsdb', "public");
+        }
 
         table.create('jsdb', 'public', 'users', {
                 'id': {
                     'type': 'number',
                     'unique': true,
-                    'autoIncremant': true,
+                    'autoIncrement': true,
                     'notNull': true
                 },
 
@@ -124,11 +128,32 @@ function readDBFile() {
  *
  * */
 function writeDBFile(content) {
-    if (!fs.existsSync(server.startDir + "dbs/")) {
-        fs.mkdirSync(server.startDir + "dbs");
-    }
+    if (typeof content === "string") {
+        if (!fs.existsSync(server.startDir + "dbs/")) {
+            fs.mkdirSync(server.startDir + "dbs");
+        }
 
-    fs.writeFileSync(server.startDir + "dbs/" + f_dblist, content);
+        fs.writeFileSync(server.startDir + "dbs/" + f_dblist, content);
+    }
+}
+
+/**
+ *
+ * */
+function dropDB(dbName, ifExists = false) {
+    if (typeof dbName === "string" && typeof ifExists === "boolean") {
+        if ((ifExists && readDBFile().indexOf(dbName) !== -1) || (!ifExists && existsDB(dbName))) {
+            let DBList = readDBFile();
+            let i = DBList.indexOf(dbName);
+            DBList.splice(i, 1);
+            writeDBFile(JSON.stringify(DBList));
+            server.rmdirRSync(server.startDir + "dbs/" + dbName + "/");
+
+            return "Dropped database " + dbName;
+        } else {
+            return "Database " + dbName + " does not exist";
+        }
+    }
 }
 
 /**
@@ -150,5 +175,7 @@ exports.createFolder = createDBFolder;
 
 exports.readFile = readDBFile;
 exports.writeFile = writeDBFile;
+
+exports.drop = dropDB;
 
 exports.exists = existsDB;

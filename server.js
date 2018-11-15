@@ -35,8 +35,7 @@ let server = net.createServer(function (socket) {
     let schemaS = 'public';
 
     function setDB(dbName) {
-        let DBList = db.readFile();
-        if (DBList.indexOf(dbName) !== -1) {
+        if (db.exists(dbName)) {
             dbS = dbName;
         }
     }
@@ -71,7 +70,12 @@ let server = net.createServer(function (socket) {
         }
 
         if (sqlCmd.includes("db ")) {
-            setDB(sqlCmd.slice(3));
+            try {
+                setDB(sqlCmd.slice(3));
+            } catch (err) {
+                socket.write("[{\"code\": 1, \"message\": \"" + err.message + "\"}]");
+                socket.destroy();
+            }
         } else if (sqlCmd.toUpperCase().includes("SET SEARCH_PATH TO")) {
             setSchema(sqlCmd.slice("SET SEARCH_PATH TO ".length));
         } else {
@@ -84,7 +88,7 @@ let server = net.createServer(function (socket) {
 
                 socket.write(r);
             } catch (err) {
-                socket.write("ERROR: " + err.message);
+                socket.write("[{\"code\": 1, \"message\": \"" + err.message + "\"}]");
             }
         }
     });

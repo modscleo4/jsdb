@@ -233,6 +233,7 @@ function run(sql, dbName, schemaName) {
                                             } else if (t[j][1].toUpperCase() === "KEY") {
                                                 if (t[j - 1][1].toUpperCase() === "PRIMARY") {
                                                     metadata['primaryKey'].push(t[i + 3][1]);
+                                                    tableStruct[t[i + 3][1]]['unique'] = true;
                                                 } else if (t[j - 1][1].toUpperCase() === "UNIQUE") {
                                                     tableStruct[t[i + 3][1]]['unique'] = true;
                                                 }
@@ -245,8 +246,8 @@ function run(sql, dbName, schemaName) {
                                                     tableStruct[t[i + 3][1]]['default'] = (t[j + 1][1].toUpperCase() === "TRUE");
                                                 }
 
-                                            } else if (t[j][1].toUpperCase() === "AUTO" && t[j + 1][1].toUpperCase() === "INCRemaNT") {
-                                                tableStruct[t[i + 3][1]]['autoIncremant'] = true;
+                                            } else if (t[j][1].toUpperCase() === "AUTO" && t[j + 1][1].toUpperCase() === "INCREMENT") {
+                                                tableStruct[t[i + 3][1]]['autoIncrement'] = true;
                                             } else if (t[j][1].toUpperCase() === "NULL") {
                                                 tableStruct[t[i + 3][1]]['notNull'] = (t[j - 1][1].toUpperCase() === "NOT");
                                             }
@@ -355,6 +356,17 @@ function run(sql, dbName, schemaName) {
 
                             /* GET update */
                             for (let j = 0; j < t.length; j++) {
+                                if (t[j][0] !== "LITERAL" && t[j][0] !== "STRING" && t[j][0] !== "NUMBER" && t[j][0] !== "BOOLEAN" && t[j][0] !== "OPERATOR" && t[j][0] !== "SEPARATOR") {
+                                    a = i + 1;
+                                    break;
+                                }
+
+                                if (t[j][0] === "LITERAL") {
+                                    if (t[j][1].toUpperCase() === "DEFAULT") {
+                                        t[j][0] = "STRING";
+                                    }
+                                }
+
                                 if (t[j][0] === "LITERAL" && t[j + 1][1] === "=") {
                                     if (t[j][0] === "BOOLEAN" && t[j][1].toUpperCase() === "NULL") {
                                         t[j][0] = "NUlL";
@@ -399,7 +411,12 @@ function run(sql, dbName, schemaName) {
                                 } else if (t[k][1] === '<>') {
                                     t[k][1] = '!=';
                                 } else if (t[k][0] === 'LITERAL') {
-                                    t[k][1] = '`' + t[k][1] + '`';
+                                    if (t[k][1].toUpperCase() === "DEFAULT") {
+                                        t[k][0] = "STRING";
+                                        t[k][1] = "'" + t[k][1] + "'";
+                                    } else {
+                                        t[k][1] = '`' + t[k][1] + '`';
+                                    }
                                 } else if (t[k][0] === 'CONDITIONAL') {
                                     t[k][1] = (t[k][1] === 'AND') ? '&&' : '||';
                                 } else if (t[k][0] === "STRING") {
@@ -505,7 +522,32 @@ function run(sql, dbName, schemaName) {
                     }
                 } else if (t[0][1].toUpperCase() === "DROP") {
                     if (t[1][1].toUpperCase() === "DATABASE") {
+                        let a;
+                        let ifExists = false;
 
+                        /*
+                        * Gets the table name
+                        * */
+                        for (let i = 1; i < t.length; i++) {
+                            if (t[i][1].toUpperCase() === "DATABASE") {
+                                a = i + 1;
+                                dbName = t[i + 1][1];
+                            }
+
+                            if (t[i][1].toUpperCase() === "IF" && t[i + 1][1].toUpperCase() === "EXISTS") {
+                                a = i + 2;
+                                dbName = t[i + 2][1];
+                                ifExists = true;
+                                break;
+                            }
+                        }
+
+                        try {
+                            o['data'] = db.drop(dbName, ifExists);
+                        } catch (e) {
+                            o['code'] = 1;
+                            o['message'] = e.message;
+                        }
                     } else if (t[1][1].toUpperCase() === "TABLE") {
                         let tableName;
                         let a;

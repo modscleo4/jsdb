@@ -12,14 +12,14 @@ function createSchema(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
         let SCHList = readSchemaFile(dbName);
 
-        if (SCHList.indexOf(schemaName) === -1) {
+        if (SCHList.indexOf(schemaName) !== -1) {
+            throw new Error("Schema " + schemaName + " already exists in DB " + dbName);
+        } else {
             SCHList.push(schemaName);
             writeSchemaFile(dbName, JSON.stringify(SCHList));
             createSchemaFolder(dbName, schemaName);
 
             return "Created schema " + schemaName;
-        } else {
-            throw new Error("Schema " + schemaName + " already exists in DB " + dbName);
         }
     }
 }
@@ -27,10 +27,12 @@ function createSchema(dbName, schemaName) {
 /**
  *
  * */
-function createSchemaFolder(dbname, schemaName) {
-    if (db.exists(dbname)) {
-        if (!fs.existsSync(server.startDir + "dbs/" + dbname + "/" + schemaName)) {
-            fs.mkdirSync(server.startDir + "dbs/" + dbname + "/" + schemaName);
+function createSchemaFolder(dbName, schemaName) {
+    if (typeof dbName === "string" && typeof schemaName === "string") {
+        if (db.exists(dbName)) {
+            if (!fs.existsSync(server.startDir + "dbs/" + dbName + "/" + schemaName)) {
+                fs.mkdirSync(server.startDir + "dbs/" + dbName + "/" + schemaName);
+            }
         }
     }
 }
@@ -76,9 +78,11 @@ function readSchemaFile(dbName) {
 /**
  *
  * */
-function writeSchemaFile(dbname, content) {
-    if (db.exists(dbname)) {
-        fs.writeFileSync(server.startDir + "dbs/" + dbname + "/" + f_schlist, content);
+function writeSchemaFile(dbName, content) {
+    if (typeof dbName === "string") {
+        if (db.exists(dbName)) {
+            fs.writeFileSync(server.startDir + "dbs/" + dbName + "/" + f_schlist, content);
+        }
     }
 }
 
