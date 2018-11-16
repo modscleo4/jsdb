@@ -688,8 +688,6 @@ function run(sql, socketIndex) {
                 } else {
                     o['code'] = 1;
                     o['message'] = `Unrecognized command: ${o['sql']}`;
-
-                    continue;
                 }
 
                 output.push(o);
