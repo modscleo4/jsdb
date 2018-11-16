@@ -15,7 +15,7 @@ function createDB(dbName) {
         if (DBList.indexOf(dbName) !== -1) {
             schema.create(dbName, "public");
 
-            throw new Error("DB " + dbName + " already exists");
+            throw new Error(`DB ${dbName} already exists.`);
         } else {
             DBList.push(dbName);
             writeDBFile(JSON.stringify(DBList));
@@ -23,7 +23,7 @@ function createDB(dbName) {
 
             schema.create(dbName, "public");
 
-            return "Created DB " + dbName;
+            return `Created DB ${dbName}.`;
         }
     }
 }
@@ -33,11 +33,11 @@ function createDB(dbName) {
  * */
 function createDBFolder(dbName) {
     if (typeof dbName === "string") {
-        if (!fs.existsSync(server.startDir + "dbs/")) {
-            fs.mkdirSync(server.startDir + "dbs/");
+        if (!fs.existsSync(`${server.startDir}dbs/`)) {
+            fs.mkdirSync(`${server.startDir}dbs/`);
         }
 
-        fs.mkdirSync(server.startDir + "dbs/" + dbName);
+        fs.mkdirSync(`${server.startDir}dbs/${dbName}`);
     }
 }
 
@@ -47,26 +47,26 @@ function createDBFolder(dbName) {
 function readDBFile() {
     let DBList = [];
 
-    if (!fs.existsSync(server.startDir + "dbs/" + f_dblist)) {
+    if (!fs.existsSync(`${server.startDir}dbs/${f_dblist}`)) {
         writeDBFile(JSON.stringify([]));
         return readDBFile();
     }
 
-    DBList = JSON.parse(fs.readFileSync(server.startDir + "dbs/" + f_dblist, 'utf8'));
+    DBList = JSON.parse(fs.readFileSync(`${server.startDir}dbs/${f_dblist}`, 'utf8'));
 
-    fs.readdirSync(server.startDir + "dbs/").forEach(dbname => {
-        if (dbname !== f_dblist) {
-            if (DBList.indexOf(dbname) === -1) {
-                DBList.push(dbname);
+    fs.readdirSync(`${server.startDir}dbs/`).forEach(dbName => {
+        if (dbName !== f_dblist) {
+            if (DBList.indexOf(dbName) === -1) {
+                DBList.push(dbName);
                 writeDBFile(JSON.stringify(DBList));
             }
         }
     });
 
-    DBList.forEach(dbname => {
-        if (!fs.existsSync(server.startDir + "dbs/" + dbname)) {
-            createDBFolder(dbname);
-            schema.create(dbname, "public");
+    DBList.forEach(dbName => {
+        if (!fs.existsSync(`${server.startDir}dbs/${dbName}`)) {
+            createDBFolder(dbName);
+            schema.create(dbName, "public");
         }
     });
 
@@ -129,11 +129,11 @@ function readDBFile() {
  * */
 function writeDBFile(content) {
     if (typeof content === "string") {
-        if (!fs.existsSync(server.startDir + "dbs/")) {
-            fs.mkdirSync(server.startDir + "dbs");
+        if (!fs.existsSync(`${server.startDir}dbs/`)) {
+            fs.mkdirSync(`${server.startDir}dbs/`);
         }
 
-        fs.writeFileSync(server.startDir + "dbs/" + f_dblist, content);
+        fs.writeFileSync(`${server.startDir}dbs/${f_dblist}`, content);
     }
 }
 
@@ -147,11 +147,11 @@ function dropDB(dbName, ifExists = false) {
             let i = DBList.indexOf(dbName);
             DBList.splice(i, 1);
             writeDBFile(JSON.stringify(DBList));
-            server.rmdirRSync(server.startDir + "dbs/" + dbName + "/");
+            server.rmdirRSync(`${server.startDir}dbs/${dbName}/`);
 
-            return "Dropped database " + dbName;
+            return `Dropped database ${dbName}.`;
         } else {
-            return "Database " + dbName + " does not exist";
+            return `Database ${dbName} does not exist.`;
         }
     }
 }
@@ -165,7 +165,7 @@ function existsDB(dbName) {
         if (DBList.indexOf(dbName) !== -1) {
             return true;
         } else {
-            throw new Error("Database " + dbName + " does not exist.");
+            throw new Error(`Database ${dbName} does not exist.`);
         }
     }
 }

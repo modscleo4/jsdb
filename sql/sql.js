@@ -125,11 +125,11 @@ function run(sql, dbName, schemaName) {
                                     } else if (t[k][1] === '<>') {
                                         t[k][1] = '!=';
                                     } else if (t[k][0] === 'LITERAL') {
-                                        t[k][1] = '`' + t[k][1] + '`';
+                                        t[k][1] = `\`${t[k][1]}\``;
                                     } else if (t[k][0] === 'CONDITIONAL') {
                                         t[k][1] = (t[k][1] === 'AND') ? '&&' : '||';
                                     } else if (t[k][0] === "STRING") {
-                                        t[k][1] = "'" + t[k][1] + "'";
+                                        t[k][1] = `\`${t[k][1]}\``;
                                     }
 
                                     options['where'] += t[k][1];
@@ -187,6 +187,13 @@ function run(sql, dbName, schemaName) {
                     } else if (t[1][1].toUpperCase() === "SCHEMA") {
                         try {
                             o['data'] = schema.create(dbName, t[2][1]);
+                        } catch (e) {
+                            o['code'] = 1;
+                            o['message'] = e.message;
+                        }
+                    } else if (t[1][1].toUpperCase() === "SEQUENCE") {
+                        try {
+                            o['data'] = sequence.create(dbName, schemaName, t[2][1]);
                         } catch (e) {
                             o['code'] = 1;
                             o['message'] = e.message;
@@ -265,8 +272,6 @@ function run(sql, dbName, schemaName) {
                             o['code'] = 1;
                             o['message'] = e.message;
                         }
-                    } else if (t[1][1].toUpperCase() === "SEQUENCE") {
-
                     }
                 } else if (t[0][1].toUpperCase() === "INSERT") {
                     /*
@@ -413,14 +418,14 @@ function run(sql, dbName, schemaName) {
                                 } else if (t[k][0] === 'LITERAL') {
                                     if (t[k][1].toUpperCase() === "DEFAULT") {
                                         t[k][0] = "STRING";
-                                        t[k][1] = "'" + t[k][1] + "'";
+                                        t[k][1] = `\`${t[k][1]}\``;
                                     } else {
-                                        t[k][1] = '`' + t[k][1] + '`';
+                                        t[k][1] = `\`${t[k][1]}\``;
                                     }
                                 } else if (t[k][0] === 'CONDITIONAL') {
                                     t[k][1] = (t[k][1] === 'AND') ? '&&' : '||';
                                 } else if (t[k][0] === "STRING") {
-                                    t[k][1] = "'" + t[k][1] + "'";
+                                    t[k][1] = `\`${t[k][1]}\``;
                                 }
 
                                 options['where'] += t[k][1];
@@ -487,11 +492,11 @@ function run(sql, dbName, schemaName) {
                                 } else if (t[k][1] === '<>') {
                                     t[k][1] = '!=';
                                 } else if (t[k][0] === 'LITERAL') {
-                                    t[k][1] = '`' + t[k][1] + '`';
+                                    t[k][1] = `\`${t[k][1]}\``;
                                 } else if (t[k][0] === 'CONDITIONAL') {
                                     t[k][1] = (t[k][1] === 'AND') ? '&&' : '||';
                                 } else if (t[k][0] === "STRING") {
-                                    t[k][1] = "'" + t[k][1] + "'";
+                                    t[k][1] = `\`${t[k][1]}\``;
                                 }
 
                                 options['where'] += t[k][1];
@@ -548,6 +553,10 @@ function run(sql, dbName, schemaName) {
                             o['code'] = 1;
                             o['message'] = e.message;
                         }
+                    } else if (t[1][1].toUpperCase() === "SCHEMA") {
+
+                    } else if (t[1][1].toUpperCase() === "SEQUENCE") {
+
                     } else if (t[1][1].toUpperCase() === "TABLE") {
                         let tableName;
                         let a;
@@ -602,6 +611,8 @@ function run(sql, dbName, schemaName) {
                             o['code'] = 1;
                             o['message'] = e.message;
                         }
+                    } else if (t[1][1].toUpperCase() === "SEQUENCES") {
+
                     } else if (t[1][1].toUpperCase() === "TABLES") {
                         /*
                         * Gets the DB name

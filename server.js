@@ -9,12 +9,12 @@ const fs = require("fs");
 
 function authUser(username, password) {
     let users = table.select('jsdb', 'public', 'users', ["username", "password", "privileges"], {
-        "where": "\`username\` == '" + username + "'",
+        "where": `\`username\` == '${username}'`,
         "orderby": [{"column": 'username', "mode": 'ASC'}]
     });
 
     if (users.length === 0) {
-        throw new Error("AUTHERR: Invalid username: " + username);
+        throw new Error(`AUTHERR: Invalid username: ${username}`);
     }
 
     if (users[0]['password'] === md5(password)) {
@@ -73,7 +73,7 @@ let server = net.createServer(function (socket) {
             try {
                 setDB(sqlCmd.slice(3));
             } catch (err) {
-                socket.write("[{\"code\": 1, \"message\": \"" + err.message + "\"}]");
+                socket.write(`[{"code": 1, "message": "${err.message}"}]`);
                 socket.destroy();
             }
         } else if (sqlCmd.toUpperCase().includes("SET SEARCH_PATH TO")) {
@@ -88,7 +88,7 @@ let server = net.createServer(function (socket) {
 
                 socket.write(r);
             } catch (err) {
-                socket.write("[{\"code\": 1, \"message\": \"" + err.message + "\"}]");
+                socket.write(`[{"code": 1, "message": "${err.message}"}]`);
             }
         }
     });
@@ -103,7 +103,7 @@ let server = net.createServer(function (socket) {
         } else if (err.code === 'ECONNRESET') {
             console.error('Connection reset. Maybe a client disconnected');
         } else {
-            console.error(err.code + ": " + err.message);
+            console.error(`${err.code}: ${err.message}`);
         }
     })
 });
@@ -130,7 +130,7 @@ if (port === 0) {
 
 if (address !== "" && port !== 0 && dir !== "") {
     server.listen(port, address);
-    console.log("Running server on " + address + ":" + port + ", " + dir);
+    console.log(`Running server on ${address}:${port}, ${dir}`);
     exports.startDir = dir;
     db.readFile();
 }
@@ -138,7 +138,7 @@ if (address !== "" && port !== 0 && dir !== "") {
 exports.rmdirRSync = function rmdirRSync(path) {
     if (fs.existsSync(path)) {
         fs.readdirSync(path).forEach((file, index) => {
-            let curPath = path + "/" + file;
+            let curPath = `${path}/${file}`;
             if (fs.lstatSync(curPath).isDirectory()) {
                 rmdirRSync(curPath);
             } else {
