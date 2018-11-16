@@ -7,6 +7,9 @@ const md5 = require('md5');
 const net = require('net');
 const fs = require("fs");
 
+let sockets = [];
+exports.sockets = sockets;
+
 function authUser(username, password) {
     let users = table.select('jsdb', 'public', 'users', ["username", "password", "privileges"], {
         "where": `\`username\` == '${username}'`,
@@ -25,29 +28,19 @@ function authUser(username, password) {
 }
 
 let server = net.createServer(function (socket) {
-    socket.on('connection', function () {
-        db.readFile();
+    socket.dbName = "jsdb";
+    socket.schemaName = "public";
+
+    db.readFile();
+    sockets.push(socket);
+    exports.sockets = sockets;
+
+    socket.on('end', function () {
+        sockets.splice(sockets.indexOf(socket), 1);
+        exports.sockets = socket;
     });
 
     let userPrivileges = null;
-
-    let dbS = 'jsdb';
-    let schemaS = 'public';
-
-    function setDB(dbName) {
-        if (db.exists(dbName)) {
-            dbS = dbName;
-        }
-    }
-
-    function setSchema(schemaName) {
-        let DBList = db.readFile();
-        let SCHList = schema.readFile(dbS);
-
-        if (DBList.indexOf(dbS) !== -1 && SCHList.indexOf(schemaName) !== -1) {
-            schemaS = schemaName;
-        }
-    }
 
     socket.on('data', function (data) {
         let sqlCmd = data.toLocaleString();
@@ -69,27 +62,16 @@ let server = net.createServer(function (socket) {
             }
         }
 
-        if (sqlCmd.includes("db ")) {
-            try {
-                setDB(sqlCmd.slice(3));
-            } catch (err) {
-                socket.write(`[{"code": 1, "message": "${err.message}"}]`);
-                socket.destroy();
-            }
-        } else if (sqlCmd.toUpperCase().includes("SET SEARCH_PATH TO")) {
-            setSchema(sqlCmd.slice("SET SEARCH_PATH TO ".length));
-        } else {
-            try {
-                let r = sql.run(sqlCmd, dbS, schemaS);
+        try {
+            let r = sql.run(sqlCmd, sockets.indexOf(socket));
 
-                if (typeof r === "object") {
-                    r = JSON.stringify(r);
-                }
-
-                socket.write(r);
-            } catch (err) {
-                socket.write(`[{"code": 1, "message": "${err.message}"}]`);
+            if (typeof r === "object") {
+                r = JSON.stringify(r);
             }
+
+            socket.write(r);
+        } catch (err) {
+            socket.write(`[{"code": 1, "message": "${err.message}"}]`);
         }
     });
 
