@@ -3,6 +3,7 @@ const schema = require('./schema');
 const server = require('../server');
 
 const f_seqlist = 'seqlist.json';
+exports.f_seqlist = f_seqlist;
 
 /**
  *

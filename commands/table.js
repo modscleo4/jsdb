@@ -88,7 +88,7 @@ function readTableFile(dbName, schemaName) {
             let TableList = JSON.parse(fs.readFileSync(`${server.startDir}dbs/${dbName}/${schemaName}/${f_tablelist}`, 'utf8'));
 
             fs.readdirSync(`${server.startDir}dbs/${dbName}/${schemaName}/`).forEach(tableName => {
-                if (tableName !== f_tablelist) {
+                if (tableName !== f_tablelist && tableName !== sequence.f_seqlist) {
                     if (TableList.indexOf(tableName) === -1) {
                         TableList.push(tableName);
                         writeTableFile(dbName, schemaName, JSON.stringify(TableList));
