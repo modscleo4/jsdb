@@ -1,6 +1,7 @@
 const db = require("./commands/db");
 const schema = require("./commands/schema");
 const table = require("./commands/table");
+const user = require('./commands/user');
 const sql = require("./sql/sql");
 
 const md5 = require('md5');
@@ -9,23 +10,6 @@ const fs = require("fs");
 
 let sockets = [];
 exports.sockets = sockets;
-
-function authUser(username, password) {
-    let users = table.select('jsdb', 'public', 'users', ["username", "password", "privileges"], {
-        "where": `\`username\` == '${username}'`,
-        "orderby": [{"column": 'username', "mode": 'ASC'}]
-    });
-
-    if (users.length === 0) {
-        throw new Error(`AUTHERR: Invalid username: ${username}`);
-    }
-
-    if (users[0]['password'] === md5(password)) {
-        return users[0]['privileges'];
-    } else {
-        throw new Error("AUTHERR: Wrong password");
-    }
-}
 
 let server = net.createServer(function (socket) {
     socket.dbName = "jsdb";
@@ -51,7 +35,7 @@ let server = net.createServer(function (socket) {
                     throw new Error("Username and password not informed");
                 } else {
                     let credentials = JSON.parse(sqlCmd.slice("credentials: ".length));
-                    userPrivileges = authUser(credentials['username'], credentials['password']);
+                    userPrivileges = user.auth(credentials['username'], credentials['password']);
                     exports.userPrivileges = userPrivileges;
                     socket.write("AUTHOK");
                     return;

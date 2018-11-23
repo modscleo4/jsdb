@@ -6,6 +6,10 @@ const md5 = require('md5');
 
 const f_dblist = 'dblist.json';
 
+/*
+* @todo: Run on a backup DB, then delete the original and rename
+* */
+
 /**
  *
  * */
@@ -80,7 +84,8 @@ function readDBFile() {
             schema.create('jsdb', "public");
         }
 
-        table.create('jsdb', 'public', 'users', {
+        table.create('jsdb', 'public', 'users',
+            {
                 'id': {
                     'type': 'number',
                     'unique': true,
@@ -116,9 +121,23 @@ function readDBFile() {
                 'primaryKey': [
                     'id'
                 ]
-            });
+            }
+        );
 
-        table.insert('jsdb', 'public', 'users', ["DEFAULT", 'jsdbadmin', md5('dbadmin'), "DEFAULT", "DEFAULT"]);
+        let stdin = process.openStdin();
+
+        console.log('Insert jsdbadmin password: ');
+        stdin.addListener("data", function (d) {
+            d = d.toLocaleString().trim();
+            if (d.length > 8) {
+                stdin.removeAllListeners('data');
+
+                table.insert('jsdb', 'public', 'users', ["DEFAULT", 'jsdbadmin', md5(`${d}`), "DEFAULT", "DEFAULT"]);
+                console.log("User created.");
+            } else {
+                console.log('jsdbadmin password must be greater than 8 characters!');
+            }
+        });
     }
 
     return DBList;

@@ -5,6 +5,8 @@ const sequence = require("../commands/sequence");
 const sql_parser = require("sql-parser/lib/sql_parser");
 const server = require("../server");
 
+const md5 = require('md5');
+
 function run(sql, socketIndex) {
     let dbName = {
         get: function () {
@@ -365,6 +367,12 @@ function run(sql, socketIndex) {
                                 } else if (t[j][0] === "LITERAL" && t[j][1].toUpperCase() === "DEFAULT") {
                                     t[j][0] = "STRING";
                                     t[j][1] = "DEFAULT";
+                                } else if (t[j][0] === "LITERAL" && t[j][1].toUpperCase() === "MD5") {
+                                    if (t[j + 1][0] === "LEFT_PAREN" && t[j + 3][0] === "RIGHT_PAREN") {
+                                        t[j][0] = "STRING";
+                                        t[j][1] = md5(t[j + 2][1]);
+                                        t.splice(j + 1, 3);
+                                    }
                                 }
 
                                 if (t[j][0] === "STRING") {
@@ -412,6 +420,11 @@ function run(sql, socketIndex) {
                                 if (t[j][0] === "LITERAL") {
                                     if (t[j][1].toUpperCase() === "DEFAULT") {
                                         t[j][0] = "STRING";
+                                    } else if (t[j][1].toUpperCase() === "MD5") {
+                                        if (t[j + 1][0] === "LEFT_PAREN" && t[j + 3][0] === "RIGHT_PAREN") {
+                                            t[j][1] = md5(t[j + 2][1]);
+                                            t.splice(j + 1, 3);
+                                        }
                                     }
                                 }
 

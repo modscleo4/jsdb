@@ -11,6 +11,10 @@ const f_tabledata = 'tabledata.json';
 exports.f_tablestruct = f_tablestruct;
 exports.f_tabledata = f_tabledata;
 
+/*
+* @todo: Run on a backup table, then delete the original and rename
+* */
+
 /**
  *
  * */
@@ -34,7 +38,7 @@ function createTable(dbName, schemaName, tableName, tableStruct, metadata = null
                     if (tableStruct[key]['type'] === 'number' && tableStruct[key]['autoIncrement']) {
                         delete(tableStruct[key]['autoIncrement']);
                         tableStruct[key]['default'] = `sequence(${tableName}_${key}_seq)`;
-                        sequence.create(dbName, schemaName, `${tableName}_${key}_seq)`);
+                        sequence.create(dbName, schemaName, `${tableName}_${key}_seq`);
                     }
                 }
             }
@@ -464,6 +468,9 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
                 * Ignore tablename.metadata array to avoid errors
                 * */
                 if (key !== `${tableName}.metadata`) {
+                    if (TableStruct[key]['type'] === "object" && content[i].toUpperCase() !== "DEFAULT") {
+                        content[i] = JSON.parse(content[i]);
+                    }
 
                     /*
                     * Key is not provided
@@ -492,6 +499,7 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
 
                         /*
                         * If true, it's a sequence
+                        * @todo Reset the sequence if an error happened
                         * */
                         if (typeof TableStruct[key]['default'] === "string" && (a = TableStruct[key]['default'].search("sequence[(].*[)]")) !== -1) {
                             let seqName = TableStruct[key]['default'].slice(a + "sequence(".length, TableStruct[key]['default'].length - 1);
@@ -637,6 +645,10 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
                                     if (TableIndexes[j] === key) {
                                         break;
                                     }
+                                }
+
+                                if (TableStruct[key]['type'] === "object") {
+                                    update[key] = JSON.parse(update[key]);
                                 }
 
                                 if (typeof update[key] === "string" && update[key].toUpperCase() === 'DEFAULT') {

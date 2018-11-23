@@ -5,6 +5,10 @@ const server = require('../server');
 
 const f_schlist = 'schlist.json';
 
+/*
+* @todo: Run on a backup schema, then delete the original and rename
+* */
+
 /**
  *
  * */
