@@ -7,6 +7,10 @@ const server = require("../server");
 
 const md5 = require('md5');
 
+const {
+    performance
+} = require('perf_hooks');
+
 function run(sql, socketIndex) {
     let dbName = {
         get: function () {
@@ -63,13 +67,26 @@ function run(sql, socketIndex) {
         }
 
         sql = sql.split(';');
+
+        let perf = true;
         for (let i = 0; i < sql.length; i++) {
             let sqlString = sql[i];
             if (sqlString !== "") {
+                if (sqlString === "NOPERF") {
+                    perf = false;
+                    continue;
+                }
+
                 let o = {};
                 o['command'] = i;
                 o['sql'] = sqlString;
                 o['code'] = 0;
+
+                if (perf) {
+                    o['time'] = performance.now();
+                } else {
+                    o['time'] = 'NOTIME';
+                }
 
                 if (sqlString.includes("!dbg")) {
                     sqlString = sqlString.replace("!dbg", "");
@@ -456,9 +473,6 @@ function run(sql, socketIndex) {
                     for (let i = a + 1; i < t.length; i++) {
                         if (t[i][0] === "WHERE") {
                             options['where'] = "";
-                            /*
-                            * @todo: SQL WHERE parameter
-                            * */
                             for (let k = i + 1; k < t.length; k++) {
                                 /*
                                 * Stop when find something that is not on WHERE params
@@ -532,9 +546,6 @@ function run(sql, socketIndex) {
                     for (let i = a + 1; i < t.length; i++) {
                         if (t[i][0] === "WHERE") {
                             options['where'] = "";
-                            /*
-                            * @todo: SQL WHERE parameter
-                            * */
                             for (let k = i + 1; k < t.length; k++) {
                                 /*
                                 * Stop when find something that is not on WHERE params
@@ -701,6 +712,10 @@ function run(sql, socketIndex) {
                 } else {
                     o['code'] = 1;
                     o['message'] = `Unrecognized command: ${o['sql']}`;
+                }
+
+                if (perf) {
+                    o['time'] = performance.now() - o['time'];
                 }
 
                 output.push(o);
