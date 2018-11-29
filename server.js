@@ -11,7 +11,6 @@ const schema = require("./commands/schema");
 const table = require("./commands/table");
 const user = require('./commands/user');
 const sql = require("./sql/sql");
-const user = require('./commands/user');
 
 const net = require('net');
 const fs = require("fs");

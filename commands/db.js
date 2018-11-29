@@ -16,13 +16,13 @@ const md5 = require('md5');
 
 const f_dblist = 'dblist.json';
 
-/*
-* @todo: Run on a backup DB, then delete the original and rename
-* */
-
 /**
+ * @summary
  *
- * */
+ * @param dbName {string}
+ *
+ * @return {string}
+ */
 function createDB(dbName) {
     if (typeof dbName === "string") {
         let DBList = readDBFile();

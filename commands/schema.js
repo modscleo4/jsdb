@@ -15,13 +15,15 @@ const server = require('../server');
 
 const f_schlist = 'schlist.json';
 
-/*
-* @todo: Run on a backup schema, then delete the original and rename
-* */
 
 /**
+ * @summary
  *
- * */
+ * @param dbName {string}
+ * @param schemaName {string}
+ *
+ * @return {string}
+ */
 function createSchema(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
         let SCHList = readSchemaFile(dbName);
