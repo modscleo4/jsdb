@@ -1,3 +1,11 @@
+/**
+ * @summary
+ *
+ * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
+ *
+ * @type {module:fs}
+ */
+
 const fs = require('fs');
 const schema = require('./schema');
 const server = require('../server');
@@ -6,7 +14,14 @@ const f_seqlist = 'seqlist.json';
 exports.f_seqlist = f_seqlist;
 
 /**
+ * @summary
  *
+ * @param dbName {string}
+ * @param schemaName {string}
+ * @param seqName {string}
+ * @param options {Array}
+ *
+ * @returns {string}
  * */
 function createSequence(dbName, schemaName, seqName, options = [1, 1]) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof  options === "object") {
@@ -24,7 +39,12 @@ function createSequence(dbName, schemaName, seqName, options = [1, 1]) {
 }
 
 /**
+ * @summary
  *
+ * @param dbName {string}
+ * @param schemaName {string}
+ *
+ * @returns {{}, Array}
  * */
 function readSequenceFile(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
@@ -40,7 +60,11 @@ function readSequenceFile(dbName, schemaName) {
 }
 
 /**
+ * @summary
  *
+ * @param dbName {string}
+ * @param schemaName {string}
+ * @param content {Array}
  * */
 function writeSequenceFile(dbName, schemaName, content) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof content === "object") {
@@ -50,6 +74,15 @@ function writeSequenceFile(dbName, schemaName, content) {
     }
 }
 
+/**
+ * @summary
+ *
+ * @param dbName {string}
+ * @param schemaName {string}
+ * @param seqName {string}
+ *
+ * @returns {boolean}
+ * */
 function existsSequence(dbName, schemaName, seqName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string") {
         if (schema.exists(dbName, schemaName)) {
@@ -64,7 +97,13 @@ function existsSequence(dbName, schemaName, seqName) {
 }
 
 /**
+ * @summary
  *
+ * @param dbName {string}
+ * @param schemaName {string}
+ * @param seqName {string}
+ *
+ * @returns {Array}
  * */
 function readSequence(dbName, schemaName, seqName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string") {
@@ -79,7 +118,12 @@ function readSequence(dbName, schemaName, seqName) {
 }
 
 /**
+ * @summary
  *
+ * @param dbName {string}
+ * @param schemaName {string}
+ * @param seqName {string}
+ * @param content {Array}
  * */
 function updateSequence(dbName, schemaName, seqName, content) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof content === "object") {
@@ -96,7 +140,14 @@ function updateSequence(dbName, schemaName, seqName, content) {
 }
 
 /**
+ * @summary
  *
+ * @param dbName {string}
+ * @param schemaName {string}
+ * @param seqName {string}
+ * @param ifExists {boolean}
+ *
+ * @returns {string}
  * */
 function dropSequence(dbName, schemaName, seqName, ifExists = false) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof ifExists === "boolean") {

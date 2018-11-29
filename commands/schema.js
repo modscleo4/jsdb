@@ -1,3 +1,11 @@
+/**
+ * @summary
+ *
+ * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
+ *
+ * @type {module:fs}
+ */
+
 const fs = require('fs');
 
 const db = require("./db");
@@ -29,8 +37,11 @@ function createSchema(dbName, schemaName) {
 }
 
 /**
+ * @summary
  *
- * */
+ * @param dbName {string}
+ * @param schemaName {string}
+ */
 function createSchemaFolder(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
         if (db.exists(dbName)) {
@@ -42,8 +53,12 @@ function createSchemaFolder(dbName, schemaName) {
 }
 
 /**
+ * @summary
  *
- * */
+ * @param dbName {string}
+ *
+ * @returns {Array}
+ */
 function readSchemaFile(dbName) {
     if (typeof dbName === "string") {
         let r = [];
@@ -80,8 +95,11 @@ function readSchemaFile(dbName) {
 }
 
 /**
+ * @summary
  *
- * */
+ * @param dbName {string}
+ * @param content {Array}
+ */
 function writeSchemaFile(dbName, content) {
     if (typeof dbName === "string") {
         if (db.exists(dbName)) {
@@ -91,8 +109,13 @@ function writeSchemaFile(dbName, content) {
 }
 
 /**
+ * @summary
  *
- * */
+ * @param dbName {string}
+ * @param schemaName {string}
+ *
+ * @return {boolean}
+ */
 function existsSchema(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
         if (db.exists(dbName)) {

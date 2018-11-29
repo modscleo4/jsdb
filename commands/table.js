@@ -1,3 +1,11 @@
+/**
+ * @summary Contains functions to interact with tables, like SELECT and UPDATE
+ *
+ * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
+ *
+ * @type {module:fs}
+ */
+
 const fs = require('fs');
 const db = require('./db');
 const schema = require('./schema');
@@ -16,7 +24,15 @@ exports.f_tabledata = f_tabledata;
 * */
 
 /**
+ * @summary Create a table
  *
+ * @param dbName {string} The name of database
+ * @param schemaName {string} The schema name
+ * @param tableName {string} The name of the table
+ * @param tableStruct {Array} Named array containing the structure for the table
+ * @param metadata {Array} Some table metadata, like the primary key <optional>
+ *
+ * @returns {string} If OK, returns a string
  * */
 function createTable(dbName, schemaName, tableName, tableStruct, metadata = null) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof tableStruct === "object" && typeof metadata === "object") {
@@ -52,7 +68,13 @@ function createTable(dbName, schemaName, tableName, tableStruct, metadata = null
 }
 
 /**
+ * @summary
  *
+ * @param dbName {string} The DB name
+ * @param schemaName {string} The name of the schema
+ * @param tableName {string} The name of the table
+ *
+ * @returns {Array} Return the structure of the table in a named array
  * */
 function readTableStructure(dbName, schemaName, tableName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
@@ -68,7 +90,12 @@ function readTableStructure(dbName, schemaName, tableName) {
 }
 
 /**
+ * @summary
  *
+ * @param dbName {string}
+ * @param schemaName {string}
+ * @param tableName {string}
+ * @param tableStruct {Array}
  * */
 function writeTableStructure(dbName, schemaName, tableName, tableStruct) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof tableStruct === "object") {
@@ -79,8 +106,13 @@ function writeTableStructure(dbName, schemaName, tableName, tableStruct) {
 }
 
 /**
+ * @summary
  *
- * */
+ * @param dbName {string}
+ * @param schemaName {string}
+ *
+ * @returns {Array}
+ */
 function readTableFile(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
         if (schema.exists(dbName, schemaName)) {
@@ -112,8 +144,12 @@ function readTableFile(dbName, schemaName) {
 }
 
 /**
+ * @summary
  *
- * */
+ * @param dbName {string}
+ * @param schemaName {string}
+ * @param content {Array}
+ */
 function writeTableFile(dbName, schemaName, content) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof content === "string") {
         if (schema.exists(dbName, schemaName)) {
@@ -123,7 +159,11 @@ function writeTableFile(dbName, schemaName, content) {
 }
 
 /**
+ * @summary
  *
+ * @param dbName {string}
+ * @param schemaName {string}
+ * @param tableName {string}
  * */
 function createTableFolder(dbName, schemaName, tableName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
@@ -136,7 +176,13 @@ function createTableFolder(dbName, schemaName, tableName) {
 }
 
 /**
+ * @summary
  *
+ * @param dbName {string}
+ * @param schemaName {string}
+ * @param tableName {string}
+ *
+ * @returns {Array}
  * */
 function readTableContent(dbName, schemaName, tableName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
@@ -147,7 +193,15 @@ function readTableContent(dbName, schemaName, tableName) {
 }
 
 /**
+ * @summary
  *
+ * @param dbName {string}
+ * @param schemaName {string}
+ * @param tableName {string}
+ * @param content {Array}
+ * @param override {boolean}
+ *
+ * @returns {string}
  * */
 function writeTableContent(dbName, schemaName, tableName, content, override = false) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof content === "object" && typeof override === "boolean") {
@@ -175,7 +229,14 @@ function writeTableContent(dbName, schemaName, tableName, content, override = fa
 }
 
 /**
+ * @summary
  *
+ * @param dbName {string}
+ * @param schemaName {string}
+ * @param tableName {string}
+ * @param ifExists {boolean}
+ *
+ * @returns {string}
  * */
 function dropTable(dbName, schemaName, tableName, ifExists = false) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof ifExists === "boolean") {
@@ -197,19 +258,16 @@ function dropTable(dbName, schemaName, tableName, ifExists = false) {
     }
 }
 
-
-/* SQL Commands */
-
 /**
  * @summary This is the table SELECT function scope
  *
- * @param dbName The name of DB
- * @param schemaName The name of the schema
- * @param tableName The table name
- * @param columns The desired columns in an indexed array
- * @param options Options like WHERE, ORDER BY, etc.
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param tableName {string} The table name
+ * @param columns {Array} The desired columns in an indexed array
+ * @param options {Array} Options like WHERE, ORDER BY, etc.
  *
- * @returns Array returns an indexed array with multiple named arrays containg the data of each cell
+ * @returns {Array} returns an indexed array with multiple named arrays containg the data of each cell
  * */
 function selectTableContent(dbName, schemaName, tableName, columns, options) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof columns === "object" && typeof options === "object") {
@@ -386,13 +444,13 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
 /**
  * @summary This is the table INSERT INTO function scope
  *
- * @param dbName The name of DB
- * @param schemaName The name of the schema
- * @param tableName The table name
- * @param content The values to insert
- * @param columns The columns of content and the order (optional)
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param tableName {string} The table name
+ * @param content {Array} The values to insert
+ * @param columns {Array} The columns of content and the order (optional)
  *
- * @returns string If inserted, returns a string
+ * @returns {string} If inserted, returns a string
  * */
 function insertTableContent(dbName, schemaName, tableName, content, columns = null) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof content === "object" && typeof columns === "object") {
@@ -579,13 +637,13 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
 /**
  * @summary This is the table UPDATE function scope
  *
- * @param dbName The name of DB
- * @param schemaName The name of the schema
- * @param tableName The table name
- * @param update The values to update in a named array
- * @param options Options like WHERE, ORDER BY, etc.
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param tableName {string} The table name
+ * @param update {Array} The values to update in a named array
+ * @param options {Array} Options like WHERE, ORDER BY, etc.
  *
- * @returns string Returns a string containing the count of affected rows
+ * @returns {string} Returns a string containing the count of affected rows
  * */
 function updateTableContent(dbName, schemaName, tableName, update, options) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof update === "object" && typeof options === "object") {
@@ -730,12 +788,12 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
 /**
  * @summary This is the table DELETE function scope
  *
- * @param dbName The name of DB
- * @param schemaName The name of the schema
- * @param tableName The table name
- * @param options Options like WHERE, ORDER BY, etc.
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param tableName {string} The table name
+ * @param options {Array} Options like WHERE, ORDER BY, etc.
  *
- * @returns string Returns a string containing the count of affected rows
+ * @returns {string} Returns a string containing the count of affected rows
  * */
 function deleteTableContent(dbName, schemaName, tableName, options) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof options === "object") {
@@ -830,8 +888,14 @@ function deleteTableContent(dbName, schemaName, tableName, options) {
 }
 
 /**
+ * @summary
  *
- * */
+ * @param dbName {string}
+ * @param schemaName {string}
+ * @param tableName {string}
+ *
+ * @return {boolean}
+ */
 function existsTable(dbName, schemaName, tableName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
         if (schema.exists(dbName, schemaName)) {

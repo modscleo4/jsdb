@@ -1,10 +1,18 @@
+/**
+ * @summary
+ *
+ * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
+ *
+ * @type {module:fs}
+ */
+
 const db = require("./commands/db");
 const schema = require("./commands/schema");
 const table = require("./commands/table");
 const user = require('./commands/user');
 const sql = require("./sql/sql");
+const user = require('./commands/user');
 
-const md5 = require('md5');
 const net = require('net');
 const fs = require("fs");
 

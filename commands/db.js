@@ -1,3 +1,11 @@
+/**
+ * @summary
+ *
+ * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
+ *
+ * @type {module:fs}
+ */
+
 const fs = require('fs');
 const schema = require('./schema');
 const table = require('./table');
@@ -33,8 +41,10 @@ function createDB(dbName) {
 }
 
 /**
+ * @summary
  *
- * */
+ * @param dbName {string}
+ */
 function createDBFolder(dbName) {
     if (typeof dbName === "string") {
         if (!fs.existsSync(`${server.startDir}dbs/`)) {
@@ -46,8 +56,10 @@ function createDBFolder(dbName) {
 }
 
 /**
+ * @summary
  *
- * */
+ * @return {Array}
+ */
 function readDBFile() {
     let DBList = [];
 
@@ -144,8 +156,10 @@ function readDBFile() {
 }
 
 /**
+ * @summary
  *
- * */
+ * @param content {Array}
+ */
 function writeDBFile(content) {
     if (typeof content === "string") {
         if (!fs.existsSync(`${server.startDir}dbs/`)) {
@@ -157,8 +171,13 @@ function writeDBFile(content) {
 }
 
 /**
+ * @summary
  *
- * */
+ * @param dbName {string}
+ * @param ifExists {boolean}
+ *
+ * @return {string}
+ */
 function dropDB(dbName, ifExists = false) {
     if (typeof dbName === "string" && typeof ifExists === "boolean") {
         if ((ifExists && readDBFile().indexOf(dbName) !== -1) || (!ifExists && existsDB(dbName))) {
@@ -176,8 +195,12 @@ function dropDB(dbName, ifExists = false) {
 }
 
 /**
+ * @summary
  *
- * */
+ * @param dbName {string}
+ *
+ * @return {boolean}
+ */
 function existsDB(dbName) {
     if (typeof dbName === "string") {
         let DBList = readDBFile();

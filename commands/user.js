@@ -1,6 +1,22 @@
+/**
+ * @summary
+ *
+ * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
+ *
+ * @type {module:fs}
+ */
+
 const table = require("./table");
 const md5 = require('md5');
 
+/**
+ * @summary
+ *
+ * @param username {string}
+ * @param password {string}
+ *
+ * @returns {Array}
+ */
 function authUser(username, password) {
     let users = table.select(
         'jsdb',
