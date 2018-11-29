@@ -4,6 +4,8 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  *
  * @type {module:fs}
+ *
+ * @todo: Run on a backup table, then delete the original and rename
  */
 
 const fs = require('fs');
@@ -29,8 +31,8 @@ exports.f_tabledata = f_tabledata;
  * @param dbName {string} The name of database
  * @param schemaName {string} The schema name
  * @param tableName {string} The name of the table
- * @param tableStruct {Array} Named array containing the structure for the table
- * @param metadata {Array} Some table metadata, like the primary key <optional>
+ * @param tableStruct {Object} Named Object containing the structure for the table
+ * @param metadata {Object} Some table metadata, like the primary key <optional>
  *
  * @returns {string} If OK, returns a string
  * */
@@ -59,7 +61,7 @@ function createTable(dbName, schemaName, tableName, tableStruct, metadata = null
                 }
             }
 
-            writeTableStructure(dbName, schemaName, tableName, tableStruct);
+            writeTableStructure(dbName, schemaName, tableName, JSON.stringify(tableStruct));
             writeTableContent(dbName, schemaName, tableName, null);
 
             return `Created table ${schemaName}.${tableName} in DB ${dbName}`;
@@ -74,7 +76,7 @@ function createTable(dbName, schemaName, tableName, tableStruct, metadata = null
  * @param schemaName {string} The name of the schema
  * @param tableName {string} The name of the table
  *
- * @returns {Array} Return the structure of the table in a named array
+ * @returns {Object} Return the structure of the table in a named Object
  * */
 function readTableStructure(dbName, schemaName, tableName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
@@ -95,12 +97,12 @@ function readTableStructure(dbName, schemaName, tableName) {
  * @param dbName {string}
  * @param schemaName {string}
  * @param tableName {string}
- * @param tableStruct {Array}
+ * @param tableStruct {string}
  * */
 function writeTableStructure(dbName, schemaName, tableName, tableStruct) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof tableStruct === "object") {
+    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof tableStruct === "string") {
         if (existsTable(dbName, schemaName, tableName)) {
-            fs.writeFileSync(`${server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tablestruct}`, JSON.stringify(tableStruct));
+            fs.writeFileSync(`${server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tablestruct}`, tableStruct);
         }
     }
 }
@@ -111,7 +113,7 @@ function writeTableStructure(dbName, schemaName, tableName, tableStruct) {
  * @param dbName {string}
  * @param schemaName {string}
  *
- * @returns {Array}
+ * @returns {Object}
  */
 function readTableFile(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
@@ -134,7 +136,7 @@ function readTableFile(dbName, schemaName) {
 
             TableList.forEach(tableName => {
                 if (!fs.existsSync(`${server.startDir}dbs/${dbName}/${schemaName}/${tableName}/`)) {
-                    createTableFolder(tableName);
+                    createTableFolder(dbName, schemaName, tableName);
                 }
             });
 
@@ -148,7 +150,7 @@ function readTableFile(dbName, schemaName) {
  *
  * @param dbName {string}
  * @param schemaName {string}
- * @param content {Array}
+ * @param content {string}
  */
 function writeTableFile(dbName, schemaName, content) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof content === "string") {
@@ -182,7 +184,7 @@ function createTableFolder(dbName, schemaName, tableName) {
  * @param schemaName {string}
  * @param tableName {string}
  *
- * @returns {Array}
+ * @returns {Object}
  * */
 function readTableContent(dbName, schemaName, tableName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
@@ -198,7 +200,7 @@ function readTableContent(dbName, schemaName, tableName) {
  * @param dbName {string}
  * @param schemaName {string}
  * @param tableName {string}
- * @param content {Array}
+ * @param content {Object}
  * @param override {boolean}
  *
  * @returns {string}
@@ -264,10 +266,10 @@ function dropTable(dbName, schemaName, tableName, ifExists = false) {
  * @param dbName {string} The name of DB
  * @param schemaName {string} The name of the schema
  * @param tableName {string} The table name
- * @param columns {Array} The desired columns in an indexed array
- * @param options {Array} Options like WHERE, ORDER BY, etc.
+ * @param columns {Object} The desired columns in an indexed Object
+ * @param options {Object} Options like WHERE, ORDER BY, etc.
  *
- * @returns {Array} returns an indexed array with multiple named arrays containg the data of each cell
+ * @returns {Object} returns an indexed Object with multiple named Objects containg the data of each cell
  * */
 function selectTableContent(dbName, schemaName, tableName, columns, options) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof columns === "object" && typeof options === "object") {
@@ -296,7 +298,7 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
         }
 
         /*
-        * Auxiliary array for WHERE
+        * Auxiliary Object for WHERE
         * */
         let aaa = [];
         for (let i = 0; i < TableContent.length; i++) {
@@ -447,8 +449,8 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
  * @param dbName {string} The name of DB
  * @param schemaName {string} The name of the schema
  * @param tableName {string} The table name
- * @param content {Array} The values to insert
- * @param columns {Array} The columns of content and the order (optional)
+ * @param content {Object} The values to insert
+ * @param columns {Object} The columns of content and the order (optional)
  *
  * @returns {string} If inserted, returns a string
  * */
@@ -527,7 +529,7 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
                 }
 
                 /*
-                * Ignore tablename.metadata array to avoid errors
+                * Ignore tablename.metadata Object to avoid errors
                 * */
                 if (key !== `${tableName}.metadata`) {
                     if (TableStruct[key]['type'] === "object" && content[i].toUpperCase() !== "DEFAULT") {
@@ -640,8 +642,8 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
  * @param dbName {string} The name of DB
  * @param schemaName {string} The name of the schema
  * @param tableName {string} The table name
- * @param update {Array} The values to update in a named array
- * @param options {Array} Options like WHERE, ORDER BY, etc.
+ * @param update {Object} The values to update in a named Object
+ * @param options {Object} Options like WHERE, ORDER BY, etc.
  *
  * @returns {string} Returns a string containing the count of affected rows
  * */
@@ -667,7 +669,7 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
             }
 
             /*
-            * Auxiliary array for WHERE
+            * Auxiliary Object for WHERE
             * */
             let aaa = [];
             for (let i = 0; i < TableContent.length; i++) {
@@ -791,7 +793,7 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
  * @param dbName {string} The name of DB
  * @param schemaName {string} The name of the schema
  * @param tableName {string} The table name
- * @param options {Array} Options like WHERE, ORDER BY, etc.
+ * @param options {Object} Options like WHERE, ORDER BY, etc.
  *
  * @returns {string} Returns a string containing the count of affected rows
  * */
@@ -822,7 +824,7 @@ function deleteTableContent(dbName, schemaName, tableName, options) {
             }
 
             /*
-            * Auxiliary array for WHERE
+            * Auxiliary Object for WHERE
             * */
             let aaa = [];
             for (let i = 0; i < TableContent.length; i++) {

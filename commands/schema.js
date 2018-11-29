@@ -4,6 +4,8 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  *
  * @type {module:fs}
+ *
+ * @todo: Run on a backup schema, then delete the original and rename
  */
 
 const fs = require('fs');
@@ -57,7 +59,7 @@ function createSchemaFolder(dbName, schemaName) {
  *
  * @param dbName {string}
  *
- * @returns {Array}
+ * @returns {Object}
  */
 function readSchemaFile(dbName) {
     if (typeof dbName === "string") {
@@ -98,10 +100,10 @@ function readSchemaFile(dbName) {
  * @summary
  *
  * @param dbName {string}
- * @param content {Array}
+ * @param content {string}
  */
 function writeSchemaFile(dbName, content) {
-    if (typeof dbName === "string") {
+    if (typeof dbName === "string" && typeof content === "string") {
         if (db.exists(dbName)) {
             fs.writeFileSync(`${server.startDir}dbs/${dbName}/${f_schlist}`, content);
         }

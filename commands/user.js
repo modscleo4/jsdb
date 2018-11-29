@@ -15,7 +15,7 @@ const md5 = require('md5');
  * @param username {string}
  * @param password {string}
  *
- * @returns {Array}
+ * @returns {Object}
  */
 function authUser(username, password) {
     let users = table.select(

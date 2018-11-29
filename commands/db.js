@@ -4,6 +4,8 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  *
  * @type {module:fs}
+ *
+ * @todo: Run on a backup DB, then delete the original and rename
  */
 
 const fs = require('fs');
@@ -58,7 +60,7 @@ function createDBFolder(dbName) {
 /**
  * @summary
  *
- * @return {Array}
+ * @return {Object}
  */
 function readDBFile() {
     let DBList = [];
@@ -139,6 +141,7 @@ function readDBFile() {
         let stdin = process.openStdin();
 
         console.log('Insert jsdbadmin password: ');
+
         stdin.addListener("data", function (d) {
             d = d.toLocaleString().trim();
             if (d.length > 8) {
@@ -158,7 +161,7 @@ function readDBFile() {
 /**
  * @summary
  *
- * @param content {Array}
+ * @param content {string}
  */
 function writeDBFile(content) {
     if (typeof content === "string") {

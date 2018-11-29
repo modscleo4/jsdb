@@ -19,7 +19,7 @@ exports.f_seqlist = f_seqlist;
  * @param dbName {string}
  * @param schemaName {string}
  * @param seqName {string}
- * @param options {Array}
+ * @param options {Object}
  *
  * @returns {string}
  * */
@@ -31,7 +31,7 @@ function createSequence(dbName, schemaName, seqName, options = [1, 1]) {
             throw new Error(`Sequence ${schemaName}.${seqName} already exists in DB ${dbName}`);
         } else {
             SequenceList[seqName] = {'start': options[0], 'inc': options[1]};
-            writeSequenceFile(dbName, schemaName, SequenceList);
+            writeSequenceFile(dbName, schemaName, JSON.stringify(SequenceList));
 
             return `Created sequence ${schemaName}.${seqName} in DB ${dbName}.`;
         }
@@ -44,13 +44,13 @@ function createSequence(dbName, schemaName, seqName, options = [1, 1]) {
  * @param dbName {string}
  * @param schemaName {string}
  *
- * @returns {{}, Array}
+ * @returns {{}, Object}
  * */
 function readSequenceFile(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
         if (schema.exists(dbName, schemaName)) {
             if (!fs.existsSync(`${server.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`)) {
-                writeSequenceFile(dbName, JSON.stringify({}));
+                writeSequenceFile(dbName, schemaName, JSON.stringify({}));
                 return {};
             }
 
@@ -64,12 +64,12 @@ function readSequenceFile(dbName, schemaName) {
  *
  * @param dbName {string}
  * @param schemaName {string}
- * @param content {Array}
+ * @param content {string}
  * */
 function writeSequenceFile(dbName, schemaName, content) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof content === "object") {
+    if (typeof dbName === "string" && typeof schemaName === "string" && typeof content === "string") {
         if (schema.exists(dbName, schemaName)) {
-            fs.writeFileSync(`${server.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`, JSON.stringify(content));
+            fs.writeFileSync(`${server.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`, content);
         }
     }
 }
@@ -103,7 +103,7 @@ function existsSequence(dbName, schemaName, seqName) {
  * @param schemaName {string}
  * @param seqName {string}
  *
- * @returns {Array}
+ * @returns {Object}
  * */
 function readSequence(dbName, schemaName, seqName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string") {
@@ -123,7 +123,7 @@ function readSequence(dbName, schemaName, seqName) {
  * @param dbName {string}
  * @param schemaName {string}
  * @param seqName {string}
- * @param content {Array}
+ * @param content {Object}
  * */
 function updateSequence(dbName, schemaName, seqName, content) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof content === "object") {
@@ -155,7 +155,7 @@ function dropSequence(dbName, schemaName, seqName, ifExists = false) {
             let SequenceList = readSequenceFile(dbName, schemaName);
             delete(SequenceList[seqName]);
 
-            writeSequenceFile(dbName, schemaName, SequenceList);
+            writeSequenceFile(dbName, schemaName, JSON.stringify(SequenceList));
 
             return `Deleted sequence ${schemaName}.${seqName}.`;
         } else {
