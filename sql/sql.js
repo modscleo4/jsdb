@@ -215,14 +215,14 @@ function run(sql, socketIndex) {
                             options['limoffset'] = {};
                             for (let j = i + 1; j < t.length; j++) {
                                 if (t[j][0] === "NUMBER") {
-                                    options['limoffset']['limit'] = t[j][1];
+                                    options['limoffset']['limit'] = parseInt(t[j][1]);
                                 } else if (t[j][0] === "SEPARATOR") {
-                                    options['limoffset']['limit'] = t[j + 1][1];
-                                    options['limoffset']['offset'] = t[j - 1][1];
+                                    options['limoffset']['limit'] = parseInt(t[j + 1][1]);
+                                    options['limoffset']['offset'] = parseInt(t[j - 1][1]);
                                     break;
                                 } else if (t[j][0] === "OFFSET") {
-                                    options['limoffset']['limit'] = t[j - 1][1];
-                                    options['limoffset']['offset'] = t[j + 1][1];
+                                    options['limoffset']['limit'] = parseInt(t[j - 1][1]);
+                                    options['limoffset']['offset'] = parseInt(t[j + 1][1]);
                                     break;
                                 }
                             }
@@ -504,14 +504,14 @@ function run(sql, socketIndex) {
                             options['limoffset'] = {};
                             for (let j = i + 1; j < t.length; j++) {
                                 if (t[j][0] === "NUMBER") {
-                                    options['limoffset']['limit'] = t[j][1];
+                                    options['limoffset']['limit'] = parseInt(t[j][1]);
                                 } else if (t[j][0] === "SEPARATOR") {
-                                    options['limoffset']['limit'] = t[j + 1][1];
-                                    options['limoffset']['offset'] = t[j - 1][1];
+                                    options['limoffset']['limit'] = parseInt(t[j + 1][1]);
+                                    options['limoffset']['offset'] = parseInt(t[j - 1][1]);
                                     break;
                                 } else if (t[j][0] === "OFFSET") {
-                                    options['limoffset']['limit'] = t[j - 1][1];
-                                    options['limoffset']['offset'] = t[j + 1][1];
+                                    options['limoffset']['limit'] = parseInt(t[j - 1][1]);
+                                    options['limoffset']['offset'] = parseInt(t[j + 1][1]);
                                     break;
                                 }
                             }
@@ -572,14 +572,14 @@ function run(sql, socketIndex) {
                             options['limoffset'] = {};
                             for (let j = i + 1; j < t.length; j++) {
                                 if (t[j][0] === "NUMBER") {
-                                    options['limoffset']['limit'] = t[j][1];
+                                    options['limoffset']['limit'] = parseInt(t[j][1]);
                                 } else if (t[j][0] === "SEPARATOR") {
-                                    options['limoffset']['limit'] = t[j + 1][1];
-                                    options['limoffset']['offset'] = t[j - 1][1];
+                                    options['limoffset']['limit'] = parseInt(t[j + 1][1]);
+                                    options['limoffset']['offset'] = parseInt(t[j - 1][1]);
                                     break;
                                 } else if (t[j][0] === "OFFSET") {
-                                    options['limoffset']['limit'] = t[j - 1][1];
-                                    options['limoffset']['offset'] = t[j + 1][1];
+                                    options['limoffset']['limit'] = parseInt(t[j - 1][1]);
+                                    options['limoffset']['offset'] = parseInt(t[j + 1][1]);
                                     break;
                                 }
                             }
@@ -682,7 +682,35 @@ function run(sql, socketIndex) {
                             o['message'] = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === "SEQUENCES") {
+                        /*
+                        * Gets the DB name
+                        * */
+                        for (let i = 1; i < t.length; i++) {
+                            if (t[i][0] === "FROM") {
+                                dbName.set(t[i + 1][1]);
 
+                                if (typeof t[i + 2] !== "undefined" && t[i + 2][0] === "DOT") {
+                                    schemaName.set(t[i + 3][1]);
+                                }
+
+                                break;
+                            }
+                        }
+
+                        try {
+                            let a = sequence.readFile(dbName.get(), schemaName.get());
+                            let s = [];
+                            for (let key in a) {
+                                if (a.hasOwnProperty(key)) {
+                                    s.push(key);
+                                }
+                            }
+
+                            o['data'] = s;
+                        } catch (e) {
+                            o['code'] = 1;
+                            o['message'] = e.message;
+                        }
                     } else if (t[1][1].toUpperCase() === "TABLES") {
                         /*
                         * Gets the DB name

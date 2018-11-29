@@ -226,8 +226,12 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
             let limit = options['limoffset']['limit'];
             let offset = options['limoffset']['offset'];
 
-            if (typeof TableContent[limit] === "undefined") {
+            if (typeof TableContent[limit - 1] === "undefined") {
                 throw new Error("LIMIT greater than number of rows");
+            }
+
+            if (typeof TableContent[offset] === "undefined") {
+                throw new Error("OFFSET greater than number of rows");
             }
 
             TableContent = TableContent.splice(offset, limit);
@@ -593,6 +597,17 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
             let TableStruct = readTableStructure(dbName, schemaName, tableName);
             let TableIndexes = [];
 
+            let limit;
+            let offset;
+            if (typeof options['limoffset'] !== "undefined") {
+                limit = options['limoffset']['limit'];
+                offset = options['limoffset']['offset'];
+
+                if (typeof TableContent[offset] === "undefined") {
+                    throw new Error("OFFSET greater than number of rows");
+                }
+            }
+
             /*
             * Auxiliary array for WHERE
             * */
@@ -733,12 +748,18 @@ function deleteTableContent(dbName, schemaName, tableName, options) {
             let TableContent = readTableContent(dbName, schemaName, tableName);
             let TableStruct = readTableStructure(dbName, schemaName, tableName);
 
+            let limit;
+            let offset;
             if (typeof options['limoffset'] !== "undefined") {
-                let limit = options['limoffset']['limit'];
-                let offset = options['limoffset']['offset'];
+                limit = options['limoffset']['limit'];
+                offset = options['limoffset']['offset'];
 
-                if (typeof TableContent[limit] === "undefined") {
+                if (typeof TableContent[limit - 1] === "undefined") {
                     throw new Error("LIMIT greater than number of rows");
+                }
+
+                if (typeof TableContent[offset] === "undefined") {
+                    throw new Error("OFFSET greater than number of rows");
                 }
             }
 
