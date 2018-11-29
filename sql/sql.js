@@ -224,6 +224,7 @@ function run(sql, socketIndex) {
                             for (let j = i + 1; j < t.length; j++) {
                                 if (t[j][0] === "NUMBER") {
                                     options['limoffset']['limit'] = parseInt(t[j][1]);
+                                    options['limoffset']['offset'] = 0;
                                 } else if (t[j][0] === "SEPARATOR") {
                                     options['limoffset']['limit'] = parseInt(t[j + 1][1]);
                                     options['limoffset']['offset'] = parseInt(t[j - 1][1]);
@@ -513,6 +514,7 @@ function run(sql, socketIndex) {
                             for (let j = i + 1; j < t.length; j++) {
                                 if (t[j][0] === "NUMBER") {
                                     options['limoffset']['limit'] = parseInt(t[j][1]);
+                                    options['limoffset']['offset'] = 0;
                                 } else if (t[j][0] === "SEPARATOR") {
                                     options['limoffset']['limit'] = parseInt(t[j + 1][1]);
                                     options['limoffset']['offset'] = parseInt(t[j - 1][1]);
@@ -581,6 +583,7 @@ function run(sql, socketIndex) {
                             for (let j = i + 1; j < t.length; j++) {
                                 if (t[j][0] === "NUMBER") {
                                     options['limoffset']['limit'] = parseInt(t[j][1]);
+                                    options['limoffset']['offset'] = 0;
                                 } else if (t[j][0] === "SEPARATOR") {
                                     options['limoffset']['limit'] = parseInt(t[j + 1][1]);
                                     options['limoffset']['offset'] = parseInt(t[j - 1][1]);
