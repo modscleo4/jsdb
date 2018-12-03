@@ -53,11 +53,11 @@ function run(sql, socketIndex) {
         *   {
         *     "code": 0,
         *     "message": "",
-        *     "data": {
-        *       "0": {
+        *     "data": [
+        *       {
         *         "id": 1
         *       }
-        *     },
+        *     ],
         *     "sql": "SELECT * FROM adm"
         *   },
         *
@@ -177,9 +177,6 @@ function run(sql, socketIndex) {
                     for (let i = a + 1; i < t.length; i++) {
                         if (t[i][0] === "WHERE") {
                             options['where'] = "";
-                            /*
-                            * @todo: SQL WHERE parameter
-                            * */
                             for (let k = i + 1; k < t.length; k++) {
                                 /*
                                 * Stop when find something that is not on WHERE params
@@ -267,10 +264,6 @@ function run(sql, socketIndex) {
                             o['message'] = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === "TABLE") {
-                        /*
-                        * @todo Make CREATE TABLE work (need a SQL parser to do that)
-                        * */
-                        //let cols = {};
                         let tableName;
                         let a;
                         let tableStruct = {};
@@ -345,9 +338,6 @@ function run(sql, socketIndex) {
                         o['message'] = `Unrecognized command: ${o['sql']}`;
                     }
                 } else if (t[0][1].toUpperCase() === "INSERT") {
-                    /*
-                    * @todo Make INSERT INTO work (need a SQL parser to do that)
-                    * */
                     let tableName;
                     let a = 0;
                     let columns = null;
@@ -421,9 +411,6 @@ function run(sql, socketIndex) {
                         o['message'] = e.message;
                     }
                 } else if (t[0][1].toUpperCase() === "UPDATE") {
-                    /*
-                    * @todo Make SQL UPDATE
-                    * */
                     let a = 0;
                     let tableName;
                     let update = {};

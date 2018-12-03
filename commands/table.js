@@ -247,10 +247,6 @@ function writeTableContent(dbName, schemaName, tableName, content, override = fa
  * */
 function dropTable(dbName, schemaName, tableName, ifExists = false) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof ifExists === "boolean") {
-        /*
-        * @TODO: DROP TABLE
-        * */
-
         if ((ifExists && readTableFile(dbName, schemaName).indexOf(tableName) !== -1) || (!ifExists && existsTable(dbName, schemaName, tableName))) {
             let TableList = readTableFile(dbName, schemaName);
             let i = TableList.indexOf(tableName);
@@ -354,9 +350,6 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
         }
 
         if (typeof options['where'] !== "undefined") {
-            /*
-            * @todo SQL WHERE
-            * */
             for (let i = 0; i < r.length; i++) {
                 let e = options['where'];
                 for (let key in aaa[i]) {
@@ -658,9 +651,6 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
 function updateTableContent(dbName, schemaName, tableName, update, options) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof update === "object" && typeof options === "object") {
         if (existsTable(dbName, schemaName, tableName)) {
-            /*
-            * @todo: Make UPDATE command
-            * */
             let TableContent = readTableContent(dbName, schemaName, tableName);
             let TableStruct = readTableStructure(dbName, schemaName, tableName);
             let TableIndexes = [];
@@ -697,9 +687,6 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
             let b = 0;
             let c = 0;
             if (typeof options['where'] !== "undefined") {
-                /*
-                * @todo SQL WHERE
-                * */
                 for (let i = 0; i < TableContent.length; i++) {
                     let e = options['where'];
                     for (let key in aaa[i]) {
@@ -808,10 +795,6 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
  * */
 function deleteTableContent(dbName, schemaName, tableName, options) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof options === "object") {
-        /*
-        * @todo: Make DELETE command
-        * */
-
         if (existsTable(dbName, schemaName, tableName)) {
 
             let TableContent = readTableContent(dbName, schemaName, tableName);
@@ -852,9 +835,6 @@ function deleteTableContent(dbName, schemaName, tableName, options) {
             let b = 0;
             let c = 0;
             if (options['where'] !== null) {
-                /*
-                * @todo SQL WHERE
-                * */
                 for (let i = 0; i < TableContent.length; i++) {
                     let e = options['where'];
                     for (let key in aaa[i]) {
