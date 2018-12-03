@@ -8,7 +8,7 @@
 
 const fs = require('fs');
 const schema = require('./schema');
-const server = require('../server');
+const config = require('../config');
 
 const f_seqlist = 'seqlist.json';
 exports.f_seqlist = f_seqlist;
@@ -51,12 +51,12 @@ function createSequence(dbName, schemaName, seqName, options = {"start": 1, "inc
 function readSequenceFile(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
         if (schema.exists(dbName, schemaName)) {
-            if (!fs.existsSync(`${server.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`)) {
+            if (!fs.existsSync(`${config.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`)) {
                 writeSequenceFile(dbName, schemaName, JSON.stringify({}));
                 return {};
             }
 
-            return JSON.parse(fs.readFileSync(`${server.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`, 'utf8'));
+            return JSON.parse(fs.readFileSync(`${config.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`, 'utf8'));
         }
     }
 }
@@ -73,7 +73,7 @@ function readSequenceFile(dbName, schemaName) {
 function writeSequenceFile(dbName, schemaName, content) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof content === "string") {
         if (schema.exists(dbName, schemaName)) {
-            fs.writeFileSync(`${server.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`, content);
+            fs.writeFileSync(`${config.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`, content);
         }
     }
 }

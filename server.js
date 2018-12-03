@@ -7,31 +7,23 @@
  */
 
 const db = require("./commands/db");
-const schema = require("./commands/schema");
 const table = require("./commands/table");
 const user = require('./commands/user');
 const sql = require("./sql/sql");
+const config = require('./config');
 
 const net = require('net');
-const fs = require("fs");
-
-let ignAuth = false;
-exports.ignAuth = ignAuth;
-
-let sockets = [];
-exports.sockets = sockets;
+const md5 = require('md5');
 
 let server = net.createServer(function (socket) {
     socket.dbName = "jsdb";
     socket.schemaName = "public";
 
     db.readFile();
-    sockets.push(socket);
-    exports.sockets = sockets;
+    config.addSocket(socket);
 
     socket.on('end', function () {
-        sockets.splice(sockets.indexOf(socket), 1);
-        exports.sockets = socket;
+        config.removeSocket(socket);
     });
 
     let userPrivileges = null;
@@ -39,11 +31,11 @@ let server = net.createServer(function (socket) {
     socket.on('data', function (data) {
         let sqlCmd = data.toLocaleString();
 
-        if (ignAuth && sqlCmd.includes("credentials: ")) {
+        if (config.ignAuth && sqlCmd.includes("credentials: ")) {
             return;
         }
 
-        if (userPrivileges === null && !ignAuth) {
+        if (userPrivileges === null && !config.ignAuth) {
             try {
                 if (!sqlCmd.includes("credentials: ")) {
                     throw new Error("Username and password not informed");
@@ -61,7 +53,7 @@ let server = net.createServer(function (socket) {
         }
 
         try {
-            let r = sql.run(sqlCmd, sockets.indexOf(socket));
+            let r = sql.run(sqlCmd, config.sockets.indexOf(socket));
 
             if (typeof r === "object") {
                 r = JSON.stringify(r);
@@ -98,7 +90,7 @@ for (let i = 0; i < process.argv.length; i++) {
     } else if (process.argv[i] === "-p" || process.argv[i] === "--port") {
         port = parseInt(process.argv[i + 1]);
     } else if (process.argv[i] === "-N" || process.argv[i] === "--noAuth") {
-        ignAuth = true;
+        config.ignAuth = true;
     }
 }
 
@@ -113,23 +105,27 @@ if (port === 0) {
 if (address !== "" && port !== 0 && dir !== "") {
     server.listen(port, address);
     console.log(`Running server on ${address}:${port}, ${dir}`);
-    if (ignAuth) {
+    if (config.ignAuth) {
         console.log('Warning: running without authentication!');
     }
-    exports.startDir = dir;
+    config.startDir = dir;
     db.readFile();
-}
 
-exports.rmdirRSync = function rmdirRSync(path) {
-    if (fs.existsSync(path)) {
-        fs.readdirSync(path).forEach((file, index) => {
-            let curPath = `${path}/${file}`;
-            if (fs.lstatSync(curPath).isDirectory()) {
-                rmdirRSync(curPath);
+    if (!config.ignAuth && table.select('jsdb', 'public', 'users', ['*'], {"where": '\`username\` == \'jsdbadmin\''}).length === 0) {
+        let stdin = process.openStdin();
+
+        console.log('Insert jsdbadmin password: ');
+
+        stdin.addListener("data", function (d) {
+            d = d.toLocaleString().trim();
+            if (d.length > 8) {
+                stdin.removeAllListeners('data');
+
+                user.create('jsdbadmin', d, {});
+                console.log("User created.");
             } else {
-                fs.unlinkSync(curPath);
+                console.log('jsdbadmin password must be greater than 8 characters!');
             }
         });
-        fs.rmdirSync(path);
     }
-};
+}

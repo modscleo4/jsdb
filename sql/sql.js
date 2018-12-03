@@ -11,7 +11,7 @@ const schema = require("../commands/schema");
 const table = require("../commands/table");
 const sequence = require("../commands/sequence");
 const sql_parser = require("sql-parser/lib/sql_parser");
-const server = require("../server");
+const config = require("../config");
 
 const md5 = require('md5');
 
@@ -22,12 +22,12 @@ const {
 function run(sql, socketIndex) {
     let dbName = {
         get: function () {
-            return server.sockets[socketIndex].dbName;
+            return config.sockets[socketIndex].dbName;
         },
 
         set: function (dbS) {
             if (db.exists(dbS)) {
-                server.sockets[socketIndex].dbName = dbS;
+                config.sockets[socketIndex].dbName = dbS;
                 return `Using database ${dbS}.`;
             }
         }
@@ -35,12 +35,12 @@ function run(sql, socketIndex) {
 
     let schemaName = {
         get: function () {
-            return server.sockets[socketIndex].schemaName;
+            return config.sockets[socketIndex].schemaName;
         },
 
         set: function (schemaS) {
             if (schema.exists(dbName.get(), schemaS)) {
-                server.sockets[socketIndex].schemaName = schemaS;
+                config.sockets[socketIndex].schemaName = schemaS;
                 return `Changed schema to ${schemaS}.`;
             }
         }

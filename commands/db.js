@@ -11,7 +11,7 @@
 const fs = require('fs');
 const schema = require('./schema');
 const table = require('./table');
-const server = require('../server');
+const config = require('../config');
 const md5 = require('md5');
 
 const f_dblist = 'dblist.json';
@@ -50,11 +50,11 @@ function createDB(dbName) {
  */
 function createDBFolder(dbName) {
     if (typeof dbName === "string") {
-        if (!fs.existsSync(`${server.startDir}dbs/`)) {
-            fs.mkdirSync(`${server.startDir}dbs/`);
+        if (!fs.existsSync(`${config.startDir}dbs/`)) {
+            fs.mkdirSync(`${config.startDir}dbs/`);
         }
 
-        fs.mkdirSync(`${server.startDir}dbs/${dbName}`);
+        fs.mkdirSync(`${config.startDir}dbs/${dbName}`);
     }
 }
 
@@ -66,14 +66,14 @@ function createDBFolder(dbName) {
 function readDBFile() {
     let DBList = [];
 
-    if (!fs.existsSync(`${server.startDir}dbs/${f_dblist}`)) {
+    if (!fs.existsSync(`${config.startDir}dbs/${f_dblist}`)) {
         writeDBFile(JSON.stringify([]));
         return readDBFile();
     }
 
-    DBList = JSON.parse(fs.readFileSync(`${server.startDir}dbs/${f_dblist}`, 'utf8'));
+    DBList = JSON.parse(fs.readFileSync(`${config.startDir}dbs/${f_dblist}`, 'utf8'));
 
-    fs.readdirSync(`${server.startDir}dbs/`).forEach(dbName => {
+    fs.readdirSync(`${config.startDir}dbs/`).forEach(dbName => {
         if (dbName !== f_dblist) {
             if (DBList.indexOf(dbName) === -1) {
                 DBList.push(dbName);
@@ -83,7 +83,7 @@ function readDBFile() {
     });
 
     DBList.forEach(dbName => {
-        if (!fs.existsSync(`${server.startDir}dbs/${dbName}`)) {
+        if (!fs.existsSync(`${config.startDir}dbs/${dbName}`)) {
             createDBFolder(dbName);
             schema.create(dbName, "public");
         }
@@ -138,24 +138,6 @@ function readDBFile() {
                 ]
             }
         );
-
-        if (!server.ignAuth) {
-            let stdin = process.openStdin();
-
-            console.log('Insert jsdbadmin password: ');
-
-            stdin.addListener("data", function (d) {
-                d = d.toLocaleString().trim();
-                if (d.length > 8) {
-                    stdin.removeAllListeners('data');
-
-                    table.insert('jsdb', 'public', 'users', ["DEFAULT", 'jsdbadmin', md5(`${d}`), "DEFAULT", "DEFAULT"]);
-                    console.log("User created.");
-                } else {
-                    console.log('jsdbadmin password must be greater than 8 characters!');
-                }
-            });
-        }
     }
 
     return DBList;
@@ -168,11 +150,11 @@ function readDBFile() {
  */
 function writeDBFile(content) {
     if (typeof content === "string") {
-        if (!fs.existsSync(`${server.startDir}dbs/`)) {
-            fs.mkdirSync(`${server.startDir}dbs/`);
+        if (!fs.existsSync(`${config.startDir}dbs/`)) {
+            fs.mkdirSync(`${config.startDir}dbs/`);
         }
 
-        fs.writeFileSync(`${server.startDir}dbs/${f_dblist}`, content);
+        fs.writeFileSync(`${config.startDir}dbs/${f_dblist}`, content);
     }
 }
 
@@ -192,7 +174,7 @@ function dropDB(dbName, ifExists = false) {
             let i = DBList.indexOf(dbName);
             DBList.splice(i, 1);
             writeDBFile(JSON.stringify(DBList));
-            server.rmdirRSync(`${server.startDir}dbs/${dbName}/`);
+            config.rmdirRSync(`${config.startDir}dbs/${dbName}/`);
 
             return `Dropped database ${dbName}.`;
         } else {

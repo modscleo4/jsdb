@@ -1,4 +1,9 @@
-const server = require('./server');
+const config = require('./config');
+
+/*
+* Ignore authentication for test purposes
+* */
+config.ignAuth = true;
 
 const db = require("./commands/db");
 const schema = require("./commands/schema");
@@ -10,11 +15,6 @@ const sql = require("./sql/sql");
 const md5 = require('md5');
 
 const assert = require('assert');
-
-/*
-* Ignore authentication for test purposes
-* */
-server.ignAuth = true;
 
 describe('DB', function () {
     describe('#createDB()', function () {
@@ -390,56 +390,8 @@ describe('Table', function () {
 
 describe('User', function () {
     let prev;
-    let exists = true;
 
     before(function () {
-        try {
-            db.exists('jsdb');
-        } catch (e) {
-            db.create('jsdb');
-            exists = false;
-
-            table.create('jsdb', 'public', 'users',
-                {
-                    'id': {
-                        'type': 'number',
-                        'unique': true,
-                        'autoIncrement': true,
-                        'notNull': true
-                    },
-
-                    'username': {
-                        'type': 'string',
-                        'unique': true,
-                        'notNull': true
-                    },
-
-                    'password': {
-                        'type': 'string',
-                        'notNull': true
-                    },
-
-                    'valid': {
-                        'type': 'boolean',
-                        'default': true,
-                        'notNull': true
-                    },
-
-                    'privileges': {
-                        'type': 'object',
-                        'default': {},
-                        'notNull': false
-                    },
-                },
-
-                {
-                    'primaryKey': [
-                        'id'
-                    ]
-                }
-            );
-        }
-
         let passwd = 'jsdbadmin';
         prev = sequence.read('jsdb', 'public', 'users_id_seq');
         table.insert('jsdb', 'public', 'users', ["DEFAULT", 'internaluser:test', md5(`${passwd}`), "DEFAULT", JSON.stringify({"create": true})]);
@@ -452,11 +404,7 @@ describe('User', function () {
     });
 
     after(function () {
-        if (!exists) {
-            db.drop('jsdb');
-        } else {
-            table.delete('jsdb', 'public', 'users', {"where": '`username` == \'internaluser:test\''});
-            sequence.update('jsdb', 'public', 'users_id_seq', prev);
-        }
+        table.delete('jsdb', 'public', 'users', {"where": '`username` == \'internaluser:test\''});
+        sequence.update('jsdb', 'public', 'users_id_seq', prev);
     });
 });

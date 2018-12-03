@@ -19,26 +19,44 @@ const md5 = require('md5');
  * @throws {Error} If the username or the password is wrong, throw an error
  */
 function authUser(username, password) {
-    let users = table.select(
-        'jsdb',
-        'public',
-        'users',
-        ["username", "password", "privileges"],
-        {
-            "where": `\`username\` == '${username}'`,
-            "orderby": [{"column": 'username', "mode": 'ASC'}]
+    if (typeof username === "string" && typeof password === "string") {
+        let users = table.select(
+            'jsdb',
+            'public',
+            'users',
+            ["username", "password", "privileges"],
+            {
+                "where": `\`username\` == '${username}'`,
+                "orderby": [{"column": 'username', "mode": 'ASC'}]
+            }
+        );
+
+        if (users.length === 0) {
+            throw new Error(`AUTHERR: Invalid username: ${username}`);
         }
-    );
 
-    if (users.length === 0) {
-        throw new Error(`AUTHERR: Invalid username: ${username}`);
+        if (users[0]['password'] === md5(password)) {
+            return users[0]['privileges'];
+        } else {
+            throw new Error("AUTHERR: Wrong password");
+        }
     }
+}
 
-    if (users[0]['password'] === md5(password)) {
-        return users[0]['privileges'];
-    } else {
-        throw new Error("AUTHERR: Wrong password");
+/**
+ * @summary Creates a new user
+ *
+ * @param username {string} The username
+ * @param password {string} The password
+ * @param privileges {Object} The user privileges
+ *
+ * @throws {Error} If the user already exists, throw an error
+ */
+function createUser(username, password, privileges) {
+    if (typeof username === "string" && typeof password === "string" && typeof privileges === "object") {
+        table.insert('jsdb', 'public', 'users', ["DEFAULT", username, md5(`${password}`), "DEFAULT", JSON.stringify(privileges)]);
     }
 }
 
 exports.auth = authUser;
+exports.create = createUser;

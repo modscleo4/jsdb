@@ -12,7 +12,7 @@ const fs = require('fs');
 const db = require('./db');
 const schema = require('./schema');
 const sequence = require('./sequence');
-const server = require('../server');
+const config = require('../config');
 
 const f_tablelist = 'tablelist.json';
 const f_tablestruct = 'tablestruct.json';
@@ -79,12 +79,12 @@ function createTable(dbName, schemaName, tableName, tableStruct, metadata = null
 function readTableStructure(dbName, schemaName, tableName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
         if (existsTable(dbName, schemaName, tableName)) {
-            if (!fs.existsSync(`${server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tablestruct}`)) {
+            if (!fs.existsSync(`${config.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tablestruct}`)) {
                 dropTable(dbName, schemaName, tableName, true);
                 throw new Error(`Structure for table ${schemaName}.${tableName} is missing. Table dropped`);
             }
 
-            return JSON.parse(fs.readFileSync(`${server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tablestruct}`, 'utf8'));
+            return JSON.parse(fs.readFileSync(`${config.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tablestruct}`, 'utf8'));
         }
     }
 }
@@ -100,7 +100,7 @@ function readTableStructure(dbName, schemaName, tableName) {
 function writeTableStructure(dbName, schemaName, tableName, tableStruct) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof tableStruct === "string") {
         if (existsTable(dbName, schemaName, tableName)) {
-            fs.writeFileSync(`${server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tablestruct}`, tableStruct);
+            fs.writeFileSync(`${config.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tablestruct}`, tableStruct);
         }
     }
 }
@@ -117,14 +117,14 @@ function writeTableStructure(dbName, schemaName, tableName, tableStruct) {
 function readTableFile(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
         if (schema.exists(dbName, schemaName)) {
-            if (!fs.existsSync(`${server.startDir}dbs/${dbName}/${schemaName}/${f_tablelist}`)) {
+            if (!fs.existsSync(`${config.startDir}dbs/${dbName}/${schemaName}/${f_tablelist}`)) {
                 writeTableFile(dbName, schemaName, JSON.stringify([]));
                 return [];
             }
 
-            let TableList = JSON.parse(fs.readFileSync(`${server.startDir}dbs/${dbName}/${schemaName}/${f_tablelist}`, 'utf8'));
+            let TableList = JSON.parse(fs.readFileSync(`${config.startDir}dbs/${dbName}/${schemaName}/${f_tablelist}`, 'utf8'));
 
-            fs.readdirSync(`${server.startDir}dbs/${dbName}/${schemaName}/`).forEach(tableName => {
+            fs.readdirSync(`${config.startDir}dbs/${dbName}/${schemaName}/`).forEach(tableName => {
                 if (tableName !== f_tablelist && tableName !== sequence.f_seqlist) {
                     if (TableList.indexOf(tableName) === -1) {
                         TableList.push(tableName);
@@ -134,7 +134,7 @@ function readTableFile(dbName, schemaName) {
             });
 
             TableList.forEach(tableName => {
-                if (!fs.existsSync(`${server.startDir}dbs/${dbName}/${schemaName}/${tableName}/`)) {
+                if (!fs.existsSync(`${config.startDir}dbs/${dbName}/${schemaName}/${tableName}/`)) {
                     createTableFolder(dbName, schemaName, tableName);
                 }
             });
@@ -156,7 +156,7 @@ function readTableFile(dbName, schemaName) {
 function writeTableFile(dbName, schemaName, content) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof content === "string") {
         if (schema.exists(dbName, schemaName)) {
-            fs.writeFileSync(`${server.startDir}dbs/${dbName}/${schemaName}/${f_tablelist}`, content);
+            fs.writeFileSync(`${config.startDir}dbs/${dbName}/${schemaName}/${f_tablelist}`, content);
         }
     }
 }
@@ -173,8 +173,8 @@ function writeTableFile(dbName, schemaName, content) {
 function createTableFolder(dbName, schemaName, tableName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
         if (schema.exists(dbName, schemaName)) {
-            if (!fs.existsSync(`${server.startDir}dbs/${dbName}/${schemaName}/${tableName}/`)) {
-                fs.mkdirSync(`${server.startDir}dbs/${dbName}/${schemaName}/${tableName}`);
+            if (!fs.existsSync(`${config.startDir}dbs/${dbName}/${schemaName}/${tableName}/`)) {
+                fs.mkdirSync(`${config.startDir}dbs/${dbName}/${schemaName}/${tableName}`);
             }
         }
     }
@@ -193,7 +193,7 @@ function createTableFolder(dbName, schemaName, tableName) {
 function readTableContent(dbName, schemaName, tableName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
         if (existsTable(dbName, schemaName, tableName)) {
-            return JSON.parse(fs.readFileSync(`${server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tabledata}`, 'utf8'));
+            return JSON.parse(fs.readFileSync(`${config.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tabledata}`, 'utf8'));
         }
     }
 }
@@ -216,7 +216,7 @@ function writeTableContent(dbName, schemaName, tableName, content, override = fa
         /*
         * Checks if tabledata.json exists to avoid loops
         * */
-        if (fs.existsSync(`${server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tabledata}`)) {
+        if (fs.existsSync(`${config.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tabledata}`)) {
             TableContent = readTableContent(dbName, schemaName, tableName);
         }
 
@@ -228,7 +228,7 @@ function writeTableContent(dbName, schemaName, tableName, content, override = fa
             }
         }
 
-        fs.writeFileSync(`${server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tabledata}`, JSON.stringify(TableContent));
+        fs.writeFileSync(`${config.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tabledata}`, JSON.stringify(TableContent));
 
         return "Line inserted.";
     }
@@ -252,7 +252,7 @@ function dropTable(dbName, schemaName, tableName, ifExists = false) {
             let i = TableList.indexOf(tableName);
             TableList.splice(i, 1);
             writeTableFile(dbName, schemaName, JSON.stringify(TableList));
-            server.rmdirRSync(`${server.startDir}dbs/${dbName}/${schemaName}/${tableName}/`);
+            config.rmdirRSync(`${config.startDir}dbs/${dbName}/${schemaName}/${tableName}/`);
 
             return `Dropped table ${tableName}.`;
         } else {
