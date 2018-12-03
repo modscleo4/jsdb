@@ -1,5 +1,5 @@
 /**
- * @summary
+ * @summary This is the main script of JSDB
  *
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  *
@@ -14,6 +14,9 @@ const sql = require("./sql/sql");
 
 const net = require('net');
 const fs = require("fs");
+
+let ignAuth = false;
+exports.ignAuth = ignAuth;
 
 let sockets = [];
 exports.sockets = sockets;
@@ -36,7 +39,7 @@ let server = net.createServer(function (socket) {
     socket.on('data', function (data) {
         let sqlCmd = data.toLocaleString();
 
-        if (userPrivileges === null) {
+        if (userPrivileges === null && !ignAuth) {
             try {
                 if (!sqlCmd.includes("credentials: ")) {
                     throw new Error("Username and password not informed");
@@ -90,6 +93,8 @@ for (let i = 0; i < process.argv.length; i++) {
         dir = process.argv[i + 1];
     } else if (process.argv[i] === "-p") {
         port = parseInt(process.argv[i + 1]);
+    } else if (process.argv[i] === "-N" || process.argv[i] === "--noAuth") {
+        ignAuth = true;
     }
 }
 

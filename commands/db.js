@@ -1,5 +1,5 @@
 /**
- * @summary
+ * @summary Contains functions to interact with DBs, like CREATE and DROP
  *
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  *
@@ -17,11 +17,12 @@ const md5 = require('md5');
 const f_dblist = 'dblist.json';
 
 /**
- * @summary
+ * @summary Create a DB
  *
- * @param dbName {string}
+ * @param dbName {string} The name of DB
  *
- * @return {string}
+ * @returns {string} If everything runs ok, returns 'Created DB ${dbName}.'
+ * @throws {Error} If the DB already exists, throw an error
  */
 function createDB(dbName) {
     if (typeof dbName === "string") {
@@ -43,9 +44,9 @@ function createDB(dbName) {
 }
 
 /**
- * @summary
+ * @summary Create the folder for the DB
  *
- * @param dbName {string}
+ * @param dbName {string} The name of DB
  */
 function createDBFolder(dbName) {
     if (typeof dbName === "string") {
@@ -58,9 +59,9 @@ function createDBFolder(dbName) {
 }
 
 /**
- * @summary
+ * @summary Reads the DB list file
  *
- * @return {Object}
+ * @returns {Object} Returns a indexed Object containing all the DBs
  */
 function readDBFile() {
     let DBList = [];
@@ -138,30 +139,32 @@ function readDBFile() {
             }
         );
 
-        let stdin = process.openStdin();
+        if (!server.ignAuth) {
+            let stdin = process.openStdin();
 
-        console.log('Insert jsdbadmin password: ');
+            console.log('Insert jsdbadmin password: ');
 
-        stdin.addListener("data", function (d) {
-            d = d.toLocaleString().trim();
-            if (d.length > 8) {
-                stdin.removeAllListeners('data');
+            stdin.addListener("data", function (d) {
+                d = d.toLocaleString().trim();
+                if (d.length > 8) {
+                    stdin.removeAllListeners('data');
 
-                table.insert('jsdb', 'public', 'users', ["DEFAULT", 'jsdbadmin', md5(`${d}`), "DEFAULT", "DEFAULT"]);
-                console.log("User created.");
-            } else {
-                console.log('jsdbadmin password must be greater than 8 characters!');
-            }
-        });
+                    table.insert('jsdb', 'public', 'users', ["DEFAULT", 'jsdbadmin', md5(`${d}`), "DEFAULT", "DEFAULT"]);
+                    console.log("User created.");
+                } else {
+                    console.log('jsdbadmin password must be greater than 8 characters!');
+                }
+            });
+        }
     }
 
     return DBList;
 }
 
 /**
- * @summary
+ * @summary Writes the DB list file
  *
- * @param content {string}
+ * @param content {string} A JSON string of the indexed Object containing all the DBs
  */
 function writeDBFile(content) {
     if (typeof content === "string") {
@@ -174,12 +177,13 @@ function writeDBFile(content) {
 }
 
 /**
- * @summary
+ * @summary Drops a DB
  *
- * @param dbName {string}
- * @param ifExists {boolean}
+ * @param dbName {string} The name of DB
+ * @param ifExists {boolean} If true, doesn't throw an error when the DB does not exist
  *
- * @return {string}
+ * @returns {string} If everything runs without errors, return 'Dropped database ${dbName}.'
+ * @throws {Error} If the DB does not exist and ifExists is false, throw an error
  */
 function dropDB(dbName, ifExists = false) {
     if (typeof dbName === "string" && typeof ifExists === "boolean") {
@@ -198,11 +202,12 @@ function dropDB(dbName, ifExists = false) {
 }
 
 /**
- * @summary
+ * @summary Check if the DB exists
  *
- * @param dbName {string}
+ * @param dbName {string} The name of DB
  *
- * @return {boolean}
+ * @returns {boolean} Return true if the DB exists
+ * @throws {Error} If the DB does not exist, throw an error
  */
 function existsDB(dbName) {
     if (typeof dbName === "string") {

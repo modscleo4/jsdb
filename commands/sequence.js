@@ -1,5 +1,5 @@
 /**
- * @summary
+ * @summary Contains functions to interact with sequences, like CREATE and UPDATE
  *
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  *
@@ -14,23 +14,24 @@ const f_seqlist = 'seqlist.json';
 exports.f_seqlist = f_seqlist;
 
 /**
- * @summary
+ * @summary Create a sequence
  *
- * @param dbName {string}
- * @param schemaName {string}
- * @param seqName {string}
- * @param options {Object}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param seqName {string} The sequence name
+ * @param options {Object} The number to the sequence starts and the incremental
  *
- * @returns {string}
+ * @returns {string} If everything runs ok, returns 'Created sequence ${schemaName}.${seqName} in DB ${dbName}.'
+ * @throws {Error} If the sequence already exists, throw an error
  * */
-function createSequence(dbName, schemaName, seqName, options = [1, 1]) {
+function createSequence(dbName, schemaName, seqName, options = {"start": 1, "inc": 1}) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof  options === "object") {
         let SequenceList = readSequenceFile(dbName, schemaName);
 
         if (SequenceList.hasOwnProperty(seqName)) {
             throw new Error(`Sequence ${schemaName}.${seqName} already exists in DB ${dbName}`);
         } else {
-            SequenceList[seqName] = {'start': options[0], 'inc': options[1]};
+            SequenceList[seqName] = {'start': options.start, 'inc': options.inc};
             writeSequenceFile(dbName, schemaName, JSON.stringify(SequenceList));
 
             return `Created sequence ${schemaName}.${seqName} in DB ${dbName}.`;
@@ -39,12 +40,13 @@ function createSequence(dbName, schemaName, seqName, options = [1, 1]) {
 }
 
 /**
- * @summary
+ * @summary Reads the sequences list file
  *
- * @param dbName {string}
- * @param schemaName {string}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
  *
- * @returns {{}, Object}
+ * @returns {Object} Returns a named Object containing all the sequences
+ * @throws {Error} If the schema does not exist, throw an error
  * */
 function readSequenceFile(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
@@ -60,11 +62,13 @@ function readSequenceFile(dbName, schemaName) {
 }
 
 /**
- * @summary
+ * @summary Writes the sequences list file
  *
- * @param dbName {string}
- * @param schemaName {string}
- * @param content {string}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param content {string} A JSON string of the named Object containing all the sequences
+ *
+ * @throws {Error} If the schema does not exist, throw an error
  * */
 function writeSequenceFile(dbName, schemaName, content) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof content === "string") {
@@ -75,13 +79,14 @@ function writeSequenceFile(dbName, schemaName, content) {
 }
 
 /**
- * @summary
+ * @summary Check if the sequence exists
  *
- * @param dbName {string}
- * @param schemaName {string}
- * @param seqName {string}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param seqName {string} The sequence name
  *
- * @returns {boolean}
+ * @returns {boolean} Return true if the sequence exists
+ * @throws {Error} If the schema/sequence does not exist, throw an error
  * */
 function existsSequence(dbName, schemaName, seqName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string") {
@@ -97,61 +102,66 @@ function existsSequence(dbName, schemaName, seqName) {
 }
 
 /**
- * @summary
+ * @summary This function reads the sequence file and returns the properties from the desired sequence
  *
- * @param dbName {string}
- * @param schemaName {string}
- * @param seqName {string}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param seqName {string} The sequence name
  *
- * @returns {Object}
+ * @returns {Object} Returns a named Object with the keys start and inc from the sequence
+ * @throws {Error} If the sequence does not exist, throw an error
  * */
 function readSequence(dbName, schemaName, seqName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string") {
-        let SequenceList = readSequenceFile(dbName, schemaName);
+        if (existsSequence(dbName, schemaName, seqName)) {
+            let SequenceList = readSequenceFile(dbName, schemaName);
 
-        if (SequenceList.hasOwnProperty(seqName)) {
             return SequenceList[seqName];
-        } else {
-            throw new Error(`Sequence ${schemaName}.${seqName} does not exist.`);
         }
     }
 }
 
 /**
- * @summary
+ * @summary This is the sequence UPDATE function scope
  *
- * @param dbName {string}
- * @param schemaName {string}
- * @param seqName {string}
- * @param content {Object}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param seqName {string} The sequence name
+ * @param content {Object} A named Object containing the start and inc keys
+ *
+ * @returns {string} Returns 'Updated sequence ${seqName}.' if no errors happened
+ * @throws {Error} If the sequence does not exist, throw an error
  * */
 function updateSequence(dbName, schemaName, seqName, content) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof content === "object") {
-        let SequenceList;
+        if (existsSequence(dbName, schemaName, seqName)) {
+            let SequenceList = readSequenceFile(dbName, schemaName);
 
-        if (typeof (SequenceList = readSequenceFile(dbName, schemaName)) !== "undefined") {
             if (content !== null) {
                 SequenceList[seqName] = content;
             }
-        }
 
-        writeSequenceFile(dbName, schemaName, SequenceList);
+            writeSequenceFile(dbName, schemaName, JSON.stringify(SequenceList));
+
+            return `Updated sequence ${seqName}.`;
+        }
     }
 }
 
 /**
- * @summary
+ * @summary Drops a sequence from the schema
  *
- * @param dbName {string}
- * @param schemaName {string}
- * @param seqName {string}
- * @param ifExists {boolean}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param seqName {string} The sequence name
+ * @param ifExists {boolean} If true, doesn't throw an error when the sequence does not exist
  *
- * @returns {string}
+ * @returns {string} If everything runs without errors, return 'Deleted sequence {seqName}'
+ * @throws {Error} If the sequence does not exist and ifExists is false, throw an error
  * */
 function dropSequence(dbName, schemaName, seqName, ifExists = false) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof ifExists === "boolean") {
-        if ((ifExists && readSequenceFile(dbName, schemaName).indexOf(seqName) !== -1) || (!ifExists && existsSequence(dbName, schemaName, seqName))) {
+        if ((ifExists && readSequenceFile(dbName, schemaName).hasOwnProperty(seqName)) || (!ifExists && existsSequence(dbName, schemaName, seqName))) {
             let SequenceList = readSequenceFile(dbName, schemaName);
             delete(SequenceList[seqName]);
 

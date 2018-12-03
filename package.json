@@ -3,6 +3,9 @@
   "description": "A simple database manager written in JavaScript",
   "version": "1.0.0",
   "bin": "./bin/jsdb",
+  "scripts": {
+    "test": "mocha"
+  },
   "author": {
     "name": "Dhiego Cassiano Fogaça Barbosa",
     "email": "modscleo4@outlook.com"
@@ -14,6 +17,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "md5": "^2.2.1",
+    "mocha": "^5.2.0",
     "perf_hooks": "0.0.1",
     "sql-parser": "^0.5.0"
   },

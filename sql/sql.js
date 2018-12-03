@@ -1,5 +1,5 @@
 /**
- * @summary
+ * @summary This is the script that parses the SQL
  *
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  *
@@ -609,7 +609,7 @@ function run(sql, socketIndex) {
                         let ifExists = false;
 
                         /*
-                        * Gets the table name
+                        * Gets the DB name
                         * */
                         for (let i = 1; i < t.length; i++) {
                             if (t[i][1].toUpperCase() === "DATABASE") {
@@ -632,7 +632,32 @@ function run(sql, socketIndex) {
                             o['message'] = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === "SCHEMA") {
+                        let a;
+                        let ifExists = false;
 
+                        /*
+                        * Gets the schema name
+                        * */
+                        for (let i = 1; i < t.length; i++) {
+                            if (t[i][1].toUpperCase() === "SCHEMA") {
+                                a = i + 1;
+                                schemaName.set(t[i + 1][1]);
+                            }
+
+                            if (t[i][1].toUpperCase() === "IF" && t[i + 1][1].toUpperCase() === "EXISTS") {
+                                a = i + 2;
+                                schemaName.set(t[i + 2][1]);
+                                ifExists = true;
+                                break;
+                            }
+                        }
+
+                        try {
+                            o['data'] = schema.drop(dbName.get(), schemaName.get(), ifExists);
+                        } catch (e) {
+                            o['code'] = 1;
+                            o['message'] = e.message;
+                        }
                     } else if (t[1][1].toUpperCase() === "SEQUENCE") {
 
                     } else if (t[1][1].toUpperCase() === "TABLE") {

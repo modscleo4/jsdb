@@ -1,5 +1,5 @@
 /**
- * @summary
+ * @summary Contains functions to interact with users
  *
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  *
@@ -10,12 +10,13 @@ const table = require("./table");
 const md5 = require('md5');
 
 /**
- * @summary
+ * @summary Authenticates the user
  *
- * @param username {string}
- * @param password {string}
+ * @param username {string} The username
+ * @param password {string} The matching password
  *
- * @returns {Object}
+ * @returns {Object} If the username and the provided password matches, returns all the user privileges
+ * @throws {Error} If the username or the password is wrong, throw an error
  */
 function authUser(username, password) {
     let users = table.select(

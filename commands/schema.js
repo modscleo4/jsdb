@@ -1,5 +1,5 @@
 /**
- * @summary
+ * @summary Contains functions to interact with schemas, like CREATE and DROP
  *
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  *
@@ -17,12 +17,13 @@ const f_schlist = 'schlist.json';
 
 
 /**
- * @summary
+ * @summary Create a schema
  *
- * @param dbName {string}
- * @param schemaName {string}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
  *
- * @return {string}
+ * @returns {string} If everything runs ok, returns 'Created schema ${schemaName} in DB ${dbName}.'
+ * @throws {Error} If the schema already exists, throw an error
  */
 function createSchema(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
@@ -35,16 +36,18 @@ function createSchema(dbName, schemaName) {
             writeSchemaFile(dbName, JSON.stringify(SCHList));
             createSchemaFolder(dbName, schemaName);
 
-            return `Created schema ${schemaName}`;
+            return `Created schema ${schemaName} in DB ${dbName}.`;
         }
     }
 }
 
 /**
- * @summary
+ * @summary Create the folder for the schema
  *
- * @param dbName {string}
- * @param schemaName {string}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ *
+ * @throws {Error} If the DB does not exist, throw an error
  */
 function createSchemaFolder(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
@@ -57,11 +60,12 @@ function createSchemaFolder(dbName, schemaName) {
 }
 
 /**
- * @summary
+ * @summary Reads the schemas list file
  *
- * @param dbName {string}
+ * @param dbName {string} The name of DB
  *
- * @returns {Object}
+ * @returns {Object} Returns a indexed Object containing all the schemas
+ * @throws {Error} If the DB does not exist, throw an error
  */
 function readSchemaFile(dbName) {
     if (typeof dbName === "string") {
@@ -99,10 +103,12 @@ function readSchemaFile(dbName) {
 }
 
 /**
- * @summary
+ * @summary Writes the schemas list file
  *
- * @param dbName {string}
- * @param content {string}
+ * @param dbName {string} The name of DB
+ * @param content {string} A JSON string of the indexed Object containing all the schemas
+ *
+ * @throws {Error} If the DB does not exist, throw an error
  */
 function writeSchemaFile(dbName, content) {
     if (typeof dbName === "string" && typeof content === "string") {
@@ -113,12 +119,39 @@ function writeSchemaFile(dbName, content) {
 }
 
 /**
- * @summary
+ * @summary Drops a schema from DB
  *
- * @param dbName {string}
- * @param schemaName {string}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param ifExists {boolean} If true, doesn't throw an error when the schema does not exist
  *
- * @return {boolean}
+ * @returns {string} If everything runs without errors, return 'Dropped schema ${schemaName}.'
+ * @throws {Error} If the schema does not exist and ifExists is false, throw an error
+ */
+function dropSchema(dbName, schemaName, ifExists = false) {
+    if (typeof dbName === "string" && typeof schemaName === "string" && typeof ifExists === "boolean") {
+        if ((ifExists && readSchemaFile(dbName).indexOf(schemaName) !== -1) || (!ifExists && existsSchema(dbName, schemaName))) {
+            let SCHList = readSchemaFile(dbName);
+            let i = SCHList.indexOf(schemaName);
+            SCHList.splice(i, 1);
+            writeSchemaFile(dbName, JSON.stringify(SCHList));
+            server.rmdirRSync(`${server.startDir}dbs/${dbName}/${schemaName}/`);
+
+            return `Dropped schema ${schemaName}.`;
+        } else {
+            return `Schema ${schemaName} does not exist.`;
+        }
+    }
+}
+
+/**
+ * @summary Check if the schema exists
+ *
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ *
+ * @returns {boolean} Return true if the schema exists
+ * @throws {Error} If the schema does not exist, throw an error
  */
 function existsSchema(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
@@ -138,5 +171,7 @@ exports.createFolder = createSchemaFolder;
 
 exports.readFile = readSchemaFile;
 exports.writeFile = writeSchemaFile;
+
+exports.drop = dropSchema;
 
 exports.exists = existsSchema;

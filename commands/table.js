@@ -21,20 +21,17 @@ const f_tabledata = 'tabledata.json';
 exports.f_tablestruct = f_tablestruct;
 exports.f_tabledata = f_tabledata;
 
-/*
-* @todo: Run on a backup table, then delete the original and rename
-* */
-
 /**
  * @summary Create a table
  *
- * @param dbName {string} The name of database
- * @param schemaName {string} The schema name
- * @param tableName {string} The name of the table
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param tableName {string} The table name
  * @param tableStruct {Object} Named Object containing the structure for the table
  * @param metadata {Object} Some table metadata, like the primary key <optional>
  *
- * @returns {string} If OK, returns a string
+ * @returns {string} If OK, returns 'Created table ${schemaName}.${tableName} in DB ${dbName}'
+ * @throws {Error} If the table already exists, throw an error
  * */
 function createTable(dbName, schemaName, tableName, tableStruct, metadata = null) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof tableStruct === "object" && typeof metadata === "object") {
@@ -70,13 +67,14 @@ function createTable(dbName, schemaName, tableName, tableStruct, metadata = null
 }
 
 /**
- * @summary
+ * @summary Reads the structure of the table
  *
- * @param dbName {string} The DB name
+ * @param dbName {string} The name of DB
  * @param schemaName {string} The name of the schema
- * @param tableName {string} The name of the table
+ * @param tableName {string} The table name
  *
  * @returns {Object} Return the structure of the table in a named Object
+ * @throws {Error} If the table does not exist, throw an error
  * */
 function readTableStructure(dbName, schemaName, tableName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
@@ -92,12 +90,12 @@ function readTableStructure(dbName, schemaName, tableName) {
 }
 
 /**
- * @summary
+ * @summary Writes the structure of the table
  *
- * @param dbName {string}
- * @param schemaName {string}
- * @param tableName {string}
- * @param tableStruct {string}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param tableName {string} The table name
+ * @param tableStruct {string} Named Object containing the structure for the table
  * */
 function writeTableStructure(dbName, schemaName, tableName, tableStruct) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof tableStruct === "string") {
@@ -108,12 +106,13 @@ function writeTableStructure(dbName, schemaName, tableName, tableStruct) {
 }
 
 /**
- * @summary
+ * @summary Reads the tables list file
  *
- * @param dbName {string}
- * @param schemaName {string}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
  *
- * @returns {Object}
+ * @returns {Object} Returns a indexed Object containing all the tables
+ * @throws {Error} If the schema does not exist, throw an error
  */
 function readTableFile(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
@@ -146,11 +145,13 @@ function readTableFile(dbName, schemaName) {
 }
 
 /**
- * @summary
+ * @summary Write the tables list file
  *
- * @param dbName {string}
- * @param schemaName {string}
- * @param content {string}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param content {string} a JSON string of the indexed Object containing all the tables
+ *
+ * @throws {Error} If the schema does not exist, throw an error
  */
 function writeTableFile(dbName, schemaName, content) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof content === "string") {
@@ -161,11 +162,13 @@ function writeTableFile(dbName, schemaName, content) {
 }
 
 /**
- * @summary
+ * @summary Create the folder for the table
  *
- * @param dbName {string}
- * @param schemaName {string}
- * @param tableName {string}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param tableName {string} The table name
+ *
+ * @throws {Error} If the schema does not exist, throw an error
  * */
 function createTableFolder(dbName, schemaName, tableName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
@@ -178,13 +181,14 @@ function createTableFolder(dbName, schemaName, tableName) {
 }
 
 /**
- * @summary
+ * @summary Reads the table content from the file
  *
- * @param dbName {string}
- * @param schemaName {string}
- * @param tableName {string}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param tableName {string} The table name
  *
- * @returns {Object}
+ * @returns {Object} Returns a indexed Object containing the data in the table
+ * @throws {Error} If the table does not exist, throw an error
  * */
 function readTableContent(dbName, schemaName, tableName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
@@ -195,15 +199,15 @@ function readTableContent(dbName, schemaName, tableName) {
 }
 
 /**
- * @summary
+ * @summary Writes the table content to the file
  *
- * @param dbName {string}
- * @param schemaName {string}
- * @param tableName {string}
- * @param content {Object}
- * @param override {boolean}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param tableName {string} The table name
+ * @param content {Object} Indexed Object containing the data in the table
+ * @param override {boolean} If true, overrides the existing table data
  *
- * @returns {string}
+ * @returns {string} If Ok, returns 'Line inserted.'
  * */
 function writeTableContent(dbName, schemaName, tableName, content, override = false) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof content === "object" && typeof override === "boolean") {
@@ -231,14 +235,15 @@ function writeTableContent(dbName, schemaName, tableName, content, override = fa
 }
 
 /**
- * @summary
+ * @summary Drops a table from the schema
  *
- * @param dbName {string}
- * @param schemaName {string}
- * @param tableName {string}
- * @param ifExists {boolean}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param tableName {string} The table name
+ * @param ifExists {boolean} If true, doesn't throw an error when the table does not exist
  *
- * @returns {string}
+ * @returns {string} If everything runs without errors, return 'Dropped table {tablename}"
+ * @throws {Error} If the table does not exist and ifExists is false, throw an error
  * */
 function dropTable(dbName, schemaName, tableName, ifExists = false) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof ifExists === "boolean") {
@@ -255,7 +260,7 @@ function dropTable(dbName, schemaName, tableName, ifExists = false) {
 
             return `Dropped table ${tableName}.`;
         } else {
-            return `Table ${tableName} does not exist`;
+            return `Table ${schemaName}.${tableName} does not exist`;
         }
     }
 }
@@ -270,6 +275,7 @@ function dropTable(dbName, schemaName, tableName, ifExists = false) {
  * @param options {Object} Options like WHERE, ORDER BY, etc.
  *
  * @returns {Object} returns an indexed Object with multiple named Objects containg the data of each cell
+ * @throws {Error} If the table does not exist, throw an error
  * */
 function selectTableContent(dbName, schemaName, tableName, columns, options) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof columns === "object" && typeof options === "object") {
@@ -452,7 +458,8 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
  * @param content {Object} The values to insert
  * @param columns {Object} The columns of content and the order (optional)
  *
- * @returns {string} If inserted, returns a string
+ * @returns {string} If inserted, return 'Line inserted.'
+ * @throws {Error} If the table does not exist, throw an error
  * */
 function insertTableContent(dbName, schemaName, tableName, content, columns = null) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof content === "object" && typeof columns === "object") {
@@ -646,6 +653,7 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
  * @param options {Object} Options like WHERE, ORDER BY, etc.
  *
  * @returns {string} Returns a string containing the count of affected rows
+ * @throws {Error} If the table does not exist, throw an error
  * */
 function updateTableContent(dbName, schemaName, tableName, update, options) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof update === "object" && typeof options === "object") {
@@ -796,6 +804,7 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
  * @param options {Object} Options like WHERE, ORDER BY, etc.
  *
  * @returns {string} Returns a string containing the count of affected rows
+ * @throws {Error} If the table does not exist, throw an error
  * */
 function deleteTableContent(dbName, schemaName, tableName, options) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof options === "object") {
@@ -890,13 +899,14 @@ function deleteTableContent(dbName, schemaName, tableName, options) {
 }
 
 /**
- * @summary
+ * @summary Check if the table exists
  *
- * @param dbName {string}
- * @param schemaName {string}
- * @param tableName {string}
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param tableName {string} The table name
  *
- * @return {boolean}
+ * @returns {boolean} Return true if the table exists
+ * @throws {Error} If the table does not exist, throw an error
  */
 function existsTable(dbName, schemaName, tableName) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
