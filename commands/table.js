@@ -437,6 +437,9 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
             r = r.sort(sorting(options['orderby']));
         }
 
+        if (typeof options['groupby'] !== "undefined") {
+
+        }
 
         return r;
     }

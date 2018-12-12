@@ -15,7 +15,7 @@ const md5 = require('md5');
  * @param username {string} The username
  * @param password {string} The matching password
  *
- * @returns {Object} If the username and the provided password matches, returns all the user privileges
+ * @returns {Object} If the username and the provided password matches, returns true
  * @throws {Error} If the username or the password is wrong, throw an error
  */
 function authUser(username, password) {
@@ -24,7 +24,7 @@ function authUser(username, password) {
             'jsdb',
             'public',
             'users',
-            ["username", "password", "privileges"],
+            ["password", "privileges"],
             {
                 "where": `\`username\` == '${username}'`,
                 "orderby": [{"column": 'username', "mode": 'ASC'}]
@@ -36,7 +36,7 @@ function authUser(username, password) {
         }
 
         if (users[0]['password'] === md5(password)) {
-            return users[0]['privileges'];
+            return true;
         } else {
             throw new Error("AUTHERR: Wrong password");
         }
@@ -55,8 +55,39 @@ function authUser(username, password) {
 function createUser(username, password, privileges) {
     if (typeof username === "string" && typeof password === "string" && typeof privileges === "object") {
         table.insert('jsdb', 'public', 'users', ["DEFAULT", username, md5(`${password}`), "DEFAULT", JSON.stringify(privileges)]);
+        return `Created user ${username}`;
+    }
+}
+
+/**
+ * @summary Gets the user privileges
+ *
+ * @param username {string} The username
+ *
+ * @returns {Object} If the username exists on database, returns all the user privileges
+ * @throws {Error} If the username is wrong, throw an error
+ */
+function getUserPrivileges(username) {
+    if (typeof username === "string") {
+        let users = table.select(
+            'jsdb',
+            'public',
+            'users',
+            ["privileges"],
+            {
+                "where": `\`username\` == '${username}'`,
+                "orderby": [{"column": 'username', "mode": 'ASC'}]
+            }
+        );
+
+        if (users.length === 0) {
+            throw new Error(`AUTHERR: Invalid username: ${username}`);
+        }
+
+        return users[0].privileges;
     }
 }
 
 exports.auth = authUser;
 exports.create = createUser;
+exports.getPrivileges = getUserPrivileges;

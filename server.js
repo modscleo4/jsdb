@@ -13,36 +13,44 @@ const sql = require("./sql/sql");
 const config = require('./config');
 
 const net = require('net');
-const md5 = require('md5');
 
-let server = net.createServer(function (socket) {
+let server = net.createServer(socket => {
     socket.dbName = "jsdb";
     socket.schemaName = "public";
 
     db.readFile();
-    config.addSocket(socket);
 
-    socket.on('end', function () {
+    socket.on('end', () => {
         config.removeSocket(socket);
     });
 
-    let userPrivileges = null;
+    socket.username = null;
 
-    socket.on('data', function (data) {
+    socket.on('data', data => {
         let sqlCmd = data.toLocaleString();
 
-        if (config.ignAuth && sqlCmd.includes("credentials: ")) {
+        if (sqlCmd === "PING") {
+            socket.write("PONG");
             return;
         }
 
-        if (userPrivileges === null && !config.ignAuth) {
+        if (config.ignAuth && sqlCmd.includes("credentials: ")) {
+            socket.username = "grantall::jsdbadmin";
+            config.addSocket(socket);
+            return;
+        }
+
+        if (socket.username === null && !config.ignAuth) {
             try {
                 if (!sqlCmd.includes("credentials: ")) {
                     throw new Error("Username and password not informed");
                 } else {
                     let credentials = JSON.parse(sqlCmd.slice("credentials: ".length));
-                    userPrivileges = user.auth(credentials['username'], credentials['password']);
-                    exports.userPrivileges = userPrivileges;
+                    user.auth(credentials.username, credentials.password);
+
+                    socket.username = credentials.username;
+                    config.addSocket(socket);
+
                     socket.write("AUTHOK");
                     return;
                 }
@@ -65,7 +73,7 @@ let server = net.createServer(function (socket) {
         }
     });
 
-    socket.on('error', function (err) {
+    socket.on('error', err => {
         if (err.code === 'EADDRINUSE') {
             console.error('Address in use, retrying...');
             setTimeout(() => {
@@ -116,12 +124,12 @@ if (address !== "" && port !== 0 && dir !== "") {
 
         console.log('Insert jsdbadmin password: ');
 
-        stdin.addListener("data", function (d) {
+        stdin.addListener("data", d => {
             d = d.toLocaleString().trim();
             if (d.length > 8) {
                 stdin.removeAllListeners('data');
 
-                user.create('jsdbadmin', d, {});
+                user.create('jsdbadmin', d, {"*": parseInt("1111", 2)});
                 console.log("User created.");
             } else {
                 console.log('jsdbadmin password must be greater than 8 characters!');

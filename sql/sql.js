@@ -12,6 +12,7 @@ const table = require("../commands/table");
 const sequence = require("../commands/sequence");
 const sql_parser = require("sql-parser/lib/sql_parser");
 const config = require("../config");
+const user = require("../commands/user");
 
 const md5 = require('md5');
 
@@ -119,6 +120,50 @@ function run(sql, socketIndex) {
                         break;
                     }
                 }
+
+                /*
+                * Get user permissions on database
+                * */
+                function getPermissions() {
+                    let userPrivileges = user.getPrivileges(config.sockets[socketIndex].username);
+                    if (!userPrivileges.hasOwnProperty("*")) {
+                        if (userPrivileges.hasOwnProperty(dbName.get())) {
+                            let dbPerm = userPrivileges[dbName.get()];
+                            dbPerm = parseInt(dbPerm).toString(2);
+
+                            userPrivileges = {
+                                create: (dbPerm[0] === "1"),
+                                read: (dbPerm[1] === "1"),
+                                update: (dbPerm[2] === "1"),
+                                delete: (dbPerm[3] === "1"),
+                                root: false
+                            };
+                        } else {
+                            userPrivileges = {
+                                create: false,
+                                read: false,
+                                update: false,
+                                delete: false,
+                                root: false
+                            }
+                        }
+                    } else {
+                        let dbPerm = userPrivileges["*"];
+                        dbPerm = parseInt(dbPerm).toString(2);
+
+                        userPrivileges = {
+                            create: (dbPerm[0] === "1"),
+                            read: (dbPerm[1] === "1"),
+                            update: (dbPerm[2] === "1"),
+                            delete: (dbPerm[3] === "1"),
+                            root: true
+                        };
+                    }
+
+                    return userPrivileges;
+                }
+
+                let userPrivileges = getPermissions();
 
                 if (t[0][1].toUpperCase() === "USE") {
                     try {
@@ -236,6 +281,10 @@ function run(sql, socketIndex) {
                     }
 
                     try {
+                        if (!userPrivileges.read) {
+                            throw new Error("Not enough permissions");
+                        }
+
                         o['data'] = table.select(dbName.get(), schemaName.get(), tableName, cols, options);
                     } catch (e) {
                         o['code'] = 1;
@@ -244,6 +293,10 @@ function run(sql, socketIndex) {
                 } else if (t[0][1].toUpperCase() === "CREATE") {
                     if (t[1][1].toUpperCase() === "DATABASE") {
                         try {
+                            if (!userPrivileges.root) {
+                                throw new Error("Not enough permissions");
+                            }
+
                             o['data'] = db.create(t[2][1]);
                         } catch (e) {
                             o['code'] = 1;
@@ -251,6 +304,10 @@ function run(sql, socketIndex) {
                         }
                     } else if (t[1][1].toUpperCase() === "SCHEMA") {
                         try {
+                            if (!userPrivileges.create) {
+                                throw new Error("Not enough permissions");
+                            }
+
                             o['data'] = schema.create(dbName.get(), t[2][1]);
                         } catch (e) {
                             o['code'] = 1;
@@ -258,6 +315,10 @@ function run(sql, socketIndex) {
                         }
                     } else if (t[1][1].toUpperCase() === "SEQUENCE") {
                         try {
+                            if (!userPrivileges.create) {
+                                throw new Error("Not enough permissions");
+                            }
+
                             o['data'] = sequence.create(dbName.get(), schemaName.get(), t[2][1]);
                         } catch (e) {
                             o['code'] = 1;
@@ -273,61 +334,71 @@ function run(sql, socketIndex) {
                             if (t[i][1].toUpperCase() === "TABLE") {
                                 a = i + 1;
                                 tableName = t[i + 1][1];
+                            }
 
+                            /*
+                            * Get columns order
+                            * */
+                            if (t[i + 2][0] === "LEFT_PAREN" || t[i + 2][0] === "SEPARATOR") {
                                 /*
-                                * Get columns order
+                                * t[i + 3][1] is the name of column
                                 * */
-                                if (t[i + 2][0] === "LEFT_PAREN") {
-                                    /*
-                                    * t[i + 3][1] is the name of column
-                                    * */
-                                    tableStruct[t[i + 3][1]] = {};
-                                    metadata['primaryKey'] = [];
+                                tableStruct[t[i + 3][1]] = {};
+                                metadata['primaryKey'] = [];
 
-                                    for (let j = i + 3; j < t.length; j++) {
-                                        if (t[j][0] === "RIGHT_PAREN" || t[j][0] === "SEPARATOR") {
-                                            break;
+                                for (let j = i + 3; j < t.length; j++) {
+                                    if (t[j][0] === "RIGHT_PAREN" || t[j][0] === "SEPARATOR") {
+                                        if (t[j][0] === "RIGHT_PAREN") {
+                                            a = -1;
                                         }
 
-                                        if (t[j][0] === "LITERAL" || t[j][0] === "BOOLEAN") {
-                                            if (t[j][1].toUpperCase() === "NUMBER") {
-                                                tableStruct[t[i + 3][1]]['type'] = "number";
-                                            } else if (t[j][1].toUpperCase() === "STRING") {
-                                                tableStruct[t[i + 3][1]]['type'] = "string";
-                                            } else if (t[j][1].toUpperCase() === "BOOLEAN") {
-                                                tableStruct[t[i + 3][1]]['type'] = "boolean";
-                                            } else if (t[j][1].toUpperCase() === "OBJECT") {
-                                                tableStruct[t[i + 3][1]]['type'] = "object";
-                                            } else if (t[j][1].toUpperCase() === "KEY") {
-                                                if (t[j - 1][1].toUpperCase() === "PRIMARY") {
-                                                    metadata['primaryKey'].push(t[i + 3][1]);
-                                                    tableStruct[t[i + 3][1]]['unique'] = true;
-                                                } else if (t[j - 1][1].toUpperCase() === "UNIQUE") {
-                                                    tableStruct[t[i + 3][1]]['unique'] = true;
-                                                }
-                                            } else if (t[j][1].toUpperCase() === "DEFAULT") {
-                                                if (t[j + 1][0] === "STRING") {
-                                                    tableStruct[t[i + 3][1]]['default'] = t[j + 1][1];
-                                                } else if (t[j + 1][0] === "NUMBER") {
-                                                    tableStruct[t[i + 3][1]]['default'] = parseFloat(t[j + 1][1]);
-                                                } else if (t[j + 1][0] === "BOOLEAN") {
-                                                    tableStruct[t[i + 3][1]]['default'] = (t[j + 1][1].toUpperCase() === "TRUE");
-                                                }
+                                        break;
+                                    }
 
-                                            } else if (t[j][1].toUpperCase() === "AUTO" && t[j + 1][1].toUpperCase() === "INCREMENT") {
-                                                tableStruct[t[i + 3][1]]['autoIncrement'] = true;
-                                            } else if (t[j][1].toUpperCase() === "NULL") {
-                                                tableStruct[t[i + 3][1]]['notNull'] = (t[j - 1][1].toUpperCase() === "NOT");
+                                    if (t[j][0] === "LITERAL" || t[j][0] === "BOOLEAN") {
+                                        if (t[j][1].toUpperCase() === "NUMBER") {
+                                            tableStruct[t[i + 3][1]]['type'] = "number";
+                                        } else if (t[j][1].toUpperCase() === "STRING") {
+                                            tableStruct[t[i + 3][1]]['type'] = "string";
+                                        } else if (t[j][1].toUpperCase() === "BOOLEAN") {
+                                            tableStruct[t[i + 3][1]]['type'] = "boolean";
+                                        } else if (t[j][1].toUpperCase() === "OBJECT") {
+                                            tableStruct[t[i + 3][1]]['type'] = "object";
+                                        } else if (t[j][1].toUpperCase() === "KEY") {
+                                            if (t[j - 1][1].toUpperCase() === "PRIMARY") {
+                                                metadata['primaryKey'].push(t[i + 3][1]);
+                                                tableStruct[t[i + 3][1]]['unique'] = true;
                                             }
+                                        } else if (t[j][1].toUpperCase() === "UNIQUE") {
+                                            tableStruct[t[i + 3][1]]['unique'] = true;
+                                        } else if (t[j][1].toUpperCase() === "DEFAULT") {
+                                            if (t[j + 1][0] === "STRING") {
+                                                tableStruct[t[i + 3][1]]['default'] = t[j + 1][1];
+                                            } else if (t[j + 1][0] === "NUMBER") {
+                                                tableStruct[t[i + 3][1]]['default'] = parseFloat(t[j + 1][1]);
+                                            } else if (t[j + 1][0] === "BOOLEAN") {
+                                                tableStruct[t[i + 3][1]]['default'] = (t[j + 1][1].toUpperCase() === "TRUE");
+                                            }
+
+                                        } else if (t[j][1].toUpperCase() === "AUTO" && t[j + 1][1].toUpperCase() === "INCREMENT") {
+                                            tableStruct[t[i + 3][1]]['autoIncrement'] = true;
+                                        } else if (t[j][1].toUpperCase() === "NULL") {
+                                            tableStruct[t[i + 3][1]]['notNull'] = (t[j - 1][1].toUpperCase() === "NOT");
                                         }
                                     }
                                 }
+                            }
 
+                            if (a === -1) {
                                 break;
                             }
                         }
 
                         try {
+                            if (!userPrivileges.create) {
+                                throw new Error("Not enough permissions");
+                            }
+
                             o['data'] = table.create(dbName.get(), schemaName.get(), tableName, tableStruct, metadata);
                         } catch (e) {
                             o['code'] = 1;
@@ -405,6 +476,10 @@ function run(sql, socketIndex) {
                     }
 
                     try {
+                        if (!userPrivileges.update) {
+                            throw new Error("Not enough permissions");
+                        }
+
                         o['data'] = table.insert(dbName.get(), schemaName.get(), tableName, content, columns);
                     } catch (e) {
                         o['code'] = 1;
@@ -516,6 +591,10 @@ function run(sql, socketIndex) {
                     }
 
                     try {
+                        if (!userPrivileges.update) {
+                            throw new Error("Not enough permissions");
+                        }
+
                         o['data'] = table.update(dbName.get(), schemaName.get(), tableName, update, options);
                     } catch (e) {
                         o['code'] = 1;
@@ -585,6 +664,10 @@ function run(sql, socketIndex) {
                     }
 
                     try {
+                        if (!userPrivileges.delete) {
+                            throw new Error("Not enough permissions");
+                        }
+
                         o['data'] = table.delete(dbName.get(), schemaName.get(), tableName, options);
                     } catch (e) {
                         o['code'] = 1;
@@ -613,6 +696,11 @@ function run(sql, socketIndex) {
                         }
 
                         try {
+                            userPrivileges = getPermissions();
+                            if (!userPrivileges.root) {
+                                throw new Error("Not enough permissions");
+                            }
+
                             o['data'] = db.drop(dbName.get(), ifExists);
                         } catch (e) {
                             o['code'] = 1;
@@ -640,6 +728,10 @@ function run(sql, socketIndex) {
                         }
 
                         try {
+                            if (!userPrivileges.delete) {
+                                throw new Error("Not enough permissions");
+                            }
+
                             o['data'] = schema.drop(dbName.get(), schemaName.get(), ifExists);
                         } catch (e) {
                             o['code'] = 1;
@@ -670,6 +762,10 @@ function run(sql, socketIndex) {
                         }
 
                         try {
+                            if (!userPrivileges.delete) {
+                                throw new Error("Not enough permissions");
+                            }
+
                             o['data'] = table.drop(dbName.get(), schemaName.get(), tableName, ifExists);
                         } catch (e) {
                             o['code'] = 1;
@@ -682,6 +778,10 @@ function run(sql, socketIndex) {
                 } else if (t[0][1].toUpperCase() === "SHOW") {
                     if (t[1][1].toUpperCase() === "DATABASES") {
                         try {
+                            if (!userPrivileges.root) {
+                                throw new Error("Not enough permissions");
+                            }
+
                             o['data'] = db.readFile();
                         } catch (e) {
                             o['code'] = 1;
@@ -691,6 +791,7 @@ function run(sql, socketIndex) {
                         /*
                         * Gets the DB name
                         * */
+                        let d = dbName.get();
                         for (let i = 1; i < t.length; i++) {
                             if (t[i][0] === "FROM") {
                                 dbName.set(t[i + 1][1]);
@@ -699,15 +800,27 @@ function run(sql, socketIndex) {
                         }
 
                         try {
+                            userPrivileges = getPermissions();
+                            if (!userPrivileges.read) {
+                                throw new Error("Not enough permissions");
+                            }
+
                             o['data'] = schema.readFile(dbName.get());
+
+                            dbName.set(d);
                         } catch (e) {
                             o['code'] = 1;
                             o['message'] = e.message;
+
+                            dbName.set(d);
                         }
                     } else if (t[1][1].toUpperCase() === "SEQUENCES") {
                         /*
                         * Gets the DB name
                         * */
+                        let d = dbName.get();
+                        let s = schemaName.get();
+
                         for (let i = 1; i < t.length; i++) {
                             if (t[i][0] === "FROM") {
                                 dbName.set(t[i + 1][1]);
@@ -721,23 +834,38 @@ function run(sql, socketIndex) {
                         }
 
                         try {
+                            userPrivileges = getPermissions();
+                            if (!userPrivileges.read) {
+                                throw new Error("Not enough permissions");
+                            }
+
                             let a = sequence.readFile(dbName.get(), schemaName.get());
-                            let s = [];
+                            let seq = [];
+
                             for (let key in a) {
                                 if (a.hasOwnProperty(key)) {
-                                    s.push(key);
+                                    seq.push(key);
                                 }
                             }
 
                             o['data'] = s;
+
+                            dbName.set(d);
+                            schemaName.set(s);
                         } catch (e) {
                             o['code'] = 1;
                             o['message'] = e.message;
+
+                            dbName.set(d);
+                            schemaName.set(s);
                         }
                     } else if (t[1][1].toUpperCase() === "TABLES") {
                         /*
                         * Gets the DB name
                         * */
+                        let d = dbName.get();
+                        let s = schemaName.get();
+
                         for (let i = 1; i < t.length; i++) {
                             if (t[i][0] === "FROM") {
                                 dbName.set(t[i + 1][1]);
@@ -751,10 +879,21 @@ function run(sql, socketIndex) {
                         }
 
                         try {
+                            userPrivileges = getPermissions();
+                            if (!userPrivileges.read) {
+                                throw new Error("Not enough permissions");
+                            }
+
                             o['data'] = table.readFile(dbName.get(), schemaName.get());
+
+                            dbName.set(d);
+                            schemaName.set(s);
                         } catch (e) {
                             o['code'] = 1;
                             o['message'] = e.message;
+
+                            dbName.set(d);
+                            schemaName.set(s);
                         }
                     } else {
                         o['code'] = 1;

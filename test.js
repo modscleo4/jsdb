@@ -394,12 +394,23 @@ describe('User', function () {
     before(function () {
         let passwd = 'jsdbadmin';
         prev = sequence.read('jsdb', 'public', 'users_id_seq');
-        table.insert('jsdb', 'public', 'users', ["DEFAULT", 'internaluser:test', md5(`${passwd}`), "DEFAULT", JSON.stringify({"create": true})]);
+    });
+
+    describe('#createUser()', function () {
+        it('Should return \'Created user internaluser:test\'', function () {
+            assert.equal(user.create('internaluser:test', 'jsdbadmin', {"test": 15}), "Created user internaluser:test")
+        });
     });
 
     describe('#authUser()', function () {
+        it('Should return true', function () {
+            assert.equal(JSON.stringify(user.auth('internaluser:test', 'jsdbadmin')), JSON.stringify(true))
+        });
+    });
+
+    describe('#getUserPrivileges()', function () {
         it('Should return the user privileges', function () {
-            assert.equal(JSON.stringify(user.auth('internaluser:test', 'jsdbadmin')), JSON.stringify({"create": true}))
+            assert.equal(JSON.stringify(user.getPrivileges('internaluser:test')), JSON.stringify({"test": 15}))
         });
     });
 
