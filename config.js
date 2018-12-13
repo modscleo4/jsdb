@@ -30,3 +30,6 @@ exports.rmdirRSync = function rmdirRSync(path) {
         fs.rmdirSync(path);
     }
 };
+
+let date = new Date();
+exports.date = date;

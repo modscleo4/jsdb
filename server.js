@@ -11,6 +11,7 @@ const table = require("./commands/table");
 const user = require('./commands/user');
 const sql = require("./sql/sql");
 const config = require('./config');
+const logger = require('./lib/logger');
 
 const net = require('net');
 
@@ -18,9 +19,12 @@ let server = net.createServer(socket => {
     socket.dbName = "jsdb";
     socket.schemaName = "public";
 
+    logger.log(`User connected, IP: ${socket.remoteAddress}`);
+
     db.readFile();
 
     socket.on('end', () => {
+        logger.log(`[${socket.remoteAddress}] User disconnected`);
         config.removeSocket(socket);
     });
 
@@ -52,15 +56,19 @@ let server = net.createServer(socket => {
                     config.addSocket(socket);
 
                     socket.write("AUTHOK");
+                    logger.log(`[${socket.remoteAddress}] User authenticated, username: ${credentials.username}`);
                     return;
                 }
             } catch (e) {
+                logger.log(`[${socket.remoteAddress}] Authentication error: ${e.message}`);
                 socket.write(e.message);
                 socket.destroy();
+                return;
             }
         }
 
         try {
+            logger.log(`[${socket.username}@${socket.remoteAddress}] SQL: ${sqlCmd}`);
             let r = sql.run(sqlCmd, config.sockets.indexOf(socket));
 
             if (typeof r === "object") {
