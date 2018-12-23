@@ -9,6 +9,9 @@ exports.startDir = startDir;
 let sockets = [];
 exports.sockets = sockets;
 
+let createZip = false;
+exports.createZip = createZip;
+
 exports.addSocket = function addSocket(socket) {
     sockets.push(socket);
 };

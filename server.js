@@ -107,6 +107,8 @@ for (let i = 0; i < process.argv.length; i++) {
         port = parseInt(process.argv[i + 1]);
     } else if (process.argv[i] === "-N" || process.argv[i] === "--noAuth") {
         config.ignAuth = true;
+    } else if (process.argv[i] === "-Z" || process.argv[i] === "--createZip") {
+        config.createZip = true;
     }
 }
 
@@ -127,21 +129,23 @@ if (address !== "" && port !== 0 && dir !== "") {
     config.startDir = dir;
     db.readFile();
 
-    if (!config.ignAuth && table.select('jsdb', 'public', 'users', ['*'], {"where": '\`username\` == \'jsdbadmin\''}).length === 0) {
-        let stdin = process.openStdin();
+    if (!config.ignAuth) {
+        if (table.select('jsdb', 'public', 'users', ['*'], {"where": '\`username\` == \'jsdbadmin\''}).length === 0) {
+            let stdin = process.openStdin();
 
-        console.log('Insert jsdbadmin password: ');
+            console.log('Insert jsdbadmin password: ');
 
-        stdin.addListener("data", d => {
-            d = d.toLocaleString().trim();
-            if (d.length > 8) {
-                stdin.removeAllListeners('data');
+            stdin.addListener("data", d => {
+                d = d.toLocaleString().trim();
+                if (d.length > 8) {
+                    stdin.removeAllListeners('data');
 
-                user.create('jsdbadmin', d, {"*": parseInt("1111", 2)});
-                console.log("User created.");
-            } else {
-                console.log('jsdbadmin password must be greater than 8 characters!');
-            }
-        });
+                    user.create('jsdbadmin', d, {"*": parseInt("1111", 2)});
+                    console.log("User created.");
+                } else {
+                    console.log('jsdbadmin password must be greater than 8 characters!');
+                }
+            });
+        }
     }
 }

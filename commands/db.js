@@ -12,7 +12,8 @@ const fs = require('fs');
 const schema = require('./schema');
 const table = require('./table');
 const config = require('../config');
-const md5 = require('md5');
+const archiver = require('archiver');
+const admzip = require('adm-zip');
 
 const f_dblist = 'dblist.json';
 
@@ -74,7 +75,7 @@ function readDBFile() {
     DBList = JSON.parse(fs.readFileSync(`${config.startDir}dbs/${f_dblist}`, 'utf8'));
 
     fs.readdirSync(`${config.startDir}dbs/`).forEach(dbName => {
-        if (dbName !== f_dblist) {
+        if (dbName !== f_dblist && !dbName.endsWith('.jsdb')) {
             if (DBList.indexOf(dbName) === -1) {
                 DBList.push(dbName);
                 writeDBFile(JSON.stringify(DBList));
@@ -82,8 +83,26 @@ function readDBFile() {
         }
     });
 
+    /*
+    * Compress/decompress .jsdb files
+    * */
+    if (config.createZip) {
+        DBList.forEach(dbName => {
+            if (fs.existsSync(`${config.startDir}dbs/${dbName}`)) {
+                let zip = new admzip();
+                zip.addLocalFolder(`${config.startDir}dbs/${dbName}`);
+                zip.writeZip(`${config.startDir}dbs/${dbName}.jsdb`);
+
+                config.rmdirRSync(`${config.startDir}dbs/${dbName}/`);
+            }
+
+            let zip = new admzip(`${config.startDir}dbs/${dbName}.jsdb`);
+            zip.extractAllTo(`${config.startDir}dbs/${dbName}`, true);
+        });
+    }
+
     DBList.forEach(dbName => {
-        if (!fs.existsSync(`${config.startDir}dbs/${dbName}`)) {
+        if (!fs.existsSync(`${config.startDir}dbs/${dbName}`) && !fs.existsSync(`${config.startDir}dbs/${dbName}.jsdb`)) {
             createDBFolder(dbName);
             schema.create(dbName, "public");
         }
@@ -94,6 +113,10 @@ function readDBFile() {
     * */
     if (DBList.indexOf("jsdb") === -1) {
         DBList.push('jsdb');
+        if (!fs.existsSync(`${config.startDir}dbs/jsdb/`)) {
+            createDBFolder('jsdb');
+        }
+
         writeDBFile(JSON.stringify(DBList));
         if (schema.readFile('jsdb').indexOf('public') === -1) {
             schema.create('jsdb', "public");
