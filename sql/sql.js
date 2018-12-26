@@ -8,8 +8,8 @@
 
 const db = require("../commands/db");
 const schema = require("../commands/schema");
-const table = require("../commands/table");
 const sequence = require("../commands/sequence");
+const table = require("../commands/table");
 const sql_parser = require("sql-parser/lib/sql_parser");
 const config = require("../config");
 const user = require("../commands/user");

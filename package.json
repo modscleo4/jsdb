@@ -2,27 +2,34 @@
   "name": "@modscleo4/jsdb",
   "description": "A simple database manager written in JavaScript",
   "version": "1.0.0",
-  "bin": "./bin/jsdb",
-  "scripts": {
-    "test": "mocha"
-  },
   "author": {
     "name": "Dhiego Cassiano Fogaça Barbosa",
     "email": "modscleo4@outlook.com"
+  },
+  "bugs": {
+    "url": "https://github.com/modscleo4/jsdb/issues",
+    "email": "dhiego.cf.barbosa@gmail.com"
+  },
+  "homepage": "https://github.com/modscleo4/jsdb#readme",
+  "license": "Apache-2.0",
+  "bin": "./bin/jsdb",
+  "scripts": {
+    "test": "mocha"
   },
   "directories": {
     "commands": "./commands",
     "sql": "./sql",
     "lib": "./lib"
   },
-  "license": "Apache-2.0",
   "dependencies": {
     "adm-zip": "^0.4.13",
     "archiver": "^3.0.0",
     "md5": "^2.2.1",
-    "mocha": "^5.2.0",
     "perf_hooks": "0.0.1",
     "sql-parser": "^0.5.0"
+  },
+  "devDependencies": {
+    "mocha": "^5.2.0"
   },
   "repository": {
     "type": "git",
