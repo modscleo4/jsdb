@@ -72,22 +72,22 @@ function parseSQL(sql, socketIndex) {
                 }
 
                 let o = {};
-                o['command'] = i;
-                o['sql'] = sqlString;
-                o['code'] = 0;
+                o.command = i;
+                o.sql = sqlString;
+                o.code = 0;
 
                 if (perf) {
-                    o['time'] = performance.now();
+                    o.time = performance.now();
                 } else {
-                    o['time'] = 'NOTIME';
+                    o.time = 'NOTIME';
                 }
 
                 if (sqlString.includes("!dbg")) {
                     sqlString = sqlString.replace("!dbg", "");
                     let t = sql_parser.lexer.tokenize(sqlString);
                     t = t.splice(0, t.length - 1);
-                    o['data'] = t;
-                    o['code'] = 0;
+                    o.data = t;
+                    o.code = 0;
                     return o;
                 }
 
@@ -151,22 +151,22 @@ function parseSQL(sql, socketIndex) {
 
                 if (t[0][1].toUpperCase() === "USE") {
                     try {
-                        o['data'] = dbName.set(t[1][1]);
+                        o.data = dbName.set(t[1][1]);
                     } catch (e) {
-                        o['code'] = 1;
-                        o['message'] = e.message;
+                        o.code = 1;
+                        o.message = e.message;
                     }
                 } else if (t[0][1].toUpperCase() === "SET") {
                     if (t[1][1].toUpperCase() === "SEARCH_PATH") {
                         try {
-                            o['data'] = schemaName.set(t[3][1]);
+                            o.data = schemaName.set(t[3][1]);
                         } catch (e) {
-                            o['code'] = 1;
-                            o['message'] = e.message;
+                            o.code = 1;
+                            o.message = e.message;
                         }
                     } else {
-                        o['code'] = 2;
-                        o['message'] = `Unrecognized command: ${o['sql']}`;
+                        o.code = 2;
+                        o.message = `Unrecognized command: ${o.sql}`;
                     }
                 } else if (t[0][1].toUpperCase() === "SELECT") {
                     let a = 0;
@@ -205,7 +205,7 @@ function parseSQL(sql, socketIndex) {
                     let options = {};
                     for (let i = a + 1; i < t.length; i++) {
                         if (t[i][0] === "WHERE") {
-                            options['where'] = "";
+                            options.where = "";
                             for (let k = i + 1; k < t.length; k++) {
                                 /*
                                 * Stop when find something that is not on WHERE params
@@ -226,18 +226,18 @@ function parseSQL(sql, socketIndex) {
                                     t[k][1] = `\`${t[k][1]}\``;
                                 }
 
-                                options['where'] += t[k][1];
+                                options.where += t[k][1];
                             }
                         } else if (t[i][0] === "ORDER" && t[i + 1][0] === "BY") {
-                            options['orderby'] = [];
+                            options.orderby = [];
                             let count = 0;
                             for (let j = i + 2; j < t.length; j++) {
                                 if (t[j][0] === "LITERAL") {
-                                    options['orderby'][count] = {};
-                                    options['orderby'][count]['column'] = t[j][1];
+                                    options.orderby[count] = {};
+                                    options.orderby[count].column = t[j][1];
 
                                     if (t[j + 1] !== undefined && t[j + 1][0] === "DIRECTION") {
-                                        options['orderby'][count]['mode'] = t[j + 1][1];
+                                        options.orderby[count].mode = t[j + 1][1];
                                     }
                                 } else if (t[j][0] === "SEPARATOR") {
                                     count++;
@@ -246,18 +246,18 @@ function parseSQL(sql, socketIndex) {
                                 }
                             }
                         } else if (t[i][0] === "LIMIT") {
-                            options['limoffset'] = {};
+                            options.limoffset = {};
                             for (let j = i + 1; j < t.length; j++) {
                                 if (t[j][0] === "NUMBER") {
-                                    options['limoffset']['limit'] = parseInt(t[j][1]);
-                                    options['limoffset']['offset'] = 0;
+                                    options.limoffset.limit = parseInt(t[j][1]);
+                                    options.limoffset.offset = 0;
                                 } else if (t[j][0] === "SEPARATOR") {
-                                    options['limoffset']['limit'] = parseInt(t[j + 1][1]);
-                                    options['limoffset']['offset'] = parseInt(t[j - 1][1]);
+                                    options.limoffset.limit = parseInt(t[j + 1][1]);
+                                    options.limoffset.offset = parseInt(t[j - 1][1]);
                                     break;
                                 } else if (t[j][0] === "OFFSET") {
-                                    options['limoffset']['limit'] = parseInt(t[j - 1][1]);
-                                    options['limoffset']['offset'] = parseInt(t[j + 1][1]);
+                                    options.limoffset.limit = parseInt(t[j - 1][1]);
+                                    options.limoffset.offset = parseInt(t[j + 1][1]);
                                     break;
                                 }
                             }
@@ -266,47 +266,51 @@ function parseSQL(sql, socketIndex) {
 
                     try {
                         if (!userPrivileges.read) {
-                            throw new Error("Not enough permissions");
+                            o.code = 1;
+                            o.message = "Not enough permissions";
+                        } else {
+                            o.data = table.select(dbName.get(), schemaName.get(), tableName, cols, options);
                         }
-
-                        o['data'] = table.select(dbName.get(), schemaName.get(), tableName, cols, options);
                     } catch (e) {
-                        o['code'] = 1;
-                        o['message'] = e.message;
+                        o.code = 1;
+                        o.message = e.message;
                     }
                 } else if (t[0][1].toUpperCase() === "CREATE") {
                     if (t[1][1].toUpperCase() === "DATABASE") {
                         try {
                             if (!userPrivileges.root) {
-                                throw new Error("Not enough permissions");
+                                o.code = 1;
+                                o.message = "Not enough permissions";
+                            } else {
+                                o.data = db.create(t[2][1]);
                             }
-
-                            o['data'] = db.create(t[2][1]);
                         } catch (e) {
-                            o['code'] = 1;
-                            o['message'] = e.message;
+                            o.code = 1;
+                            o.message = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === "SCHEMA") {
                         try {
                             if (!userPrivileges.create) {
-                                throw new Error("Not enough permissions");
+                                o.code = 1;
+                                o.message = "Not enough permissions";
+                            } else {
+                                o.data = schema.create(dbName.get(), t[2][1]);
                             }
-
-                            o['data'] = schema.create(dbName.get(), t[2][1]);
                         } catch (e) {
-                            o['code'] = 1;
-                            o['message'] = e.message;
+                            o.code = 1;
+                            o.message = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === "SEQUENCE") {
                         try {
                             if (!userPrivileges.create) {
-                                throw new Error("Not enough permissions");
+                                o.code = 1;
+                                o.message = "Not enough permissions";
+                            } else {
+                                o.data = sequence.create(dbName.get(), schemaName.get(), t[2][1]);
                             }
-
-                            o['data'] = sequence.create(dbName.get(), schemaName.get(), t[2][1]);
                         } catch (e) {
-                            o['code'] = 1;
-                            o['message'] = e.message;
+                            o.code = 1;
+                            o.message = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === "TABLE") {
                         let tableName;
@@ -328,7 +332,7 @@ function parseSQL(sql, socketIndex) {
                                 * t[i + 3][1] is the name of column
                                 * */
                                 tableStruct[t[i + 3][1]] = {};
-                                metadata['primaryKey'] = [];
+                                metadata.primaryKey = [];
 
                                 for (let j = i + 3; j < t.length; j++) {
                                     if (t[j][0] === "RIGHT_PAREN" || t[j][0] === "SEPARATOR") {
@@ -341,33 +345,33 @@ function parseSQL(sql, socketIndex) {
 
                                     if (t[j][0] === "LITERAL" || t[j][0] === "BOOLEAN") {
                                         if (t[j][1].toUpperCase() === "NUMBER") {
-                                            tableStruct[t[i + 3][1]]['type'] = "number";
+                                            tableStruct[t[i + 3][1]].type = "number";
                                         } else if (t[j][1].toUpperCase() === "STRING") {
-                                            tableStruct[t[i + 3][1]]['type'] = "string";
+                                            tableStruct[t[i + 3][1]].type = "string";
                                         } else if (t[j][1].toUpperCase() === "BOOLEAN") {
-                                            tableStruct[t[i + 3][1]]['type'] = "boolean";
+                                            tableStruct[t[i + 3][1]].type = "boolean";
                                         } else if (t[j][1].toUpperCase() === "OBJECT") {
-                                            tableStruct[t[i + 3][1]]['type'] = "object";
+                                            tableStruct[t[i + 3][1]].type = "object";
                                         } else if (t[j][1].toUpperCase() === "KEY") {
                                             if (t[j - 1][1].toUpperCase() === "PRIMARY") {
-                                                metadata['primaryKey'].push(t[i + 3][1]);
-                                                tableStruct[t[i + 3][1]]['unique'] = true;
+                                                metadata.primaryKey.push(t[i + 3][1]);
+                                                tableStruct[t[i + 3][1]].unique = true;
                                             }
                                         } else if (t[j][1].toUpperCase() === "UNIQUE") {
-                                            tableStruct[t[i + 3][1]]['unique'] = true;
+                                            tableStruct[t[i + 3][1]].unique = true;
                                         } else if (t[j][1].toUpperCase() === "DEFAULT") {
                                             if (t[j + 1][0] === "STRING") {
-                                                tableStruct[t[i + 3][1]]['default'] = t[j + 1][1];
+                                                tableStruct[t[i + 3][1]].default = t[j + 1][1];
                                             } else if (t[j + 1][0] === "NUMBER") {
-                                                tableStruct[t[i + 3][1]]['default'] = parseFloat(t[j + 1][1]);
+                                                tableStruct[t[i + 3][1]].default = parseFloat(t[j + 1][1]);
                                             } else if (t[j + 1][0] === "BOOLEAN") {
-                                                tableStruct[t[i + 3][1]]['default'] = (t[j + 1][1].toUpperCase() === "TRUE");
+                                                tableStruct[t[i + 3][1]].default = (t[j + 1][1].toUpperCase() === "TRUE");
                                             }
 
                                         } else if (t[j][1].toUpperCase() === "AUTO" && t[j + 1][1].toUpperCase() === "INCREMENT") {
-                                            tableStruct[t[i + 3][1]]['autoIncrement'] = true;
+                                            tableStruct[t[i + 3][1]].autoIncrement = true;
                                         } else if (t[j][1].toUpperCase() === "NULL") {
-                                            tableStruct[t[i + 3][1]]['notNull'] = (t[j - 1][1].toUpperCase() === "NOT");
+                                            tableStruct[t[i + 3][1]].notNull = (t[j - 1][1].toUpperCase() === "NOT");
                                         }
                                     }
                                 }
@@ -380,19 +384,20 @@ function parseSQL(sql, socketIndex) {
 
                         try {
                             if (!userPrivileges.create) {
-                                throw new Error("Not enough permissions");
+                                o.code = 1;
+                                o.message = "Not enough permissions";
+                            } else {
+                                o.data = table.create(dbName.get(), schemaName.get(), tableName, tableStruct, metadata);
                             }
-
-                            o['data'] = table.create(dbName.get(), schemaName.get(), tableName, tableStruct, metadata);
                         } catch (e) {
-                            o['code'] = 1;
-                            o['message'] = e.message;
+                            o.code = 1;
+                            o.message = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === "USER") {
 
                     } else {
-                        o['code'] = 2;
-                        o['message'] = `Unrecognized command: ${o['sql']}`;
+                        o.code = 2;
+                        o.message = `Unrecognized command: ${o.sql}`;
                     }
                 } else if (t[0][1].toUpperCase() === "INSERT") {
                     let tableName;
@@ -463,13 +468,14 @@ function parseSQL(sql, socketIndex) {
 
                     try {
                         if (!userPrivileges.update || (dbName.get() === "jsdb" && schemaName.get() === "public" && tableName === "users")) {
-                            throw new Error("Not enough permissions");
+                            o.code = 1;
+                            o.message = "Not enough permissions";
+                        } else {
+                            o.data = table.insert(dbName.get(), schemaName.get(), tableName, content, columns);
                         }
-
-                        o['data'] = table.insert(dbName.get(), schemaName.get(), tableName, content, columns);
                     } catch (e) {
-                        o['code'] = 1;
-                        o['message'] = e.message;
+                        o.code = 1;
+                        o.message = e.message;
                     }
                 } else if (t[0][1].toUpperCase() === "UPDATE") {
                     let a = 0;
@@ -529,7 +535,7 @@ function parseSQL(sql, socketIndex) {
                     let options = {'where': 'true'};
                     for (let i = a + 1; i < t.length; i++) {
                         if (t[i][0] === "WHERE") {
-                            options['where'] = "";
+                            options.where = "";
                             for (let k = i + 1; k < t.length; k++) {
                                 /*
                                 * Stop when find something that is not on WHERE params
@@ -555,21 +561,21 @@ function parseSQL(sql, socketIndex) {
                                     t[k][1] = `\`${t[k][1]}\``;
                                 }
 
-                                options['where'] += t[k][1];
+                                options.where += t[k][1];
                             }
                         } else if (t[i][0] === "LIMIT") {
-                            options['limoffset'] = {};
+                            options.limoffset = {};
                             for (let j = i + 1; j < t.length; j++) {
                                 if (t[j][0] === "NUMBER") {
-                                    options['limoffset']['limit'] = parseInt(t[j][1]);
-                                    options['limoffset']['offset'] = 0;
+                                    options.limoffset.limit = parseInt(t[j][1]);
+                                    options.limoffset.offset = 0;
                                 } else if (t[j][0] === "SEPARATOR") {
-                                    options['limoffset']['limit'] = parseInt(t[j + 1][1]);
-                                    options['limoffset']['offset'] = parseInt(t[j - 1][1]);
+                                    options.limoffset.limit = parseInt(t[j + 1][1]);
+                                    options.limoffset.offset = parseInt(t[j - 1][1]);
                                     break;
                                 } else if (t[j][0] === "OFFSET") {
-                                    options['limoffset']['limit'] = parseInt(t[j - 1][1]);
-                                    options['limoffset']['offset'] = parseInt(t[j + 1][1]);
+                                    options.limoffset.limit = parseInt(t[j - 1][1]);
+                                    options.limoffset.offset = parseInt(t[j + 1][1]);
                                     break;
                                 }
                             }
@@ -578,13 +584,14 @@ function parseSQL(sql, socketIndex) {
 
                     try {
                         if (!userPrivileges.update || (dbName.get() === "jsdb" && schemaName.get() === "public" && tableName === "users")) {
-                            throw new Error("Not enough permissions");
+                            o.code = 1;
+                            o.message = "Not enough permissions";
+                        } else {
+                            o.data = table.update(dbName.get(), schemaName.get(), tableName, update, options);
                         }
-
-                        o['data'] = table.update(dbName.get(), schemaName.get(), tableName, update, options);
                     } catch (e) {
-                        o['code'] = 1;
-                        o['message'] = e.message;
+                        o.code = 1;
+                        o.message = e.message;
                     }
                 } else if (t[0][1].toUpperCase() === "ALTER") {
                     if (t[1][1].toUpperCase() === "USER") {
@@ -634,13 +641,14 @@ function parseSQL(sql, socketIndex) {
                         try {
                             userPrivileges = getPermissions("jsdb");
                             if (!userPrivileges.update || username === config.sockets[socketIndex].username) {
-                                throw new Error("Not enough permissions");
+                                o.code = 1;
+                                o.message = "Not enough permissions";
+                            } else {
+                                o.data = user.update(username, update);
                             }
-
-                            o['data'] = user.update(username, update);
                         } catch (e) {
-                            o['code'] = 1;
-                            o['message'] = e.message;
+                            o.code = 1;
+                            o.message = e.message;
                         }
                     }
                 } else if (t[0][1].toUpperCase() === "DELETE") {
@@ -664,7 +672,7 @@ function parseSQL(sql, socketIndex) {
                     let options = {'where': 'true'};
                     for (let i = a + 1; i < t.length; i++) {
                         if (t[i][0] === "WHERE") {
-                            options['where'] = "";
+                            options.where = "";
                             for (let k = i + 1; k < t.length; k++) {
                                 /*
                                 * Stop when find something that is not on WHERE params
@@ -685,21 +693,21 @@ function parseSQL(sql, socketIndex) {
                                     t[k][1] = `\`${t[k][1]}\``;
                                 }
 
-                                options['where'] += t[k][1];
+                                options.where += t[k][1];
                             }
                         } else if (t[i][0] === "LIMIT") {
-                            options['limoffset'] = {};
+                            options.limoffset = {};
                             for (let j = i + 1; j < t.length; j++) {
                                 if (t[j][0] === "NUMBER") {
-                                    options['limoffset']['limit'] = parseInt(t[j][1]);
-                                    options['limoffset']['offset'] = 0;
+                                    options.limoffset.limit = parseInt(t[j][1]);
+                                    options.limoffset.offset = 0;
                                 } else if (t[j][0] === "SEPARATOR") {
-                                    options['limoffset']['limit'] = parseInt(t[j + 1][1]);
-                                    options['limoffset']['offset'] = parseInt(t[j - 1][1]);
+                                    options.limoffset.limit = parseInt(t[j + 1][1]);
+                                    options.limoffset.offset = parseInt(t[j - 1][1]);
                                     break;
                                 } else if (t[j][0] === "OFFSET") {
-                                    options['limoffset']['limit'] = parseInt(t[j - 1][1]);
-                                    options['limoffset']['offset'] = parseInt(t[j + 1][1]);
+                                    options.limoffset.limit = parseInt(t[j - 1][1]);
+                                    options.limoffset.offset = parseInt(t[j + 1][1]);
                                     break;
                                 }
                             }
@@ -708,13 +716,14 @@ function parseSQL(sql, socketIndex) {
 
                     try {
                         if (!userPrivileges.delete || (dbName.get() === "jsdb" && schemaName.get() === "public" && tableName === "users")) {
-                            throw new Error("Not enough permissions");
+                            o.code = 1;
+                            o.message = "Not enough permissions";
+                        } else {
+                            o.data = table.delete(dbName.get(), schemaName.get(), tableName, options);
                         }
-
-                        o['data'] = table.delete(dbName.get(), schemaName.get(), tableName, options);
                     } catch (e) {
-                        o['code'] = 1;
-                        o['message'] = e.message;
+                        o.code = 1;
+                        o.message = e.message;
                     }
                 } else if (t[0][1].toUpperCase() === "DROP") {
                     if (t[1][1].toUpperCase() === "DATABASE") {
@@ -741,13 +750,14 @@ function parseSQL(sql, socketIndex) {
                         try {
                             userPrivileges = getPermissions();
                             if (!userPrivileges.root) {
-                                throw new Error("Not enough permissions");
+                                o.code = 1;
+                                o.message = "Not enough permissions";
+                            } else {
+                                o.data = db.drop(dbName.get(), ifExists);
                             }
-
-                            o['data'] = db.drop(dbName.get(), ifExists);
                         } catch (e) {
-                            o['code'] = 1;
-                            o['message'] = e.message;
+                            o.code = 1;
+                            o.message = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === "SCHEMA") {
                         let a;
@@ -772,13 +782,14 @@ function parseSQL(sql, socketIndex) {
 
                         try {
                             if (!userPrivileges.delete) {
-                                throw new Error("Not enough permissions");
+                                o.code = 1;
+                                o.message = "Not enough permissions";
+                            } else {
+                                o.data = schema.drop(dbName.get(), schemaName.get(), ifExists);
                             }
-
-                            o['data'] = schema.drop(dbName.get(), schemaName.get(), ifExists);
                         } catch (e) {
-                            o['code'] = 1;
-                            o['message'] = e.message;
+                            o.code = 1;
+                            o.message = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === "SEQUENCE") {
 
@@ -806,13 +817,14 @@ function parseSQL(sql, socketIndex) {
 
                         try {
                             if (!userPrivileges.delete) {
-                                throw new Error("Not enough permissions");
+                                o.code = 1;
+                                o.message = "Not enough permissions";
+                            } else {
+                                o.data = table.drop(dbName.get(), schemaName.get(), tableName, ifExists);
                             }
-
-                            o['data'] = table.drop(dbName.get(), schemaName.get(), tableName, ifExists);
                         } catch (e) {
-                            o['code'] = 1;
-                            o['message'] = e.message;
+                            o.code = 1;
+                            o.message = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === "USER") {
                         let username = t[2][1];
@@ -820,29 +832,31 @@ function parseSQL(sql, socketIndex) {
                         try {
                             userPrivileges = getPermissions("jsdb");
                             if (!userPrivileges.delete || username === config.sockets[socketIndex].username) {
-                                throw new Error("Not enough permissions");
+                                o.code = 1;
+                                o.message = "Not enough permissions";
+                            } else {
+                                o.data = user.drop(username);
                             }
-
-                            o['data'] = user.drop(username);
                         } catch (e) {
-                            o['code'] = 1;
-                            o['message'] = e.message;
+                            o.code = 1;
+                            o.message = e.message;
                         }
                     } else {
-                        o['code'] = 2;
-                        o['message'] = `Unrecognized command: ${o['sql']}`;
+                        o.code = 2;
+                        o.message = `Unrecognized command: ${o.sql}`;
                     }
                 } else if (t[0][1].toUpperCase() === "SHOW") {
                     if (t[1][1].toUpperCase() === "DATABASES") {
                         try {
                             if (!userPrivileges.root) {
-                                throw new Error("Not enough permissions");
+                                o.code = 1;
+                                o.message = "Not enough permissions";
+                            } else {
+                                o.data = db.readFile();
                             }
-
-                            o['data'] = db.readFile();
                         } catch (e) {
-                            o['code'] = 1;
-                            o['message'] = e.message;
+                            o.code = 1;
+                            o.message = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === "SCHEMAS") {
                         /*
@@ -859,15 +873,16 @@ function parseSQL(sql, socketIndex) {
                         try {
                             userPrivileges = getPermissions();
                             if (!userPrivileges.read) {
-                                throw new Error("Not enough permissions");
+                                o.code = 1;
+                                o.message = "Not enough permissions";
+                            } else {
+                                o.data = schema.readFile(dbName.get());
                             }
-
-                            o['data'] = schema.readFile(dbName.get());
 
                             dbName.set(d);
                         } catch (e) {
-                            o['code'] = 1;
-                            o['message'] = e.message;
+                            o.code = 1;
+                            o.message = e.message;
 
                             dbName.set(d);
                         }
@@ -893,16 +908,17 @@ function parseSQL(sql, socketIndex) {
                         try {
                             userPrivileges = getPermissions();
                             if (!userPrivileges.read) {
-                                throw new Error("Not enough permissions");
+                                o.code = 1;
+                                o.message = "Not enough permissions";
+                            } else {
+                                o.data = sequence.readFile(dbName.get(), schemaName.get());
                             }
-
-                            o['data'] = sequence.readFile(dbName.get(), schemaName.get());
 
                             dbName.set(d);
                             schemaName.set(s);
                         } catch (e) {
-                            o['code'] = 1;
-                            o['message'] = e.message;
+                            o.code = 1;
+                            o.message = e.message;
 
                             dbName.set(d);
                             schemaName.set(s);
@@ -929,16 +945,17 @@ function parseSQL(sql, socketIndex) {
                         try {
                             userPrivileges = getPermissions();
                             if (!userPrivileges.read) {
-                                throw new Error("Not enough permissions");
+                                o.code = 1;
+                                o.message = "Not enough permissions";
+                            } else {
+                                o.data = table.readFile(dbName.get(), schemaName.get());
                             }
-
-                            o['data'] = table.readFile(dbName.get(), schemaName.get());
 
                             dbName.set(d);
                             schemaName.set(s);
                         } catch (e) {
-                            o['code'] = 1;
-                            o['message'] = e.message;
+                            o.code = 1;
+                            o.message = e.message;
 
                             dbName.set(d);
                             schemaName.set(s);
@@ -947,39 +964,40 @@ function parseSQL(sql, socketIndex) {
                         try {
                             userPrivileges = getPermissions("jsdb");
                             if (!userPrivileges.read) {
-                                throw new Error("Not enough permissions");
-                            }
-
-                            o['data'] = table.select('jsdb', 'public', 'users', ['id', 'username', 'valid', 'privileges'], {});
-                            o['data'].forEach(r => {
-                                r['valid'] = (r['valid']) ? "Yes" : "No";
-                                for (let key in r['privileges']) {
-                                    if (r['privileges'].hasOwnProperty(key)) {
-                                        r['privileges'][key] = parseInt(r['privileges'][key]).toString(2);
+                                o.code = 1;
+                                o.message = "Not enough permissions";
+                            } else {
+                                o.data = table.select('jsdb', 'public', 'users', ['id', 'username', 'valid', 'privileges'], {});
+                                o.data.forEach(r => {
+                                    r.valid = (r.valid) ? "Yes" : "No";
+                                    for (let key in r.privileges) {
+                                        if (r.privileges.hasOwnProperty(key)) {
+                                            r.privileges[key] = parseInt(r.privileges[key]).toString(2);
+                                        }
                                     }
-                                }
-                            });
+                                });
+                            }
                         } catch (e) {
-                            o['code'] = 1;
-                            o['message'] = e.message;
+                            o.code = 1;
+                            o.message = e.message;
                         }
 
                     } else {
-                        o['code'] = 2;
-                        o['message'] = `Unrecognized command: ${o['sql']}`;
+                        o.code = 2;
+                        o.message = `Unrecognized command: ${o.sql}`;
                     }
                 } else {
-                    o['code'] = 2;
-                    o['message'] = `Unrecognized command: ${o['sql']}`;
+                    o.code = 2;
+                    o.message = `Unrecognized command: ${o.sql}`;
                 }
 
                 if (perf) {
-                    o['time'] = performance.now() - o['time'];
+                    o.time = performance.now() - o.time;
                 }
 
                 output = o;
 
-                if (o['code'] === 1) {
+                if (o.code === 1) {
                     // Restore backup
                     dbs.forEach(dbN => {
                         db.restore(dbN);
@@ -987,7 +1005,7 @@ function parseSQL(sql, socketIndex) {
                 }
 
                 /* Stop the code execution if a command fails */
-                if (o['code'] !== 0) {
+                if (o.code !== 0) {
                     break;
                 }
             }

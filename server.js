@@ -49,7 +49,11 @@ let server = net.createServer(socket => {
         if (socket.username === null && !config.ignAuth) {
             try {
                 if (!sqlCmd.includes("credentials: ")) {
-                    throw new Error("Username and password not informed");
+                    let message = "Username and password not informed";
+                    logger.log(1, `[${socket.remoteAddress}] Authentication error: ${message}`);
+                    socket.write(message);
+                    socket.destroy();
+                    return;
                 } else {
                     let credentials = JSON.parse(sqlCmd.slice("credentials: ".length));
                     user.auth(credentials.username, credentials.password);

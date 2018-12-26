@@ -7,7 +7,6 @@
  */
 
 const fs = require('fs');
-const db = require('./db');
 const schema = require('./schema');
 const sequence = require('./sequence');
 const config = require('../config');
@@ -48,9 +47,9 @@ function createTable(dbName, schemaName, tableName, tableStruct, metadata = null
 
             for (let key in tableStruct) {
                 if (tableStruct.hasOwnProperty(key)) {
-                    if (tableStruct[key]['type'] === 'number' && tableStruct[key]['autoIncrement']) {
-                        delete(tableStruct[key]['autoIncrement']);
-                        tableStruct[key]['default'] = `sequence(${tableName}_${key}_seq)`;
+                    if (tableStruct[key].type === 'number' && tableStruct[key].autoIncrement) {
+                        delete (tableStruct[key].autoIncrement);
+                        tableStruct[key].default = `sequence(${tableName}_${key}_seq)`;
                         sequence.create(dbName, schemaName, `${tableName}_${key}_seq`);
                     }
                 }
@@ -282,9 +281,9 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
         let TableContent = readTableContent(dbName, schemaName, tableName);
         let TableStruct = readTableStructure(dbName, schemaName, tableName);
 
-        if (typeof options['limoffset'] !== "undefined") {
-            let limit = options['limoffset']['limit'];
-            let offset = options['limoffset']['offset'];
+        if (typeof options.limoffset !== "undefined") {
+            let limit = options.limoffset.limit;
+            let offset = options.limoffset.offset;
 
             if (typeof TableContent[limit - 1] === "undefined") {
                 throw new Error("LIMIT greater than number of rows");
@@ -351,13 +350,13 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
             }
         }
 
-        if (typeof options['where'] !== "undefined") {
+        if (typeof options.where !== "undefined") {
             for (let i = 0; i < r.length; i++) {
-                let e = options['where'];
+                let e = options.where;
                 for (let key in aaa[i]) {
                     if (aaa[i].hasOwnProperty(key)) {
                         if (e.search(new RegExp(`\`${key}\``, 'g')) !== -1) {
-                            if (TableStruct[key]['type'] === "string") {
+                            if (TableStruct[key].type === "string") {
                                 e = e.replace(new RegExp(`\`${key}\``, 'g'), `'${aaa[i][key].toString()}'`);
                             } else {
                                 e = e.replace(new RegExp(`\`${key}\``, 'g'), aaa[i][key].toString());
@@ -374,7 +373,7 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
             }
         }
 
-        if (typeof options['orderby'] !== "undefined") {
+        if (typeof options.orderby !== "undefined") {
             function getC(orderBy) {
                 if (!orderBy[0].hasOwnProperty('column')) {
                     if (!TableStruct[`${tableName}.metadata`].hasOwnProperty('primaryKey')) {
@@ -387,26 +386,26 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
 
                         return TableStruct[key];
                     } else {
-                        return TableStruct[`${tableName}.metadata`]['primaryKey'][0];
+                        return TableStruct[`${tableName}.metadata`].primaryKey[0];
                     }
                 } else {
-                    if (!TableStruct.hasOwnProperty(orderBy[0]['column'])) {
-                        throw new Error(`Column ${orderBy[0]['column']} does not exist`);
+                    if (!TableStruct.hasOwnProperty(orderBy[0].column)) {
+                        throw new Error(`Column ${orderBy[0].column} does not exist`);
                     }
-                    return orderBy[0]['column'];
+                    return orderBy[0].column;
                 }
             }
 
             function getM(orderBy) {
-                if (typeof orderBy[0]['mode'] === "undefined") {
+                if (typeof orderBy[0].mode === "undefined") {
                     return "ASC";
                 } else {
-                    return orderBy[0]['mode'];
+                    return orderBy[0].mode;
                 }
             }
 
             /* Check if the column 0 exists */
-            getC(options['orderby']);
+            getC(options.orderby);
 
             function sorting(orderBy) {
                 return function (a, b) {
@@ -439,10 +438,10 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
                 }
             }
 
-            r = r.sort(sorting(options['orderby']));
+            r = r.sort(sorting(options.orderby));
         }
 
-        if (typeof options['groupby'] !== "undefined") {
+        if (typeof options.groupby !== "undefined") {
 
         }
 
@@ -483,14 +482,8 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
         let ContentW = [];
 
         if (content !== null) {
-            if (columns === null && content.length !== TColumns.length) {
+            if ((columns === null && content.length !== TColumns.length) || columns !== null && content.length !== columns.length) {
                 throw new Error(`Number of columns does not match with provided values (required: ${TColumns.length})`);
-            }
-
-            if (columns !== null) {
-                if (content.length !== columns.length) {
-                    throw new Error("Number of columns does not match with provided values");
-                }
             }
 
             let i = 0;
@@ -540,7 +533,7 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
                 * Ignore tablename.metadata Object to avoid errors
                 * */
                 if (key !== `${tableName}.metadata`) {
-                    if (TableStruct[key]['type'] === "object" && content[i].toUpperCase() !== "DEFAULT") {
+                    if (TableStruct[key].type === "object" && content[i].toUpperCase() !== "DEFAULT") {
                         content[i] = JSON.parse(content[i]);
                     }
 
@@ -552,12 +545,12 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
                     }
 
                     if (content[i] === null) {
-                        if (TableStruct[key]['notNull']) {
+                        if (TableStruct[key].notNull) {
                             throw new Error(`\`${key}\` cannot be null`);
                         }
                     }
 
-                    if (TableStruct[key]['unique'] === true) {
+                    if (TableStruct[key].unique === true) {
                         let TableContent = readTableContent(dbName, schemaName, tableName);
                         TableContent.forEach(c => {
                             if (c[i] === content[i]) {
@@ -572,21 +565,21 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
                         /*
                         * If true, it's a sequence
                         * */
-                        if (typeof TableStruct[key]['default'] === "string" && (a = TableStruct[key]['default'].search("sequence[(].*[)]")) !== -1) {
-                            let seqName = TableStruct[key]['default'].slice(a + "sequence(".length, TableStruct[key]['default'].length - 1);
+                        if (typeof TableStruct[key].default === "string" && (a = TableStruct[key].default.search("sequence[(].*[)]")) !== -1) {
+                            let seqName = TableStruct[key].default.slice(a + "sequence(".length, TableStruct[key].default.length - 1);
                             let Seq = sequence.read(dbName, schemaName, seqName);
 
-                            content[i] = Seq['start'];
+                            content[i] = Seq.start;
 
-                            Seq['start'] = Seq['start'] + Seq['inc'];
+                            Seq.start = Seq.start + Seq.inc;
 
                             sequence.update(dbName, schemaName, seqName, Seq);
                         } else {
-                            content[i] = TableStruct[key]['default'];
+                            content[i] = TableStruct[key].default;
                         }
                     }
 
-                    if (typeof content[i] !== TableStruct[key]['type']) {
+                    if (typeof content[i] !== TableStruct[key].type) {
                         throw new Error(`Invalid type for column \`${key}\`: ${content[i]}(${typeof content[i]})`);
                     }
 
@@ -664,9 +657,9 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
 
             let limit;
             let offset;
-            if (typeof options['limoffset'] !== "undefined") {
-                limit = options['limoffset']['limit'];
-                offset = options['limoffset']['offset'];
+            if (typeof options.limoffset !== "undefined") {
+                limit = options.limoffset.limit;
+                offset = options.limoffset.offset;
 
                 if (typeof TableContent[offset] === "undefined") {
                     throw new Error("OFFSET greater than number of rows");
@@ -693,13 +686,13 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
 
             let b = 0;
             let c = 0;
-            if (typeof options['where'] !== "undefined") {
+            if (typeof options.where !== "undefined") {
                 for (let i = 0; i < TableContent.length; i++) {
-                    let e = options['where'];
+                    let e = options.where;
                     for (let key in aaa[i]) {
                         if (aaa[i].hasOwnProperty(key)) {
                             if (e.search(new RegExp(`\`${key}\``, 'g')) !== -1) {
-                                if (TableStruct[key]['type'] === "string") {
+                                if (TableStruct[key].type === "string") {
                                     e = e.replace(new RegExp(`\`${key}\``, 'g'), `'${aaa[i][key].toString()}'`);
                                 } else {
                                     e = e.replace(new RegExp(`\`${key}\``, 'g'), aaa[i][key].toString());
@@ -724,7 +717,7 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
                                     }
                                 }
 
-                                if (TableStruct[key]['type'] === "object") {
+                                if (TableStruct[key].type === "object") {
                                     update[key] = JSON.parse(update[key]);
                                 }
 
@@ -733,26 +726,26 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
                                     /*
                                     * If true, it's a sequence
                                     * */
-                                    if (typeof TableStruct[key]['default'] === "string" && (a = TableStruct[key]['default'].search("sequence[(].*[)]")) !== -1) {
-                                        let seqName = TableStruct[key]['default'].slice(a + "sequence(".length, TableStruct[key]['default'].length - 1);
+                                    if (typeof TableStruct[key].default === "string" && (a = TableStruct[key].default.search("sequence[(].*[)]")) !== -1) {
+                                        let seqName = TableStruct[key].default.slice(a + "sequence(".length, TableStruct[key].default.length - 1);
                                         let Seq = sequence.read(dbName, schemaName, seqName);
 
-                                        update[key] = Seq['start'];
+                                        update[key] = Seq.start;
                                         isDefault = true;
 
-                                        Seq['start'] = Seq['start'] + Seq['inc'];
+                                        Seq.start = Seq.start + Seq.inc;
 
                                         sequence.update(dbName, schemaName, seqName, Seq);
                                     } else {
-                                        update[key] = TableStruct[key]['default'];
+                                        update[key] = TableStruct[key].default;
                                     }
                                 } else {
-                                    if (typeof update[key] !== TableStruct[key]['type']) {
+                                    if (typeof update[key] !== TableStruct[key].type) {
                                         throw Error("Invalid type");
                                     }
                                 }
 
-                                if (TableStruct[key]['unique'] === true) {
+                                if (TableStruct[key].unique === true) {
                                     TableContent.forEach(c => {
                                         if (c[j] === update[key]) {
                                             throw new Error(`Value already exists: ${c[j]}`);
@@ -809,9 +802,9 @@ function deleteTableContent(dbName, schemaName, tableName, options) {
 
             let limit;
             let offset;
-            if (typeof options['limoffset'] !== "undefined") {
-                limit = options['limoffset']['limit'];
-                offset = options['limoffset']['offset'];
+            if (typeof options.limoffset !== "undefined") {
+                limit = options.limoffset.limit;
+                offset = options.limoffset.offset;
 
                 if (typeof TableContent[limit - 1] === "undefined") {
                     throw new Error("LIMIT greater than number of rows");
@@ -841,13 +834,13 @@ function deleteTableContent(dbName, schemaName, tableName, options) {
 
             let b = 0;
             let c = 0;
-            if (options['where'] !== null) {
+            if (options.where !== null) {
                 for (let i = 0; i < TableContent.length; i++) {
-                    let e = options['where'];
+                    let e = options.where;
                     for (let key in aaa[i]) {
                         if (aaa[i].hasOwnProperty(key)) {
                             if (e.search(new RegExp(`\`${key}\``, 'g')) !== -1) {
-                                if (TableStruct[key]['type'] === "string") {
+                                if (TableStruct[key].type === "string") {
                                     e = e.replace(new RegExp(`\`${key}\``, 'g'), `'${aaa[i][key].toString()}'`);
                                 } else {
                                     e = e.replace(new RegExp(`\`${key}\``, 'g'), aaa[i][key].toString());

@@ -35,11 +35,11 @@ function authUser(username, password) {
             }
         );
 
-        if (users.length === 0 || !users[0]['valid']) {
+        if (users.length === 0 || !users[0].valid) {
             throw new Error(`AUTHERR: Invalid username: ${username}`);
         }
 
-        if (users[0]['password'] === md5(password)) {
+        if (users[0].password === md5(password)) {
             return true;
         } else {
             throw new Error("AUTHERR: Wrong password");
@@ -106,17 +106,17 @@ function updateUser(username, update) {
         }
 
         if (update.hasOwnProperty('password')) {
-            update['password'] = md5(update['password']);
+            update.password = md5(update.password);
         }
 
         if (update.hasOwnProperty('privileges')) {
-            update['privileges'] = JSON.parse(update['privileges']);
-            for (let key in update['privileges']) {
-                if (update['privileges'].hasOwnProperty(key)) {
-                    update['privileges'][key] = parseInt(update['privileges'][key], 2);
+            update.privileges = JSON.parse(update.privileges);
+            for (let key in update.privileges) {
+                if (update.privileges.hasOwnProperty(key)) {
+                    update.privileges[key] = parseInt(update.privileges[key], 2);
                 }
             }
-            update['privileges'] = JSON.stringify(update['privileges']);
+            update.privileges = JSON.stringify(update.privileges);
         }
 
         table.update("jsdb", "public", "users", update, {"where": `\`username\` == '${username}'`});
@@ -172,7 +172,7 @@ function getUserPrivileges(username) {
             }
         );
 
-        if (users.length === 0 || !users[0]['valid']) {
+        if (users.length === 0 || !users[0].valid) {
             throw new Error(`AUTHERR: Invalid username: ${username}`);
         }
 

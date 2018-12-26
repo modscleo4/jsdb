@@ -10,16 +10,13 @@ const schema = require("./commands/schema");
 const sequence = require("./commands/sequence");
 const table = require("./commands/table");
 const user = require('./commands/user');
-const sql = require("./sql/sql");
-
-const md5 = require('md5');
 
 const assert = require('assert');
 
 describe('DB', function () {
     describe('#createDB()', function () {
         it('Should return \'Created DB a.\'', function () {
-            assert.equal(db.create('a'), 'Created DB a.');
+            assert.strictEqual(db.create('a'), 'Created DB a.');
         });
     });
 
@@ -33,13 +30,13 @@ describe('DB', function () {
 
     describe('#existsDB()', function () {
         it('Should return true', function () {
-            assert.equal(db.exists('a'), true);
+            assert.strictEqual(db.exists('a'), true);
         });
     });
 
     describe('#dropDB()', function () {
         it('Should return \'Dropped database a.\'', function () {
-            assert.equal(db.drop('a'), 'Dropped database a.');
+            assert.strictEqual(db.drop('a'), 'Dropped database a.');
         });
     });
 
@@ -61,7 +58,7 @@ describe('DB', function () {
 
     describe('#dropDB(ifExists)', function () {
         it('Should return \'Database a does not exist.', function () {
-            assert.equal(db.drop('a', true), 'Database a does not exist.');
+            assert.strictEqual(db.drop('a', true), 'Database a does not exist.');
         });
     });
 });
@@ -81,19 +78,19 @@ describe('Schema', function () {
 
     describe('#creteSchema()', function () {
         it('Should return \'Created schema a\'', function () {
-            assert.equal(schema.create('a', 'a'), 'Created schema a in DB a.');
+            assert.strictEqual(schema.create('a', 'a'), 'Created schema a in DB a.');
         });
     });
 
     describe('#existsSchema()', function () {
         it('Should return true', function () {
-            assert.equal(schema.exists('a', 'a'), true);
+            assert.strictEqual(schema.exists('a', 'a'), true);
         });
     });
 
     describe('#dropShema()', function () {
         it('Should return \'Dropped Schema a.\'', function () {
-            assert.equal(schema.drop('a', 'a'), 'Dropped schema a.');
+            assert.strictEqual(schema.drop('a', 'a'), 'Dropped schema a.');
         });
     });
 
@@ -115,7 +112,7 @@ describe('Schema', function () {
 
     describe('#dropSchema(ifExists)', function () {
         it('Should return \'Schema a does not exist.', function () {
-            assert.equal(schema.drop('a', 'a', true), 'Schema a does not exist.');
+            assert.strictEqual(schema.drop('a', 'a', true), 'Schema a does not exist.');
         });
     });
 
@@ -131,7 +128,7 @@ describe('Sequence', function () {
 
     describe('#createSequence()', function () {
         it('Should return \'Created sequence public.a_seq in DB a.\'', function () {
-            assert.equal(sequence.create('a', 'public', 'a_seq'), 'Created sequence public.a_seq in DB a.');
+            assert.strictEqual(sequence.create('a', 'public', 'a_seq'), 'Created sequence public.a_seq in DB a.');
         });
     });
 
@@ -145,31 +142,40 @@ describe('Sequence', function () {
 
     describe('#existsSequence()', function () {
         it('Should return true', function () {
-            assert.equal(sequence.exists('a', 'public', 'a_seq'), true);
+            assert.strictEqual(sequence.exists('a', 'public', 'a_seq'), true);
         });
     });
 
     describe('#readSequence()', function () {
         it('Should return the sequence in a named array', function () {
-            assert.equal(JSON.stringify(sequence.read('a', 'public', 'a_seq')), JSON.stringify({"start": 1, "inc": 1}));
+            assert.strictEqual(JSON.stringify(sequence.read('a', 'public', 'a_seq')), JSON.stringify({
+                "start": 1,
+                "inc": 1
+            }));
         });
     });
 
     describe('#updateSequence()', function () {
         it('Should return \'Updated sequence a.\'', function () {
-            assert.equal(sequence.update('a', 'public', 'a_seq', {"start": 2, "inc": 1}), 'Updated sequence a_seq.');
+            assert.strictEqual(sequence.update('a', 'public', 'a_seq', {
+                "start": 2,
+                "inc": 1
+            }), 'Updated sequence a_seq.');
         });
     });
 
     describe('#readSequence()', function () {
         it('Should return the sequence in a named array', function () {
-            assert.equal(JSON.stringify(sequence.read('a', 'public', 'a_seq')), JSON.stringify({"start": 2, "inc": 1}));
+            assert.strictEqual(JSON.stringify(sequence.read('a', 'public', 'a_seq')), JSON.stringify({
+                "start": 2,
+                "inc": 1
+            }));
         });
     });
 
     describe('#dropSequence()', function () {
         it('Should return \'Deleted sequence public.a_seq.\'', function () {
-            assert.equal(sequence.drop('a', 'public', 'a_seq'), 'Deleted sequence public.a_seq.');
+            assert.strictEqual(sequence.drop('a', 'public', 'a_seq'), 'Deleted sequence public.a_seq.');
         });
     });
 
@@ -183,7 +189,7 @@ describe('Sequence', function () {
 
     describe('#dropSequence(ifExists)', function () {
         it('Should return \'Sequence public.a_seq does not exist.\'', function () {
-            assert.equal(sequence.drop('a', 'public', 'a_seq', true), 'Sequence public.a_seq does not exist.');
+            assert.strictEqual(sequence.drop('a', 'public', 'a_seq', true), 'Sequence public.a_seq does not exist.');
         });
     });
 
@@ -215,7 +221,7 @@ describe('Table', function () {
 
     describe('#createTable()', function () {
         it('Should return \'Created table public.a in DB a\'', function () {
-            assert.equal(table.create('a', 'public', 'a', {
+            assert.strictEqual(table.create('a', 'public', 'a', {
                 "id": {
                     "type": "number",
                     "unique": true,
@@ -236,19 +242,19 @@ describe('Table', function () {
 
     describe('#existsTable()', function () {
         it('Should return true', function () {
-            assert.equal(table.exists('a', 'public', 'a'), true);
+            assert.strictEqual(table.exists('a', 'public', 'a'), true);
         });
     });
 
     describe('#insertTableContent()', function () {
         it('Should return \'Line inserted\'', function () {
-            assert.equal(table.insert('a', 'public', 'a', ["DEFAULT"]), 'Line inserted.');
+            assert.strictEqual(table.insert('a', 'public', 'a', ["DEFAULT"]), 'Line inserted.');
         });
     });
 
     describe('#insertTableContent()', function () {
         it('Should return \'Line inserted\'', function () {
-            assert.equal(table.insert('a', 'public', 'a', ["DEFAULT"]), 'Line inserted.');
+            assert.strictEqual(table.insert('a', 'public', 'a', ["DEFAULT"]), 'Line inserted.');
         });
     });
 
@@ -286,19 +292,19 @@ describe('Table', function () {
 
     describe('#selectTableContent()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.equal(JSON.stringify(table.select('a', 'public', 'a', ["*"], {})), JSON.stringify([{"id": 1}, {"id": 2}]));
+            assert.strictEqual(JSON.stringify(table.select('a', 'public', 'a', ["*"], {})), JSON.stringify([{"id": 1}, {"id": 2}]));
         });
     });
 
     describe('#selectTableContent()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.equal(JSON.stringify(table.select('a', 'public', 'a', ["*"], {"where": "`id` == 1"})), JSON.stringify([{"id": 1}]));
+            assert.strictEqual(JSON.stringify(table.select('a', 'public', 'a', ["*"], {"where": "`id` == 1"})), JSON.stringify([{"id": 1}]));
         });
     });
 
     describe('#selectTableContent()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.equal(JSON.stringify(table.select('a', 'public', 'a', ["*"], {
+            assert.strictEqual(JSON.stringify(table.select('a', 'public', 'a', ["*"], {
                 "orderby": [{
                     "column": "id",
                     "mode": "DESC"
@@ -309,31 +315,31 @@ describe('Table', function () {
 
     describe('#updateTableContent()', function () {
         it('Should return \'Updated 2 line(s) from public:a.\'', function () {
-            assert.equal(table.update('a', 'public', 'a', {"id": "DEFAULT"}, {"where": "true"}), 'Updated 2 line(s) from public:a.');
+            assert.strictEqual(table.update('a', 'public', 'a', {"id": "DEFAULT"}, {"where": "true"}), 'Updated 2 line(s) from public:a.');
         });
     });
 
     describe('#selectTableContent()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.equal(JSON.stringify(table.select('a', 'public', 'a', ["*"], {})), JSON.stringify([{"id": 3}, {"id": 4}]));
+            assert.strictEqual(JSON.stringify(table.select('a', 'public', 'a', ["*"], {})), JSON.stringify([{"id": 3}, {"id": 4}]));
         });
     });
 
     describe('#deleteTableContent()', function () {
         it('Should return \'Deleted 2 line(s) from public:a.\'', function () {
-            assert.equal(table.delete('a', 'public', 'a', {"where": "`id` > 2"}), 'Deleted 2 line(s) from public:a.');
+            assert.strictEqual(table.delete('a', 'public', 'a', {"where": "`id` > 2"}), 'Deleted 2 line(s) from public:a.');
         });
     });
 
     describe('#selectTableContent()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.equal(JSON.stringify(table.select('a', 'public', 'a', ["*"], {})), JSON.stringify([]));
+            assert.strictEqual(JSON.stringify(table.select('a', 'public', 'a', ["*"], {})), JSON.stringify([]));
         });
     });
 
     describe('#dropTable()', function () {
         it('Should return \'Dropped table a.\'', function () {
-            assert.equal(table.drop('a', 'public', 'a'), 'Dropped table a.');
+            assert.strictEqual(table.drop('a', 'public', 'a'), 'Dropped table a.');
         });
     });
 
@@ -347,7 +353,7 @@ describe('Table', function () {
 
     describe('#dropTable(ifExists)', function () {
         it('Should return \'Table public.a does not exist.\'', function () {
-            assert.equal(table.drop('a', 'public', 'a', true), 'Table public.a does not exist');
+            assert.strictEqual(table.drop('a', 'public', 'a', true), 'Table public.a does not exist');
         });
     });
 
@@ -397,13 +403,13 @@ describe('User', function () {
 
     describe('#createUser()', function () {
         it('Should return \'Created user internaluser:test\'', function () {
-            assert.equal(user.create('internaluser:test', 'jsdbadmin', {"test": 15}), "Created user internaluser:test")
+            assert.strictEqual(user.create('internaluser:test', 'jsdbadmin', {"test": 15}), "Created user internaluser:test")
         });
     });
 
     describe('#authUser()', function () {
         it('Should return true', function () {
-            assert.equal(JSON.stringify(user.auth('internaluser:test', 'jsdbadmin')), JSON.stringify(true))
+            assert.strictEqual(JSON.stringify(user.auth('internaluser:test', 'jsdbadmin')), JSON.stringify(true))
         });
     });
 
@@ -417,13 +423,13 @@ describe('User', function () {
 
     describe('#getUserPrivileges()', function () {
         it('Should return the user privileges', function () {
-            assert.equal(JSON.stringify(user.getPrivileges('internaluser:test')), JSON.stringify({"test": 15}))
+            assert.strictEqual(JSON.stringify(user.getPrivileges('internaluser:test')), JSON.stringify({"test": 15}))
         });
     });
 
     describe('#updateUser()', function () {
         it('Should return \'User internaluser:test updated\'', function () {
-            assert.equal(user.update('internaluser:test', {"username": 'internaluser:test2'}), 'User internaluser:test updated');
+            assert.strictEqual(user.update('internaluser:test', {"username": 'internaluser:test2'}), 'User internaluser:test updated');
         });
     });
 
@@ -445,7 +451,7 @@ describe('User', function () {
 
     describe('#dropUser()', function () {
         it('Should return \'User internaluser:test2 deleted\'', function () {
-            assert.equal(user.drop('internaluser:test2'), 'User internaluser:test2 deleted');
+            assert.strictEqual(user.drop('internaluser:test2'), 'User internaluser:test2 deleted');
         });
     });
 

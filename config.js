@@ -22,7 +22,7 @@ exports.removeSocket = function removeSocket(socket) {
 
 exports.rmdirRSync = function rmdirRSync(path) {
     if (fs.existsSync(path)) {
-        fs.readdirSync(path).forEach((file, index) => {
+        fs.readdirSync(path).forEach((file) => {
             let curPath = `${path}/${file}`;
             if (fs.lstatSync(curPath).isDirectory()) {
                 rmdirRSync(curPath);
