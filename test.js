@@ -392,7 +392,6 @@ describe('User', function () {
     let prev;
 
     before(function () {
-        let passwd = 'jsdbadmin';
         prev = sequence.read('jsdb', 'public', 'users_id_seq');
     });
 
@@ -408,14 +407,49 @@ describe('User', function () {
         });
     });
 
+    describe('#authUser()', function () {
+        it('Should throw \'AUTHERR: Wrong password\'', function () {
+            assert.throws(() => {
+                user.auth('internaluser:test', '')
+            })
+        });
+    });
+
     describe('#getUserPrivileges()', function () {
         it('Should return the user privileges', function () {
             assert.equal(JSON.stringify(user.getPrivileges('internaluser:test')), JSON.stringify({"test": 15}))
         });
     });
 
+    describe('#updateUser()', function () {
+        it('Should return \'User internaluser:test updated\'', function () {
+            assert.equal(user.update('internaluser:test', {"username": 'internaluser:test2'}), 'User internaluser:test updated');
+        });
+    });
+
+    describe('#authUser()', function () {
+        it('Should throw \'AUTHERR: Invalid username: internaluser:test\'', function () {
+            assert.throws(() => {
+                user.auth('internaluser:test', 'jsdbadmin')
+            });
+        });
+    });
+
+    describe('#getUserPrivileges()', function () {
+        it('Should throw \'AUTHERR: Invalid username: internaluser:test\'', function () {
+            assert.throws(() => {
+                user.getPrivileges('internaluser:test')
+            })
+        });
+    });
+
+    describe('#dropUser()', function () {
+        it('Should return \'User internaluser:test2 deleted\'', function () {
+            assert.equal(user.drop('internaluser:test2'), 'User internaluser:test2 deleted');
+        });
+    });
+
     after(function () {
-        table.delete('jsdb', 'public', 'users', {"where": '`username` == \'internaluser:test\''});
         sequence.update('jsdb', 'public', 'users_id_seq', prev);
     });
 });

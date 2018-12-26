@@ -21,6 +21,8 @@ const {
 } = require('perf_hooks');
 
 function run(sql, socketIndex) {
+    let dbs = [];
+
     let dbName = {
         get: function () {
             return config.sockets[socketIndex].dbName;
@@ -28,6 +30,8 @@ function run(sql, socketIndex) {
 
         set: function (dbS) {
             if (db.exists(dbS)) {
+                dbs.push(dbS);
+                db.backup(dbS);
                 config.sockets[socketIndex].dbName = dbS;
                 return `Using database ${dbS}.`;
             }
@@ -48,28 +52,8 @@ function run(sql, socketIndex) {
     };
 
     if (typeof sql === "string") {
-        /* Array of all SQL command outputs
-        * Organization:
-        * [
-        *   {
-        *     "code": 0,
-        *     "message": "",
-        *     "data": [
-        *       {
-        *         "id": 1
-        *       }
-        *     ],
-        *     "sql": "SELECT * FROM adm"
-        *   },
-        *
-        *   {
-        *     "code": 1,
-        *     "message": "Unique ID error: Already exists",
-        *     "sql": "INSERT INTO adm '["DEFAULT"]'"
-        *   }
-        * ]
-        * */
-        let output = [];
+        /* Array of all SQL command outputs */
+        let output = {};
 
         if (sql[sql.length - 1] !== ";") {
             sql += ";";
@@ -103,8 +87,7 @@ function run(sql, socketIndex) {
                     t = t.splice(0, t.length - 1);
                     o['data'] = t;
                     o['code'] = 0;
-                    output.push(o);
-                    return output;
+                    return o;
                 }
 
                 let t = sql_parser.lexer.tokenize(sqlString);
@@ -124,11 +107,11 @@ function run(sql, socketIndex) {
                 /*
                 * Get user permissions on database
                 * */
-                function getPermissions() {
+                function getPermissions(dbN = dbName.get()) {
                     let userPrivileges = user.getPrivileges(config.sockets[socketIndex].username);
                     if (!userPrivileges.hasOwnProperty("*")) {
-                        if (userPrivileges.hasOwnProperty(dbName.get())) {
-                            let dbPerm = userPrivileges[dbName.get()];
+                        if (userPrivileges.hasOwnProperty(dbN)) {
+                            let dbPerm = userPrivileges[dbN];
                             dbPerm = parseInt(dbPerm).toString(2);
 
                             userPrivileges = {
@@ -181,7 +164,7 @@ function run(sql, socketIndex) {
                             o['message'] = e.message;
                         }
                     } else {
-                        o['code'] = 1;
+                        o['code'] = 2;
                         o['message'] = `Unrecognized command: ${o['sql']}`;
                     }
                 } else if (t[0][1].toUpperCase() === "SELECT") {
@@ -404,8 +387,10 @@ function run(sql, socketIndex) {
                             o['code'] = 1;
                             o['message'] = e.message;
                         }
+                    } else if (t[1][1].toUpperCase() === "USER") {
+
                     } else {
-                        o['code'] = 1;
+                        o['code'] = 2;
                         o['message'] = `Unrecognized command: ${o['sql']}`;
                     }
                 } else if (t[0][1].toUpperCase() === "INSERT") {
@@ -476,7 +461,7 @@ function run(sql, socketIndex) {
                     }
 
                     try {
-                        if (!userPrivileges.update) {
+                        if (!userPrivileges.update || (dbName.get() === "jsdb" && schemaName.get() === "public" && tableName === "users")) {
                             throw new Error("Not enough permissions");
                         }
 
@@ -591,7 +576,7 @@ function run(sql, socketIndex) {
                     }
 
                     try {
-                        if (!userPrivileges.update) {
+                        if (!userPrivileges.update || (dbName.get() === "jsdb" && schemaName.get() === "public" && tableName === "users")) {
                             throw new Error("Not enough permissions");
                         }
 
@@ -599,6 +584,63 @@ function run(sql, socketIndex) {
                     } catch (e) {
                         o['code'] = 1;
                         o['message'] = e.message;
+                    }
+                } else if (t[0][1].toUpperCase() === "ALTER") {
+                    if (t[1][1].toUpperCase() === "USER") {
+                        let username = t[2][1];
+                        let update = {};
+
+                        for (let i = 2; i < t.length; i++) {
+                            if (t[i][1].toUpperCase() === "SET") {
+                                /* GET update */
+                                for (let j = 0; j < t.length; j++) {
+                                    if (t[j][0] !== "LITERAL" && t[j][0] !== "STRING" && t[j][0] !== "NUMBER" && t[j][0] !== "BOOLEAN" && t[j][0] !== "OPERATOR" && t[j][0] !== "SEPARATOR") {
+                                        break;
+                                    }
+
+                                    if (t[j][0] === "LITERAL") {
+                                        if (t[j][1].toUpperCase() === "DEFAULT") {
+                                            t[j][0] = "STRING";
+                                        } else if (t[j][1].toUpperCase() === "MD5") {
+                                            if (t[j + 1][0] === "LEFT_PAREN" && t[j + 3][0] === "RIGHT_PAREN") {
+                                                t[j][1] = md5(t[j + 2][1]);
+                                                t.splice(j + 1, 3);
+                                            }
+                                        }
+                                    }
+
+                                    if (t[j][0] === "LITERAL" && t[j + 1][1] === "=") {
+                                        if (t[j][0] === "BOOLEAN" && t[j][1].toUpperCase() === "NULL") {
+                                            t[j][0] = "NUlL";
+                                        }
+
+                                        if (t[j + 2][0] === "STRING") {
+                                            update[t[j][1]] = t[j + 2][1];
+                                        } else if (t[j + 2][0] === "NUMBER") {
+                                            update[t[j][1]] = parseFloat(t[j + 2][1]);
+                                        } else if (t[j + 2][0] === "BOOLEAN") {
+                                            update[t[j][1]] = (t[j + 2][1].toUpperCase() === "TRUE");
+                                        } else if (t[j + 2][0] === "NULL") {
+                                            update.push(null);
+                                        }
+                                    }
+                                }
+
+                                break;
+                            }
+                        }
+
+                        try {
+                            userPrivileges = getPermissions("jsdb");
+                            if (!userPrivileges.update || username === config.sockets[socketIndex].username) {
+                                throw new Error("Not enough permissions");
+                            }
+
+                            o['data'] = user.update(username, update);
+                        } catch (e) {
+                            o['code'] = 1;
+                            o['message'] = e.message;
+                        }
                     }
                 } else if (t[0][1].toUpperCase() === "DELETE") {
                     let a = 0;
@@ -664,7 +706,7 @@ function run(sql, socketIndex) {
                     }
 
                     try {
-                        if (!userPrivileges.delete) {
+                        if (!userPrivileges.delete || (dbName.get() === "jsdb" && schemaName.get() === "public" && tableName === "users")) {
                             throw new Error("Not enough permissions");
                         }
 
@@ -771,8 +813,22 @@ function run(sql, socketIndex) {
                             o['code'] = 1;
                             o['message'] = e.message;
                         }
+                    } else if (t[1][1].toUpperCase() === "USER") {
+                        let username = t[2][1];
+
+                        try {
+                            userPrivileges = getPermissions("jsdb");
+                            if (!userPrivileges.delete || username === config.sockets[socketIndex].username) {
+                                throw new Error("Not enough permissions");
+                            }
+
+                            o['data'] = user.drop(username);
+                        } catch (e) {
+                            o['code'] = 1;
+                            o['message'] = e.message;
+                        }
                     } else {
-                        o['code'] = 1;
+                        o['code'] = 2;
                         o['message'] = `Unrecognized command: ${o['sql']}`;
                     }
                 } else if (t[0][1].toUpperCase() === "SHOW") {
@@ -839,16 +895,7 @@ function run(sql, socketIndex) {
                                 throw new Error("Not enough permissions");
                             }
 
-                            let a = sequence.readFile(dbName.get(), schemaName.get());
-                            let seq = [];
-
-                            for (let key in a) {
-                                if (a.hasOwnProperty(key)) {
-                                    seq.push(key);
-                                }
-                            }
-
-                            o['data'] = s;
+                            o['data'] = sequence.readFile(dbName.get(), schemaName.get());
 
                             dbName.set(d);
                             schemaName.set(s);
@@ -895,12 +942,33 @@ function run(sql, socketIndex) {
                             dbName.set(d);
                             schemaName.set(s);
                         }
+                    } else if (t[1][1].toUpperCase() === "USERS") {
+                        try {
+                            userPrivileges = getPermissions("jsdb");
+                            if (!userPrivileges.read) {
+                                throw new Error("Not enough permissions");
+                            }
+
+                            o['data'] = table.select('jsdb', 'public', 'users', ['id', 'username', 'valid', 'privileges'], {});
+                            o['data'].forEach(r => {
+                                r['valid'] = (r['valid']) ? "Yes" : "No";
+                                for (let key in r['privileges']) {
+                                    if (r['privileges'].hasOwnProperty(key)) {
+                                        r['privileges'][key] = parseInt(r['privileges'][key]).toString(2);
+                                    }
+                                }
+                            });
+                        } catch (e) {
+                            o['code'] = 1;
+                            o['message'] = e.message;
+                        }
+
                     } else {
-                        o['code'] = 1;
+                        o['code'] = 2;
                         o['message'] = `Unrecognized command: ${o['sql']}`;
                     }
                 } else {
-                    o['code'] = 1;
+                    o['code'] = 2;
                     o['message'] = `Unrecognized command: ${o['sql']}`;
                 }
 
@@ -908,7 +976,14 @@ function run(sql, socketIndex) {
                     o['time'] = performance.now() - o['time'];
                 }
 
-                output.push(o);
+                output = o;
+
+                if (o['code'] === 1) {
+                    // Restore backup
+                    dbs.forEach(dbN => {
+                        db.restore(dbN);
+                    });
+                }
             }
         }
         return output;

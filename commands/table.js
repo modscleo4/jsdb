@@ -4,8 +4,6 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  *
  * @type {module:fs}
- *
- * @todo: Run on a backup table, then delete the original and rename
  */
 
 const fs = require('fs');
@@ -334,6 +332,10 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
             for (let i = 0; i < TableContent.length; i++) {
                 r[i] = {};
                 columns.forEach(column => {
+                    if (!TableStruct.hasOwnProperty(column)) {
+                        throw new Error(`Table ${schemaName}.${tableName} does not have column ${column}`);
+                    }
+
                     let j = 0;
                     for (let key in TableStruct) {
                         if (TableStruct.hasOwnProperty(key)) {
@@ -374,8 +376,8 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
 
         if (typeof options['orderby'] !== "undefined") {
             function getC(orderBy) {
-                if (typeof orderBy[0]['column'] === "undefined") {
-                    if (typeof TableStruct[`${tableName}.metadata`]['primaryKey'] === "undefined") {
+                if (!orderBy[0].hasOwnProperty('column')) {
+                    if (!TableStruct[`${tableName}.metadata`].hasOwnProperty('primaryKey')) {
                         let key;
                         for (key in TableStruct) {
                             if (key !== `${tableName}.metadata`) {
@@ -388,7 +390,7 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
                         return TableStruct[`${tableName}.metadata`]['primaryKey'][0];
                     }
                 } else {
-                    if (typeof TableStruct[orderBy[0]['column']] === "undefined") {
+                    if (!TableStruct.hasOwnProperty(orderBy[0]['column'])) {
                         throw new Error(`Column ${orderBy[0]['column']} does not exist`);
                     }
                     return orderBy[0]['column'];
@@ -402,6 +404,9 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
                     return orderBy[0]['mode'];
                 }
             }
+
+            /* Check if the column 0 exists */
+            getC(options['orderby']);
 
             function sorting(orderBy) {
                 return function (a, b) {
@@ -566,7 +571,6 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
 
                         /*
                         * If true, it's a sequence
-                        * @todo Reset the sequence if an error happened
                         * */
                         if (typeof TableStruct[key]['default'] === "string" && (a = TableStruct[key]['default'].search("sequence[(].*[)]")) !== -1) {
                             let seqName = TableStruct[key]['default'].slice(a + "sequence(".length, TableStruct[key]['default'].length - 1);
@@ -710,7 +714,7 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
                             let isDefault = false;
                             if (update.hasOwnProperty(key)) {
                                 if (!aaa[0].hasOwnProperty(key)) {
-                                    throw new Error("Column ${key} does not exist.");
+                                    throw new Error(`Column ${key} does not exist.`);
                                 }
 
                                 let j = 0;

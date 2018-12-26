@@ -4,8 +4,6 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  *
  * @type {module:fs}
- *
- * @todo: Run on a backup DB, then delete the original and rename
  */
 
 const fs = require('fs');
@@ -89,15 +87,12 @@ function readDBFile() {
     if (config.createZip) {
         DBList.forEach(dbName => {
             if (fs.existsSync(`${config.startDir}dbs/${dbName}`)) {
-                let zip = new admzip();
-                zip.addLocalFolder(`${config.startDir}dbs/${dbName}`);
-                zip.writeZip(`${config.startDir}dbs/${dbName}.jsdb`);
+                backupDB(dbName);
 
                 config.rmdirRSync(`${config.startDir}dbs/${dbName}/`);
             }
 
-            let zip = new admzip(`${config.startDir}dbs/${dbName}.jsdb`);
-            zip.extractAllTo(`${config.startDir}dbs/${dbName}`, true);
+            restoreDB(dbName);
         });
     }
 
@@ -225,6 +220,41 @@ function existsDB(dbName) {
     }
 }
 
+/**
+ * @summary Backup a database
+ *
+ * @param dbName {String} The DB name
+ *
+ * @throws {Error} If the DB does not exist, throw an error
+ */
+function backupDB(dbName) {
+    if (typeof dbName === "string") {
+        if (existsDB(dbName)) {
+            let zip = new admzip();
+            zip.addLocalFolder(`${config.startDir}dbs/${dbName}`);
+            zip.writeZip(`${config.startDir}dbs/${dbName}.jsdb`);
+        }
+    }
+}
+
+/**
+ * @summary Restore a backup
+ *
+ * @param dbName {String} The DB name
+ *
+ * @throws {Error} If the backup file does not exits, throw an error
+ */
+function restoreDB(dbName) {
+    if (typeof dbName === "string") {
+        if (fs.existsSync(`${config.startDir}dbs/${dbName}.jsdb`)) {
+            let zip = new admzip(`${config.startDir}dbs/${dbName}.jsdb`);
+            zip.extractAllTo(`${config.startDir}dbs/${dbName}`, true);
+        } else {
+            throw new Error(`Backup file for ${dbName} does not exist`);
+        }
+    }
+}
+
 exports.create = createDB;
 exports.createFolder = createDBFolder;
 
@@ -234,3 +264,6 @@ exports.writeFile = writeDBFile;
 exports.drop = dropDB;
 
 exports.exists = existsDB;
+
+exports.backup = backupDB;
+exports.restore = restoreDB;

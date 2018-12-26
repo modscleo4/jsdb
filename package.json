@@ -12,7 +12,8 @@
   },
   "directories": {
     "commands": "./commands",
-    "sql": "./sql"
+    "sql": "./sql",
+    "lib": "./lib"
   },
   "license": "Apache-2.0",
   "dependencies": {

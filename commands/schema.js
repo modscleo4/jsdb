@@ -4,8 +4,6 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  *
  * @type {module:fs}
- *
- * @todo: Run on a backup schema, then delete the original and rename
  */
 
 const fs = require('fs');

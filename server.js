@@ -41,6 +41,8 @@ let server = net.createServer(socket => {
         if (config.ignAuth && sqlCmd.includes("credentials: ")) {
             socket.username = "grantall::jsdbadmin";
             config.addSocket(socket);
+            socket.write("AUTHOK");
+            logger.log(`[${socket.remoteAddress}] User authenticated (NOAUTH)`);
             return;
         }
 
@@ -99,16 +101,21 @@ let server = net.createServer(socket => {
 let address = "localhost";
 let port = 6637;
 let dir = "./";
+let params = [];
 
 for (let i = 0; i < process.argv.length; i++) {
     if (process.argv[i] === "-d" || process.argv[i] === "--dir") {
         dir = process.argv[i + 1];
+        params.push('d');
     } else if (process.argv[i] === "-p" || process.argv[i] === "--port") {
         port = parseInt(process.argv[i + 1]);
+        params.push('p');
     } else if (process.argv[i] === "-N" || process.argv[i] === "--noAuth") {
         config.ignAuth = true;
+        params.push('N');
     } else if (process.argv[i] === "-Z" || process.argv[i] === "--createZip") {
         config.createZip = true;
+        params.push('Z');
     }
 }
 
@@ -122,9 +129,11 @@ if (port === 0) {
 
 if (address !== "" && port !== 0 && dir !== "") {
     server.listen(port, address);
+    logger.log(`Server started with parameters ${params}`);
     console.log(`Running server on ${address}:${port}, ${dir}`);
     if (config.ignAuth) {
         console.log('Warning: running without authentication!');
+        logger.log(`Warning: Server started without authentication`);
     }
     config.startDir = dir;
     db.readFile();
