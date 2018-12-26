@@ -20,7 +20,7 @@ const {
     performance
 } = require('perf_hooks');
 
-function run(sql, socketIndex) {
+function parseSQL(sql, socketIndex) {
     let dbs = [];
 
     let dbName = {
@@ -52,7 +52,8 @@ function run(sql, socketIndex) {
     };
 
     if (typeof sql === "string") {
-        /* Array of all SQL command outputs */
+        dbName.set(dbName.get());
+        /* Array of SQL command outputs */
         let output = {};
 
         if (sql[sql.length - 1] !== ";") {
@@ -63,7 +64,7 @@ function run(sql, socketIndex) {
 
         let perf = true;
         for (let i = 0; i < sql.length; i++) {
-            let sqlString = sql[i];
+            let sqlString = sql[i].trim();
             if (sqlString !== "") {
                 if (sqlString === "NOPERF") {
                     perf = false;
@@ -984,11 +985,15 @@ function run(sql, socketIndex) {
                         db.restore(dbN);
                     });
                 }
+
+                /* Stop the code execution if a command fails */
+                if (o['code'] !== 0) {
+                    break;
+                }
             }
         }
         return output;
     }
-
 }
 
-exports.run = run;
+module.exports = parseSQL;

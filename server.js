@@ -71,7 +71,7 @@ let server = net.createServer(socket => {
 
         try {
             logger.log(`[${socket.username}@${socket.remoteAddress}] SQL: ${sqlCmd}`);
-            let r = sql.run(sqlCmd, config.sockets.indexOf(socket));
+            let r = sql(sqlCmd, config.sockets.indexOf(socket));
 
             if (typeof r === "object") {
                 r = JSON.stringify(r);
