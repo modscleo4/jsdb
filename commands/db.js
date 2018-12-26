@@ -10,7 +10,6 @@ const fs = require('fs');
 const schema = require('./schema');
 const table = require('./table');
 const config = require('../config');
-const archiver = require('archiver');
 const admzip = require('adm-zip');
 
 const f_dblist = 'dblist.json';

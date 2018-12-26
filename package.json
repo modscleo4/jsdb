@@ -23,7 +23,6 @@
   },
   "dependencies": {
     "adm-zip": "^0.4.13",
-    "archiver": "^3.0.0",
     "md5": "^2.2.1",
     "perf_hooks": "0.0.1",
     "sql-parser": "^0.5.0"
