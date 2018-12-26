@@ -19,12 +19,12 @@ let server = net.createServer(socket => {
     socket.dbName = "jsdb";
     socket.schemaName = "public";
 
-    logger.log(`User connected, IP: ${socket.remoteAddress}`);
+    logger.log(0, `User connected, IP: ${socket.remoteAddress}`);
 
     db.readFile();
 
     socket.on('end', () => {
-        logger.log(`[${socket.remoteAddress}] User disconnected`);
+        logger.log(0, `[${socket.remoteAddress}] User disconnected`);
         config.removeSocket(socket);
     });
 
@@ -42,7 +42,7 @@ let server = net.createServer(socket => {
             socket.username = "grantall::jsdbadmin";
             config.addSocket(socket);
             socket.write("AUTHOK");
-            logger.log(`[${socket.remoteAddress}] User authenticated (NOAUTH)`);
+            logger.log(1, `[${socket.remoteAddress}] User authenticated (NOAUTH)`);
             return;
         }
 
@@ -58,11 +58,11 @@ let server = net.createServer(socket => {
                     config.addSocket(socket);
 
                     socket.write("AUTHOK");
-                    logger.log(`[${socket.remoteAddress}] User authenticated, username: ${credentials.username}`);
+                    logger.log(0, `[${socket.remoteAddress}] User authenticated, username: ${credentials.username}`);
                     return;
                 }
             } catch (e) {
-                logger.log(`[${socket.remoteAddress}] Authentication error: ${e.message}`);
+                logger.log(1, `[${socket.remoteAddress}] Authentication error: ${e.message}`);
                 socket.write(e.message);
                 socket.destroy();
                 return;
@@ -70,7 +70,7 @@ let server = net.createServer(socket => {
         }
 
         try {
-            logger.log(`[${socket.username}@${socket.remoteAddress}] SQL: ${sqlCmd}`);
+            logger.log(0, `[${socket.username}@${socket.remoteAddress}] SQL: ${sqlCmd}`);
             let r = sql(sqlCmd, config.sockets.indexOf(socket));
 
             if (typeof r === "object") {
@@ -80,6 +80,7 @@ let server = net.createServer(socket => {
             socket.write(r);
         } catch (err) {
             socket.write(`[{"code": 1, "message": "${err.message}"}]`);
+            logger.log(2, `[${socket.username}@${socket.remoteAddress}] ${err.message}`);
         }
     });
 
@@ -129,11 +130,11 @@ if (port === 0) {
 
 if (address !== "" && port !== 0 && dir !== "") {
     server.listen(port, address);
-    logger.log(`Server started with parameters ${params}`);
+    logger.log(0, `Server started with parameters [${params.join(", ")}]`);
     console.log(`Running server on ${address}:${port}, ${dir}`);
     if (config.ignAuth) {
         console.log('Warning: running without authentication!');
-        logger.log(`Warning: Server started without authentication`);
+        logger.log(1, `Warning: Server started without authentication`);
     }
     config.startDir = dir;
     db.readFile();
