@@ -1,7 +1,31 @@
-/**
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: commands/sequence.js</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link href="styles/prettify-tomorrow.css" rel="stylesheet" type="text/css">
+    <link href="styles/jsdoc-default.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: commands/sequence.js</h1>
+
+
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
  * @file Contains functions to interact with sequences, like CREATE and UPDATE
  *
- * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
+ * @author Dhiego Cassiano Fogaça Barbosa &lt;modscleo4@outlook.com>
  */
 
 const fs = require('fs');
@@ -23,7 +47,7 @@ exports.f_seqlist = f_seqlist;
  * @throws {Error} If the sequence already exists, throw an error
  * */
 function createSequence(dbName, schemaName, seqName, options = {"start": 1, "inc": 1}) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof  options === "object") {
+    if (typeof dbName === "string" &amp;&amp; typeof schemaName === "string" &amp;&amp; typeof seqName === "string" &amp;&amp; typeof  options === "object") {
         let SequenceList = readSequenceFile(dbName, schemaName);
 
         if (SequenceList.hasOwnProperty(seqName)) {
@@ -47,7 +71,7 @@ function createSequence(dbName, schemaName, seqName, options = {"start": 1, "inc
  * @throws {Error} If the schema does not exist, throw an error
  * */
 function readSequenceFile(dbName, schemaName) {
-    if (typeof dbName === "string" && typeof schemaName === "string") {
+    if (typeof dbName === "string" &amp;&amp; typeof schemaName === "string") {
         if (schema.exists(dbName, schemaName)) {
             if (!fs.existsSync(`${config.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`)) {
                 writeSequenceFile(dbName, schemaName, JSON.stringify({}));
@@ -69,7 +93,7 @@ function readSequenceFile(dbName, schemaName) {
  * @throws {Error} If the schema does not exist, throw an error
  * */
 function writeSequenceFile(dbName, schemaName, content) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof content === "string") {
+    if (typeof dbName === "string" &amp;&amp; typeof schemaName === "string" &amp;&amp; typeof content === "string") {
         if (schema.exists(dbName, schemaName)) {
             fs.writeFileSync(`${config.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`, content);
         }
@@ -87,7 +111,7 @@ function writeSequenceFile(dbName, schemaName, content) {
  * @throws {Error} If the schema/sequence does not exist, throw an error
  * */
 function existsSequence(dbName, schemaName, seqName) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string") {
+    if (typeof dbName === "string" &amp;&amp; typeof schemaName === "string" &amp;&amp; typeof seqName === "string") {
         if (schema.exists(dbName, schemaName)) {
             let TableList = readSequenceFile(dbName, schemaName);
             if (TableList.hasOwnProperty(seqName)) {
@@ -110,7 +134,7 @@ function existsSequence(dbName, schemaName, seqName) {
  * @throws {Error} If the sequence does not exist, throw an error
  * */
 function readSequence(dbName, schemaName, seqName) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string") {
+    if (typeof dbName === "string" &amp;&amp; typeof schemaName === "string" &amp;&amp; typeof seqName === "string") {
         if (existsSequence(dbName, schemaName, seqName)) {
             let SequenceList = readSequenceFile(dbName, schemaName);
 
@@ -131,7 +155,7 @@ function readSequence(dbName, schemaName, seqName) {
  * @throws {Error} If the sequence does not exist, throw an error
  * */
 function updateSequence(dbName, schemaName, seqName, content) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof content === "object") {
+    if (typeof dbName === "string" &amp;&amp; typeof schemaName === "string" &amp;&amp; typeof seqName === "string" &amp;&amp; typeof content === "object") {
         if (existsSequence(dbName, schemaName, seqName)) {
             let SequenceList = readSequenceFile(dbName, schemaName);
 
@@ -158,8 +182,8 @@ function updateSequence(dbName, schemaName, seqName, content) {
  * @throws {Error} If the sequence does not exist and ifExists is false, throw an error
  * */
 function dropSequence(dbName, schemaName, seqName, ifExists = false) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof ifExists === "boolean") {
-        if ((ifExists && readSequenceFile(dbName, schemaName).hasOwnProperty(seqName)) || (!ifExists && existsSequence(dbName, schemaName, seqName))) {
+    if (typeof dbName === "string" &amp;&amp; typeof schemaName === "string" &amp;&amp; typeof seqName === "string" &amp;&amp; typeof ifExists === "boolean") {
+        if ((ifExists &amp;&amp; readSequenceFile(dbName, schemaName).hasOwnProperty(seqName)) || (!ifExists &amp;&amp; existsSequence(dbName, schemaName, seqName))) {
             let SequenceList = readSequenceFile(dbName, schemaName);
             delete(SequenceList[seqName]);
 
@@ -181,3 +205,69 @@ exports.exists = existsSequence;
 
 exports.readFile = readSequenceFile;
 exports.writeFile = writeSequenceFile;
+</code></pre>
+        </article>
+    </section>
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2>
+    <h3>Global</h3>
+    <ul>
+        <li><a href="global.html#authUser">authUser</a></li>
+        <li><a href="global.html#backupDB">backupDB</a></li>
+        <li><a href="global.html#createDB">createDB</a></li>
+        <li><a href="global.html#createDBFolder">createDBFolder</a></li>
+        <li><a href="global.html#createSchema">createSchema</a></li>
+        <li><a href="global.html#createSchemaFolder">createSchemaFolder</a></li>
+        <li><a href="global.html#createSequence">createSequence</a></li>
+        <li><a href="global.html#createTable">createTable</a></li>
+        <li><a href="global.html#createTableFolder">createTableFolder</a></li>
+        <li><a href="global.html#createUser">createUser</a></li>
+        <li><a href="global.html#deleteTableContent">deleteTableContent</a></li>
+        <li><a href="global.html#dropDB">dropDB</a></li>
+        <li><a href="global.html#dropSchema">dropSchema</a></li>
+        <li><a href="global.html#dropSequence">dropSequence</a></li>
+        <li><a href="global.html#dropTable">dropTable</a></li>
+        <li><a href="global.html#dropUser">dropUser</a></li>
+        <li><a href="global.html#existsDB">existsDB</a></li>
+        <li><a href="global.html#existsSchema">existsSchema</a></li>
+        <li><a href="global.html#existsSequence">existsSequence</a></li>
+        <li><a href="global.html#existsTable">existsTable</a></li>
+        <li><a href="global.html#getUserPrivileges">getUserPrivileges</a></li>
+        <li><a href="global.html#insertTableContent">insertTableContent</a></li>
+        <li><a href="global.html#log">log</a></li>
+        <li><a href="global.html#readDBFile">readDBFile</a></li>
+        <li><a href="global.html#readSchemaFile">readSchemaFile</a></li>
+        <li><a href="global.html#readSequence">readSequence</a></li>
+        <li><a href="global.html#readSequenceFile">readSequenceFile</a></li>
+        <li><a href="global.html#readTableContent">readTableContent</a></li>
+        <li><a href="global.html#readTableFile">readTableFile</a></li>
+        <li><a href="global.html#readTableStructure">readTableStructure</a></li>
+        <li><a href="global.html#restoreDB">restoreDB</a></li>
+        <li><a href="global.html#selectTableContent">selectTableContent</a></li>
+        <li><a href="global.html#updateSequence">updateSequence</a></li>
+        <li><a href="global.html#updateTableContent">updateTableContent</a></li>
+        <li><a href="global.html#updateUser">updateUser</a></li>
+        <li><a href="global.html#writeDBFile">writeDBFile</a></li>
+        <li><a href="global.html#writeSchemaFile">writeSchemaFile</a></li>
+        <li><a href="global.html#writeSequenceFile">writeSequenceFile</a></li>
+        <li><a href="global.html#writeTableContent">writeTableContent</a></li>
+        <li><a href="global.html#writeTableFile">writeTableFile</a></li>
+        <li><a href="global.html#writeTableStructure">writeTableStructure</a></li>
+    </ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Dec 27 2018 20:54:52
+    GMT-0200 (GMT-02:00)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>

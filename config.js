@@ -1,3 +1,9 @@
+/**
+ * @file This script carries config variables for all JSDB modules
+ *
+ * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
+ */
+
 const fs = require('fs');
 
 let ignAuth = false;

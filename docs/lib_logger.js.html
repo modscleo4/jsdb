@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: lib/logger.js</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link href="styles/prettify-tomorrow.css" rel="stylesheet" type="text/css">
+    <link href="styles/jsdoc-default.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: lib/logger.js</h1>
+
+
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file Script to the logging system
+ *
+ * @author Dhiego Cassiano Fogaça Barbosa &lt;modscleo4@outlook.com>
+ */
+
+const config = require('../config');
+const fs = require('fs');
+
+Number.prototype.pad = function (size) {
+    let s = String(this);
+    while (s.length &lt; (size || 2)) {
+        s = "0" + s;
+    }
+    return s;
+};
+
+/**
+ * @summary Logs to file
+ *
+ * @param status {number} The status code (0 - Info, 1 - Warning, 2 - Error)
+ * @param str {string} What to log
+ */
+function log(status, str) {
+    if (typeof status === "number" &amp;&amp; typeof str === "string") {
+        let d = new Date();
+        let h = d.toISOString();
+        if (!fs.existsSync(`${config.startDir}logs/`)) {
+            fs.mkdirSync(`${config.startDir}logs/`);
+        }
+
+        if (!str.endsWith("\n")) {
+            str += "\n";
+        }
+
+        str = `${h}: ${str}`;
+
+        if (status === 0) {
+            str = `(-) ${str}`;
+        } else if (status === 1) {
+            str = `(!) ${str}`;
+        } else if (status === 1) {
+            str = `(*) ${str}`;
+        }
+
+        let date = config.date;
+        let file = `${config.startDir}logs/${date.getFullYear()}-${(date.getMonth() + 1).pad()}-${date.getDate().pad()}_${date.getHours().pad()}_${date.getMinutes().pad()}_${date.getSeconds().pad()}.log`;
+        fs.appendFileSync(file, str);
+    }
+}
+
+exports.log = log;
+</code></pre>
+        </article>
+    </section>
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2>
+    <h3>Global</h3>
+    <ul>
+        <li><a href="global.html#authUser">authUser</a></li>
+        <li><a href="global.html#backupDB">backupDB</a></li>
+        <li><a href="global.html#createDB">createDB</a></li>
+        <li><a href="global.html#createDBFolder">createDBFolder</a></li>
+        <li><a href="global.html#createSchema">createSchema</a></li>
+        <li><a href="global.html#createSchemaFolder">createSchemaFolder</a></li>
+        <li><a href="global.html#createSequence">createSequence</a></li>
+        <li><a href="global.html#createTable">createTable</a></li>
+        <li><a href="global.html#createTableFolder">createTableFolder</a></li>
+        <li><a href="global.html#createUser">createUser</a></li>
+        <li><a href="global.html#deleteTableContent">deleteTableContent</a></li>
+        <li><a href="global.html#dropDB">dropDB</a></li>
+        <li><a href="global.html#dropSchema">dropSchema</a></li>
+        <li><a href="global.html#dropSequence">dropSequence</a></li>
+        <li><a href="global.html#dropTable">dropTable</a></li>
+        <li><a href="global.html#dropUser">dropUser</a></li>
+        <li><a href="global.html#existsDB">existsDB</a></li>
+        <li><a href="global.html#existsSchema">existsSchema</a></li>
+        <li><a href="global.html#existsSequence">existsSequence</a></li>
+        <li><a href="global.html#existsTable">existsTable</a></li>
+        <li><a href="global.html#getUserPrivileges">getUserPrivileges</a></li>
+        <li><a href="global.html#insertTableContent">insertTableContent</a></li>
+        <li><a href="global.html#log">log</a></li>
+        <li><a href="global.html#readDBFile">readDBFile</a></li>
+        <li><a href="global.html#readSchemaFile">readSchemaFile</a></li>
+        <li><a href="global.html#readSequence">readSequence</a></li>
+        <li><a href="global.html#readSequenceFile">readSequenceFile</a></li>
+        <li><a href="global.html#readTableContent">readTableContent</a></li>
+        <li><a href="global.html#readTableFile">readTableFile</a></li>
+        <li><a href="global.html#readTableStructure">readTableStructure</a></li>
+        <li><a href="global.html#restoreDB">restoreDB</a></li>
+        <li><a href="global.html#selectTableContent">selectTableContent</a></li>
+        <li><a href="global.html#updateSequence">updateSequence</a></li>
+        <li><a href="global.html#updateTableContent">updateTableContent</a></li>
+        <li><a href="global.html#updateUser">updateUser</a></li>
+        <li><a href="global.html#writeDBFile">writeDBFile</a></li>
+        <li><a href="global.html#writeSchemaFile">writeSchemaFile</a></li>
+        <li><a href="global.html#writeSequenceFile">writeSequenceFile</a></li>
+        <li><a href="global.html#writeTableContent">writeTableContent</a></li>
+        <li><a href="global.html#writeTableFile">writeTableFile</a></li>
+        <li><a href="global.html#writeTableStructure">writeTableStructure</a></li>
+    </ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Dec 27 2018 20:54:52
+    GMT-0200 (GMT-02:00)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>
