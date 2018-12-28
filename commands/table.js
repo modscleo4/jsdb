@@ -882,18 +882,23 @@ function deleteTableContent(dbName, schemaName, tableName, options) {
  * @param dbName {string} The name of DB
  * @param schemaName {string} The name of the schema
  * @param tableName {string} The table name
+ * @param throws {boolean} If true, throw an error if the table does not exist
  *
  * @returns {boolean} Return true if the table exists
  * @throws {Error} If the table does not exist, throw an error
  */
-function existsTable(dbName, schemaName, tableName) {
+function existsTable(dbName, schemaName, tableName, throws = true) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
         if (schema.exists(dbName, schemaName)) {
             let TableList = readTableFile(dbName, schemaName);
             if (TableList.indexOf(tableName) !== -1) {
                 return true;
             } else {
-                throw new Error(`Table ${schemaName}:${tableName} does not exist.`);
+                if (throws) {
+                    throw new Error(`Table ${schemaName}:${tableName} does not exist.`);
+                } else {
+                    return false;
+                }
             }
         }
     }

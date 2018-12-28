@@ -82,18 +82,23 @@ function writeSequenceFile(dbName, schemaName, content) {
  * @param dbName {string} The name of DB
  * @param schemaName {string} The name of the schema
  * @param seqName {string} The sequence name
+ * @param throws {boolean} If true, throw an error if the sequence does not exist
  *
  * @returns {boolean} Return true if the sequence exists
  * @throws {Error} If the schema/sequence does not exist, throw an error
  * */
-function existsSequence(dbName, schemaName, seqName) {
+function existsSequence(dbName, schemaName, seqName, throws = true) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string") {
         if (schema.exists(dbName, schemaName)) {
             let TableList = readSequenceFile(dbName, schemaName);
             if (TableList.hasOwnProperty(seqName)) {
                 return true;
             } else {
-                throw new Error(`Sequence ${schemaName}.${seqName} does not exist.`);
+                if (throws) {
+                    throw new Error(`Sequence ${schemaName}.${seqName} does not exist.`);
+                } else {
+                    return false;
+                }
             }
         }
     }

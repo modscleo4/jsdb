@@ -145,18 +145,23 @@ function dropSchema(dbName, schemaName, ifExists = false) {
  *
  * @param dbName {string} The name of DB
  * @param schemaName {string} The name of the schema
+ * @param throws {boolean} If true, throw an error if the schema does not exist
  *
  * @returns {boolean} Return true if the schema exists
  * @throws {Error} If the schema does not exist, throw an error
  */
-function existsSchema(dbName, schemaName) {
+function existsSchema(dbName, schemaName, throws = true) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
         if (db.exists(dbName)) {
             let SCHList = readSchemaFile(dbName);
             if (SCHList.indexOf(schemaName) !== -1) {
                 return true;
             } else {
-                throw new Error(`Schema ${schemaName} does not exist.`);
+                if (throws) {
+                    throw new Error(`Schema ${schemaName} does not exist.`);
+                } else {
+                    return false;
+                }
             }
         }
     }

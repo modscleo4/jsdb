@@ -10,6 +10,7 @@ const schema = require("./commands/schema");
 const sequence = require("./commands/sequence");
 const table = require("./commands/table");
 const user = require('./commands/user');
+const registry = require('./commands/registry');
 
 const assert = require('assert');
 
@@ -457,5 +458,77 @@ describe('User', function () {
 
     after(function () {
         sequence.update('jsdb', 'public', 'users_id_seq', prev);
+    });
+});
+
+describe('Registry', function () {
+    let prev;
+
+    before(function () {
+        prev = sequence.read('jsdb', 'public', 'registry_id_seq');
+    });
+
+    describe('#createEntry()', function () {
+        it('Should return \'Created entry internalentry:test\'', function () {
+            assert.strictEqual(registry.create('internalentry:test', 'number', 1), "Created entry internalentry:test")
+        });
+    });
+
+    describe('#createEntry()', function () {
+        it('Should throw \'Entry internalentry:test already exists\'', function () {
+            assert.throws(() => {
+                registry.create('internalentry:test', 'number', 1)
+            })
+        });
+    });
+
+    describe('#readEntry()', function () {
+        it('Should return 1', function () {
+            assert.strictEqual(registry.read('internalentry:test'), 1);
+        });
+    });
+
+    describe('#existsEntry()', function () {
+        it('Should return true', function () {
+            assert.strictEqual(registry.exists('internalentry:test'), true);
+        });
+    });
+
+    describe('#updateEntry()', function () {
+        it('Should return \'Updated entry internalentry:test\'', function () {
+            assert.strictEqual(registry.update('internalentry:test', 2), 'Updated entry internalentry:test');
+        });
+    });
+
+    describe('#updateEntry()', function () {
+        it('Should throw \'Invalid type\'', function () {
+            assert.throws(() => {
+                registry.update('internalentry:test', '1')
+            });
+        });
+    });
+
+    describe('#readEntry()', function () {
+        it('Should return 2', function () {
+            assert.strictEqual(registry.read('internalentry:test'), 2);
+        });
+    });
+
+    describe('#deleteEntry()', function () {
+        it('Should return \'Deleted entry internalentry:test\'', function () {
+            assert.strictEqual(registry.delete('internalentry:test'), 'Deleted entry internalentry:test');
+        });
+    });
+
+    describe('#existsEntry()', function () {
+        it('Should throw \'Entry internalentry:test does not exist\'', function () {
+            assert.throws(() => {
+                registry.exists('internalentry:test')
+            });
+        });
+    });
+
+    after(function () {
+        sequence.update('jsdb', 'public', 'registry_id_seq', prev);
     });
 });

@@ -9,6 +9,7 @@ const table = require("./commands/table");
 const user = require('./commands/user');
 const sql = require("./sql/sql");
 const config = require('./config');
+const registry = require('./commands/registry');
 const logger = require('./lib/logger');
 
 const net = require('net');
@@ -102,8 +103,16 @@ let server = net.createServer(socket => {
 });
 
 let address = "localhost";
-let port = 6637;
-let dir = "./";
+let port;
+let dir;
+
+db.readFile();
+
+/* Load registry configs */
+config.ignAuth = registry.read('jsdb.server.ignAuth');
+dir = registry.read('jsdb.server.startDir');
+port = registry.read('jsdb.server.port');
+
 let params = [];
 
 for (let i = 0; i < process.argv.length; i++) {
@@ -126,7 +135,7 @@ if (dir === "") {
     dir = "./";
 }
 
-if (port === 0) {
+if (port <= 0 || port >= 65535) {
     port = 6637;
 }
 
@@ -139,7 +148,6 @@ if (address !== "" && port !== 0 && dir !== "") {
         logger.log(1, `Warning: Server started without authentication`);
     }
     config.startDir = dir;
-    db.readFile();
 
     if (!config.ignAuth) {
         if (table.select('jsdb', 'public', 'users', ['*'], {"where": '\`username\` == \'jsdbadmin\''}).length === 0) {

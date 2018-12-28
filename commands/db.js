@@ -93,13 +93,6 @@ function readDBFile() {
         });
     }
 
-    DBList.forEach(dbName => {
-        if (!fs.existsSync(`${config.startDir}dbs/${dbName}`) && !fs.existsSync(`${config.startDir}dbs/${dbName}.jsdb`)) {
-            createDBFolder(dbName);
-            schema.create(dbName, "public");
-        }
-    });
-
     /*
     * Creates JSDB admin database
     * */
@@ -153,7 +146,51 @@ function readDBFile() {
                 ]
             }
         );
+
+        table.create('jsdb', 'public', 'registry',
+            {
+                'id': {
+                    'type': 'number',
+                    'unique': true,
+                    'autoIncrement': true,
+                    'notNull': true
+                },
+
+                'entryName': {
+                    'type': 'string',
+                    'unique': true,
+                    'notNull': true
+                },
+
+                'type': {
+                    'type': 'string',
+                    'notNull': true
+                },
+
+                'value': {
+                    'type': 'string',
+                    'notNull': true
+                },
+            },
+            {
+                'primaryKey': [
+                    'id'
+                ]
+            }
+        );
+
+        /* Insert default registry entries */
+        table.insert('jsdb', 'public', 'registry', ["DEFAULT", 'jsdb.server.ignAuth', 'boolean', JSON.stringify(false)]);
+        table.insert('jsdb', 'public', 'registry', ["DEFAULT", 'jsdb.server.port', 'number', JSON.stringify(6637)]);
+        table.insert('jsdb', 'public', 'registry', ["DEFAULT", 'jsdb.server.startDir', 'string', './']);
     }
+
+    DBList.forEach(dbName => {
+        if (!fs.existsSync(`${config.startDir}dbs/${dbName}`) && !fs.existsSync(`${config.startDir}dbs/${dbName}.jsdb`)) {
+            createDBFolder(dbName);
+            schema.create(dbName, "public");
+        }
+    });
 
     return DBList;
 }
@@ -202,17 +239,22 @@ function dropDB(dbName, ifExists = false) {
  * @summary Check if the DB exists
  *
  * @param dbName {string} The name of DB
+ * @param throws {boolean} If true, throw an error if the DB does not exist
  *
  * @returns {boolean} Return true if the DB exists
  * @throws {Error} If the DB does not exist, throw an error
  */
-function existsDB(dbName) {
-    if (typeof dbName === "string") {
+function existsDB(dbName, throws = true) {
+    if (typeof dbName === "string" && typeof throws === "boolean") {
         let DBList = readDBFile();
         if (DBList.indexOf(dbName) !== -1) {
             return true;
         } else {
-            throw new Error(`Database ${dbName} does not exist.`);
+            if (throws) {
+                throw new Error(`Database ${dbName} does not exist.`);
+            } else {
+                return false;
+            }
         }
     }
 }

@@ -61,8 +61,22 @@ function createUser(username, password, privileges) {
             throw new Error("Invalid username");
         }
 
-        table.insert('jsdb', 'public', 'users', ["DEFAULT", username, md5(`${password}`), "DEFAULT", JSON.stringify(privileges)]);
-        return `Created user ${username}`;
+        let user = table.select(
+            'jsdb',
+            'public',
+            'users',
+            ["id"],
+            {
+                "where": `\`username\` == '${username}'`
+            }
+        );
+
+        if (user.length === 0) {
+            table.insert('jsdb', 'public', 'users', ["DEFAULT", username, md5(`${password}`), "DEFAULT", JSON.stringify(privileges)]);
+            return `Created user ${username}`;
+        } else {
+            throw new Error(`User ${username} already exists`);
+        }
     }
 }
 
@@ -178,8 +192,45 @@ function getUserPrivileges(username) {
     }
 }
 
+/**
+ * @summary Check if the user exists
+ *
+ * @param username {String} The username
+ * @param throws {boolean} If true, throw an error if the user does not exist
+ *
+ * @returns {boolean} Return true if the user exists
+ * @throws {Error} If the user does not exist, throw an error
+ */
+function existsUser(username, throws = true) {
+    if (typeof username === "string") {
+        let user = table.select(
+            'jsdb',
+            'public',
+            'users',
+            ["id"],
+            {
+                "where": `\`username\` == '${username}'`
+            }
+        );
+
+        if (user.length === 0) {
+            if (throws) {
+                throw new Error(`User ${username} does not exist`);
+            } else {
+                return false;
+            }
+        } else if (!user[0].valid) {
+            throw new Error(`User ${username} is disabled`);
+        }
+
+        return true;
+    }
+}
+
 exports.auth = authUser;
 exports.create = createUser;
 exports.update = updateUser;
 exports.drop = dropUser;
 exports.getPrivileges = getUserPrivileges;
+
+exports.exists = existsUser;
