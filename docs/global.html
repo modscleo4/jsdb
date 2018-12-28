@@ -233,8 +233,8 @@
                 <dd class="tag-source">
                     <ul class="dummy">
                         <li>
-                            <a href="commands_db.js.html">commands/db.js</a>, <a href="commands_db.js.html#line227">line
-                            227</a>
+                            <a href="commands_db.js.html">commands/db.js</a>, <a href="commands_db.js.html#line269">line
+                            269</a>
                         </li>
                     </ul>
                 </dd>
@@ -447,6 +447,156 @@
                 </dd>
 
 
+            </dl>
+
+
+            <h4 class="name" id="createEntry"><span class="type-signature"></span>createEntry<span class="signature">(entryName, type, value)</span><span
+                    class="type-signature"> &rarr; {String}</span></h4>
+
+
+            <p class="summary">Create a registry entry</p>
+
+
+            <h5>Parameters:</h5>
+
+
+            <table class="params">
+                <thead>
+                <tr>
+
+                    <th>Name</th>
+
+
+                    <th>Type</th>
+
+
+                    <th class="last">Description</th>
+                </tr>
+                </thead>
+
+                <tbody>
+
+
+                <tr>
+
+                    <td class="name"><code>entryName</code></td>
+
+
+                    <td class="type">
+
+
+                        <span class="param-type">String</span>
+
+
+                    </td>
+
+
+                    <td class="description last">The entry name</td>
+                </tr>
+
+
+                <tr>
+
+                    <td class="name"><code>type</code></td>
+
+
+                    <td class="type">
+
+
+                        <span class="param-type">String</span>
+
+
+                    </td>
+
+
+                    <td class="description last">The entry type</td>
+                </tr>
+
+
+                <tr>
+
+                    <td class="name"><code>value</code></td>
+
+
+                    <td class="type">
+
+
+                        <span class="param-type">*</span>
+
+
+                    </td>
+
+
+                    <td class="description last">The value for the entry</td>
+                </tr>
+
+
+                </tbody>
+            </table>
+
+
+            <dl class="details">
+
+
+                <dt class="tag-source">Source:</dt>
+                <dd class="tag-source">
+                    <ul class="dummy">
+                        <li>
+                            <a href="commands_registry.js.html">commands/registry.js</a>, <a
+                                href="commands_registry.js.html#line19">line 19</a>
+                        </li>
+                    </ul>
+                </dd>
+
+
+            </dl>
+
+
+            <h5>Throws:</h5>
+
+
+            <dl>
+                <dt>
+                    <div class="param-desc">
+                        If the entry already exists, throw an error
+                    </div>
+                </dt>
+                <dd></dd>
+                <dt>
+                    <dl>
+                        <dt>
+                            Type
+                        </dt>
+                        <dd>
+
+                            <span class="param-type">Error</span>
+
+
+                        </dd>
+                    </dl>
+                </dt>
+                <dd></dd>
+            </dl>
+
+
+            <h5>Returns:</h5>
+
+
+            <div class="param-desc">
+                If Ok, returns 'Created entry ${entryName}'
+            </div>
+
+
+            <dl>
+                <dt>
+                    Type
+                </dt>
+                <dd>
+
+                    <span class="param-type">String</span>
+
+
+                </dd>
             </dl>
 
 
@@ -1359,6 +1509,120 @@
             </dl>
 
 
+            <h4 class="name" id="deleteEntry"><span class="type-signature"></span>deleteEntry<span class="signature">(entryName)</span><span
+                    class="type-signature"> &rarr; {String}</span></h4>
+
+
+            <p class="summary">Delete an entry</p>
+
+
+            <h5>Parameters:</h5>
+
+
+            <table class="params">
+                <thead>
+                <tr>
+
+                    <th>Name</th>
+
+
+                    <th>Type</th>
+
+
+                    <th class="last">Description</th>
+                </tr>
+                </thead>
+
+                <tbody>
+
+
+                <tr>
+
+                    <td class="name"><code>entryName</code></td>
+
+
+                    <td class="type">
+
+
+                        <span class="param-type">String</span>
+
+
+                    </td>
+
+
+                    <td class="description last">The entry name</td>
+                </tr>
+
+
+                </tbody>
+            </table>
+
+
+            <dl class="details">
+
+
+                <dt class="tag-source">Source:</dt>
+                <dd class="tag-source">
+                    <ul class="dummy">
+                        <li>
+                            <a href="commands_registry.js.html">commands/registry.js</a>, <a
+                                href="commands_registry.js.html#line127">line 127</a>
+                        </li>
+                    </ul>
+                </dd>
+
+
+            </dl>
+
+
+            <h5>Throws:</h5>
+
+
+            <dl>
+                <dt>
+                    <div class="param-desc">
+                        If the entry does not exist, throw an error
+                    </div>
+                </dt>
+                <dd></dd>
+                <dt>
+                    <dl>
+                        <dt>
+                            Type
+                        </dt>
+                        <dd>
+
+                            <span class="param-type">Error</span>
+
+
+                        </dd>
+                    </dl>
+                </dt>
+                <dd></dd>
+            </dl>
+
+
+            <h5>Returns:</h5>
+
+
+            <div class="param-desc">
+                If Ok, returns 'Deleted entry ${entryName}'
+            </div>
+
+
+            <dl>
+                <dt>
+                    Type
+                </dt>
+                <dd>
+
+                    <span class="param-type">String</span>
+
+
+                </dd>
+            </dl>
+
+
             <h4 class="name" id="deleteTableContent"><span class="type-signature"></span>deleteTableContent<span
                     class="signature">(dbName, schemaName, tableName, options)</span><span class="type-signature"> &rarr; {string}</span>
             </h4>
@@ -1617,8 +1881,8 @@
                 <dd class="tag-source">
                     <ul class="dummy">
                         <li>
-                            <a href="commands_db.js.html">commands/db.js</a>, <a href="commands_db.js.html#line185">line
-                            185</a>
+                            <a href="commands_db.js.html">commands/db.js</a>, <a href="commands_db.js.html#line222">line
+                            222</a>
                         </li>
                     </ul>
                 </dd>
@@ -1981,7 +2245,7 @@
                     <ul class="dummy">
                         <li>
                             <a href="commands_sequence.js.html">commands/sequence.js</a>, <a
-                                href="commands_sequence.js.html#line160">line 160</a>
+                                href="commands_sequence.js.html#line165">line 165</a>
                         </li>
                     </ul>
                 </dd>
@@ -2288,7 +2552,7 @@
                     <ul class="dummy">
                         <li>
                             <a href="commands_user.js.html">commands/user.js</a>, <a
-                                href="commands_user.js.html#line133">line 133</a>
+                                href="commands_user.js.html#line147">line 147</a>
                         </li>
                     </ul>
                 </dd>
@@ -2345,8 +2609,8 @@
             </dl>
 
 
-            <h4 class="name" id="existsDB"><span class="type-signature"></span>existsDB<span
-                    class="signature">(dbName)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+            <h4 class="name" id="existsDB"><span class="type-signature"></span>existsDB<span class="signature">(dbName, throws)</span><span
+                    class="type-signature"> &rarr; {boolean}</span></h4>
 
 
             <p class="summary">Check if the DB exists</p>
@@ -2363,6 +2627,9 @@
 
 
                     <th>Type</th>
+
+
+                    <th>Default</th>
 
 
                     <th class="last">Description</th>
@@ -2386,7 +2653,37 @@
                     </td>
 
 
+                    <td class="default">
+
+                    </td>
+
+
                     <td class="description last">The name of DB</td>
+                </tr>
+
+
+                <tr>
+
+                    <td class="name"><code>throws</code></td>
+
+
+                    <td class="type">
+
+
+                        <span class="param-type">boolean</span>
+
+
+                    </td>
+
+
+                    <td class="default">
+
+                        true
+
+                    </td>
+
+
+                    <td class="description last">If true, throw an error if the DB does not exist</td>
                 </tr>
 
 
@@ -2401,8 +2698,8 @@
                 <dd class="tag-source">
                     <ul class="dummy">
                         <li>
-                            <a href="commands_db.js.html">commands/db.js</a>, <a href="commands_db.js.html#line209">line
-                            209</a>
+                            <a href="commands_db.js.html">commands/db.js</a>, <a href="commands_db.js.html#line247">line
+                            247</a>
                         </li>
                     </ul>
                 </dd>
@@ -2459,7 +2756,154 @@
             </dl>
 
 
-            <h4 class="name" id="existsSchema"><span class="type-signature"></span>existsSchema<span class="signature">(dbName, schemaName)</span><span
+            <h4 class="name" id="existsEntry"><span class="type-signature"></span>existsEntry<span class="signature">(entryName, throws)</span><span
+                    class="type-signature"> &rarr; {boolean}</span></h4>
+
+
+            <p class="summary">Check if the registry entry exists</p>
+
+
+            <h5>Parameters:</h5>
+
+
+            <table class="params">
+                <thead>
+                <tr>
+
+                    <th>Name</th>
+
+
+                    <th>Type</th>
+
+
+                    <th>Default</th>
+
+
+                    <th class="last">Description</th>
+                </tr>
+                </thead>
+
+                <tbody>
+
+
+                <tr>
+
+                    <td class="name"><code>entryName</code></td>
+
+
+                    <td class="type">
+
+
+                        <span class="param-type">String</span>
+
+
+                    </td>
+
+
+                    <td class="default">
+
+                    </td>
+
+
+                    <td class="description last">The entry name</td>
+                </tr>
+
+
+                <tr>
+
+                    <td class="name"><code>throws</code></td>
+
+
+                    <td class="type">
+
+
+                        <span class="param-type">boolean</span>
+
+
+                    </td>
+
+
+                    <td class="default">
+
+                        true
+
+                    </td>
+
+
+                    <td class="description last">If true, throw an error if the sequence does not exist</td>
+                </tr>
+
+
+                </tbody>
+            </table>
+
+
+            <dl class="details">
+
+
+                <dt class="tag-source">Source:</dt>
+                <dd class="tag-source">
+                    <ul class="dummy">
+                        <li>
+                            <a href="commands_registry.js.html">commands/registry.js</a>, <a
+                                href="commands_registry.js.html#line150">line 150</a>
+                        </li>
+                    </ul>
+                </dd>
+
+
+            </dl>
+
+
+            <h5>Throws:</h5>
+
+
+            <dl>
+                <dt>
+                    <div class="param-desc">
+                        If the entry does not exist, throw an error
+                    </div>
+                </dt>
+                <dd></dd>
+                <dt>
+                    <dl>
+                        <dt>
+                            Type
+                        </dt>
+                        <dd>
+
+                            <span class="param-type">Error</span>
+
+
+                        </dd>
+                    </dl>
+                </dt>
+                <dd></dd>
+            </dl>
+
+
+            <h5>Returns:</h5>
+
+
+            <div class="param-desc">
+                Return true if the entry exists
+            </div>
+
+
+            <dl>
+                <dt>
+                    Type
+                </dt>
+                <dd>
+
+                    <span class="param-type">boolean</span>
+
+
+                </dd>
+            </dl>
+
+
+            <h4 class="name" id="existsSchema"><span class="type-signature"></span>existsSchema<span class="signature">(dbName, schemaName, throws)</span><span
                     class="type-signature"> &rarr; {boolean}</span></h4>
 
 
@@ -2477,6 +2921,9 @@
 
 
                     <th>Type</th>
+
+
+                    <th>Default</th>
 
 
                     <th class="last">Description</th>
@@ -2500,6 +2947,11 @@
                     </td>
 
 
+                    <td class="default">
+
+                    </td>
+
+
                     <td class="description last">The name of DB</td>
                 </tr>
 
@@ -2518,7 +2970,37 @@
                     </td>
 
 
+                    <td class="default">
+
+                    </td>
+
+
                     <td class="description last">The name of the schema</td>
+                </tr>
+
+
+                <tr>
+
+                    <td class="name"><code>throws</code></td>
+
+
+                    <td class="type">
+
+
+                        <span class="param-type">boolean</span>
+
+
+                    </td>
+
+
+                    <td class="default">
+
+                        true
+
+                    </td>
+
+
+                    <td class="description last">If true, throw an error if the schema does not exist</td>
                 </tr>
 
 
@@ -2534,7 +3016,7 @@
                     <ul class="dummy">
                         <li>
                             <a href="commands_schema.js.html">commands/schema.js</a>, <a
-                                href="commands_schema.js.html#line152">line 152</a>
+                                href="commands_schema.js.html#line153">line 153</a>
                         </li>
                     </ul>
                 </dd>
@@ -2592,8 +3074,8 @@
 
 
             <h4 class="name" id="existsSequence"><span class="type-signature"></span>existsSequence<span
-                    class="signature">(dbName, schemaName, seqName)</span><span
-                    class="type-signature"> &rarr; {boolean}</span></h4>
+                    class="signature">(dbName, schemaName, seqName, throws)</span><span class="type-signature"> &rarr; {boolean}</span>
+            </h4>
 
 
             <p class="summary">Check if the sequence exists</p>
@@ -2610,6 +3092,9 @@
 
 
                     <th>Type</th>
+
+
+                    <th>Default</th>
 
 
                     <th class="last">Description</th>
@@ -2633,6 +3118,11 @@
                     </td>
 
 
+                    <td class="default">
+
+                    </td>
+
+
                     <td class="description last">The name of DB</td>
                 </tr>
 
@@ -2647,6 +3137,11 @@
 
                         <span class="param-type">string</span>
 
+
+                    </td>
+
+
+                    <td class="default">
 
                     </td>
 
@@ -2669,7 +3164,37 @@
                     </td>
 
 
+                    <td class="default">
+
+                    </td>
+
+
                     <td class="description last">The sequence name</td>
+                </tr>
+
+
+                <tr>
+
+                    <td class="name"><code>throws</code></td>
+
+
+                    <td class="type">
+
+
+                        <span class="param-type">boolean</span>
+
+
+                    </td>
+
+
+                    <td class="default">
+
+                        true
+
+                    </td>
+
+
+                    <td class="description last">If true, throw an error if the sequence does not exist</td>
                 </tr>
 
 
@@ -2685,7 +3210,7 @@
                     <ul class="dummy">
                         <li>
                             <a href="commands_sequence.js.html">commands/sequence.js</a>, <a
-                                href="commands_sequence.js.html#line89">line 89</a>
+                                href="commands_sequence.js.html#line90">line 90</a>
                         </li>
                     </ul>
                 </dd>
@@ -2742,7 +3267,7 @@
             </dl>
 
 
-            <h4 class="name" id="existsTable"><span class="type-signature"></span>existsTable<span class="signature">(dbName, schemaName, tableName)</span><span
+            <h4 class="name" id="existsTable"><span class="type-signature"></span>existsTable<span class="signature">(dbName, schemaName, tableName, throws)</span><span
                     class="type-signature"> &rarr; {boolean}</span></h4>
 
 
@@ -2760,6 +3285,9 @@
 
 
                     <th>Type</th>
+
+
+                    <th>Default</th>
 
 
                     <th class="last">Description</th>
@@ -2783,6 +3311,11 @@
                     </td>
 
 
+                    <td class="default">
+
+                    </td>
+
+
                     <td class="description last">The name of DB</td>
                 </tr>
 
@@ -2797,6 +3330,11 @@
 
                         <span class="param-type">string</span>
 
+
+                    </td>
+
+
+                    <td class="default">
 
                     </td>
 
@@ -2819,7 +3357,37 @@
                     </td>
 
 
+                    <td class="default">
+
+                    </td>
+
+
                     <td class="description last">The table name</td>
+                </tr>
+
+
+                <tr>
+
+                    <td class="name"><code>throws</code></td>
+
+
+                    <td class="type">
+
+
+                        <span class="param-type">boolean</span>
+
+
+                    </td>
+
+
+                    <td class="default">
+
+                        true
+
+                    </td>
+
+
+                    <td class="description last">If true, throw an error if the table does not exist</td>
                 </tr>
 
 
@@ -2835,7 +3403,7 @@
                     <ul class="dummy">
                         <li>
                             <a href="commands_table.js.html">commands/table.js</a>, <a
-                                href="commands_table.js.html#line889">line 889</a>
+                                href="commands_table.js.html#line890">line 890</a>
                         </li>
                     </ul>
                 </dd>
@@ -2876,6 +3444,153 @@
 
             <div class="param-desc">
                 Return true if the table exists
+            </div>
+
+
+            <dl>
+                <dt>
+                    Type
+                </dt>
+                <dd>
+
+                    <span class="param-type">boolean</span>
+
+
+                </dd>
+            </dl>
+
+
+            <h4 class="name" id="existsUser"><span class="type-signature"></span>existsUser<span class="signature">(username, throws)</span><span
+                    class="type-signature"> &rarr; {boolean}</span></h4>
+
+
+            <p class="summary">Check if the user exists</p>
+
+
+            <h5>Parameters:</h5>
+
+
+            <table class="params">
+                <thead>
+                <tr>
+
+                    <th>Name</th>
+
+
+                    <th>Type</th>
+
+
+                    <th>Default</th>
+
+
+                    <th class="last">Description</th>
+                </tr>
+                </thead>
+
+                <tbody>
+
+
+                <tr>
+
+                    <td class="name"><code>username</code></td>
+
+
+                    <td class="type">
+
+
+                        <span class="param-type">String</span>
+
+
+                    </td>
+
+
+                    <td class="default">
+
+                    </td>
+
+
+                    <td class="description last">The username</td>
+                </tr>
+
+
+                <tr>
+
+                    <td class="name"><code>throws</code></td>
+
+
+                    <td class="type">
+
+
+                        <span class="param-type">boolean</span>
+
+
+                    </td>
+
+
+                    <td class="default">
+
+                        true
+
+                    </td>
+
+
+                    <td class="description last">If true, throw an error if the user does not exist</td>
+                </tr>
+
+
+                </tbody>
+            </table>
+
+
+            <dl class="details">
+
+
+                <dt class="tag-source">Source:</dt>
+                <dd class="tag-source">
+                    <ul class="dummy">
+                        <li>
+                            <a href="commands_user.js.html">commands/user.js</a>, <a
+                                href="commands_user.js.html#line204">line 204</a>
+                        </li>
+                    </ul>
+                </dd>
+
+
+            </dl>
+
+
+            <h5>Throws:</h5>
+
+
+            <dl>
+                <dt>
+                    <div class="param-desc">
+                        If the user does not exist, throw an error
+                    </div>
+                </dt>
+                <dd></dd>
+                <dt>
+                    <dl>
+                        <dt>
+                            Type
+                        </dt>
+                        <dd>
+
+                            <span class="param-type">Error</span>
+
+
+                        </dd>
+                    </dl>
+                </dt>
+                <dd></dd>
+            </dl>
+
+
+            <h5>Returns:</h5>
+
+
+            <div class="param-desc">
+                Return true if the user exists
             </div>
 
 
@@ -2949,7 +3664,7 @@
                     <ul class="dummy">
                         <li>
                             <a href="commands_user.js.html">commands/user.js</a>, <a
-                                href="commands_user.js.html#line156">line 156</a>
+                                href="commands_user.js.html#line170">line 170</a>
                         </li>
                     </ul>
                 </dd>
@@ -3352,6 +4067,120 @@
             </dl>
 
 
+            <h4 class="name" id="readEntry"><span class="type-signature"></span>readEntry<span class="signature">(entryName)</span><span
+                    class="type-signature"> &rarr; {Object}</span></h4>
+
+
+            <p class="summary">Read an entry value</p>
+
+
+            <h5>Parameters:</h5>
+
+
+            <table class="params">
+                <thead>
+                <tr>
+
+                    <th>Name</th>
+
+
+                    <th>Type</th>
+
+
+                    <th class="last">Description</th>
+                </tr>
+                </thead>
+
+                <tbody>
+
+
+                <tr>
+
+                    <td class="name"><code>entryName</code></td>
+
+
+                    <td class="type">
+
+
+                        <span class="param-type">String</span>
+
+
+                    </td>
+
+
+                    <td class="description last">The entry name</td>
+                </tr>
+
+
+                </tbody>
+            </table>
+
+
+            <dl class="details">
+
+
+                <dt class="tag-source">Source:</dt>
+                <dd class="tag-source">
+                    <ul class="dummy">
+                        <li>
+                            <a href="commands_registry.js.html">commands/registry.js</a>, <a
+                                href="commands_registry.js.html#line57">line 57</a>
+                        </li>
+                    </ul>
+                </dd>
+
+
+            </dl>
+
+
+            <h5>Throws:</h5>
+
+
+            <dl>
+                <dt>
+                    <div class="param-desc">
+                        If the entry does not exist, throw an error
+                    </div>
+                </dt>
+                <dd></dd>
+                <dt>
+                    <dl>
+                        <dt>
+                            Type
+                        </dt>
+                        <dd>
+
+                            <span class="param-type">Error</span>
+
+
+                        </dd>
+                    </dl>
+                </dt>
+                <dd></dd>
+            </dl>
+
+
+            <h5>Returns:</h5>
+
+
+            <div class="param-desc">
+                If the entry exists, return the entry value
+            </div>
+
+
+            <dl>
+                <dt>
+                    Type
+                </dt>
+                <dd>
+
+                    <span class="param-type">Object</span>
+
+
+                </dd>
+            </dl>
+
+
             <h4 class="name" id="readSchemaFile"><span class="type-signature"></span>readSchemaFile<span
                     class="signature">(dbName)</span><span class="type-signature"> &rarr; {Object}</span></h4>
 
@@ -3560,7 +4389,7 @@
                     <ul class="dummy">
                         <li>
                             <a href="commands_sequence.js.html">commands/sequence.js</a>, <a
-                                href="commands_sequence.js.html#line112">line 112</a>
+                                href="commands_sequence.js.html#line117">line 117</a>
                         </li>
                     </ul>
                 </dd>
@@ -4241,8 +5070,8 @@
                 <dd class="tag-source">
                     <ul class="dummy">
                         <li>
-                            <a href="commands_db.js.html">commands/db.js</a>, <a href="commands_db.js.html#line244">line
-                            244</a>
+                            <a href="commands_db.js.html">commands/db.js</a>, <a href="commands_db.js.html#line286">line
+                            286</a>
                         </li>
                     </ul>
                 </dd>
@@ -4465,6 +5294,138 @@
             </dl>
 
 
+            <h4 class="name" id="updateEntry"><span class="type-signature"></span>updateEntry<span class="signature">(entryName, value)</span><span
+                    class="type-signature"> &rarr; {String}</span></h4>
+
+
+            <p class="summary">Update an entry value</p>
+
+
+            <h5>Parameters:</h5>
+
+
+            <table class="params">
+                <thead>
+                <tr>
+
+                    <th>Name</th>
+
+
+                    <th>Type</th>
+
+
+                    <th class="last">Description</th>
+                </tr>
+                </thead>
+
+                <tbody>
+
+
+                <tr>
+
+                    <td class="name"><code>entryName</code></td>
+
+
+                    <td class="type">
+
+
+                        <span class="param-type">String</span>
+
+
+                    </td>
+
+
+                    <td class="description last">The entry name</td>
+                </tr>
+
+
+                <tr>
+
+                    <td class="name"><code>value</code></td>
+
+
+                    <td class="type">
+
+
+                        <span class="param-type">*</span>
+
+
+                    </td>
+
+
+                    <td class="description last">The new value for the entry</td>
+                </tr>
+
+
+                </tbody>
+            </table>
+
+
+            <dl class="details">
+
+
+                <dt class="tag-source">Source:</dt>
+                <dd class="tag-source">
+                    <ul class="dummy">
+                        <li>
+                            <a href="commands_registry.js.html">commands/registry.js</a>, <a
+                                href="commands_registry.js.html#line90">line 90</a>
+                        </li>
+                    </ul>
+                </dd>
+
+
+            </dl>
+
+
+            <h5>Throws:</h5>
+
+
+            <dl>
+                <dt>
+                    <div class="param-desc">
+                        If the entry does not exist, throw an error
+                    </div>
+                </dt>
+                <dd></dd>
+                <dt>
+                    <dl>
+                        <dt>
+                            Type
+                        </dt>
+                        <dd>
+
+                            <span class="param-type">Error</span>
+
+
+                        </dd>
+                    </dl>
+                </dt>
+                <dd></dd>
+            </dl>
+
+
+            <h5>Returns:</h5>
+
+
+            <div class="param-desc">
+                If Ok, returns 'Updated entry ${entryName}'
+            </div>
+
+
+            <dl>
+                <dt>
+                    Type
+                </dt>
+                <dd>
+
+                    <span class="param-type">String</span>
+
+
+                </dd>
+            </dl>
+
+
             <h4 class="name" id="updateSequence"><span class="type-signature"></span>updateSequence<span
                     class="signature">(dbName, schemaName, seqName, content)</span><span class="type-signature"> &rarr; {string}</span>
             </h4>
@@ -4577,7 +5538,7 @@
                     <ul class="dummy">
                         <li>
                             <a href="commands_sequence.js.html">commands/sequence.js</a>, <a
-                                href="commands_sequence.js.html#line133">line 133</a>
+                                href="commands_sequence.js.html#line138">line 138</a>
                         </li>
                     </ul>
                 </dd>
@@ -4896,7 +5857,7 @@
                     <ul class="dummy">
                         <li>
                             <a href="commands_user.js.html">commands/user.js</a>, <a
-                                href="commands_user.js.html#line78">line 78</a>
+                                href="commands_user.js.html#line92">line 92</a>
                         </li>
                     </ul>
                 </dd>
@@ -5009,8 +5970,8 @@
                 <dd class="tag-source">
                     <ul class="dummy">
                         <li>
-                            <a href="commands_db.js.html">commands/db.js</a>, <a href="commands_db.js.html#line166">line
-                            166</a>
+                            <a href="commands_db.js.html">commands/db.js</a>, <a href="commands_db.js.html#line203">line
+                            203</a>
                         </li>
                     </ul>
                 </dd>
@@ -5714,12 +6675,14 @@
         <li><a href="global.html#backupDB">backupDB</a></li>
         <li><a href="global.html#createDB">createDB</a></li>
         <li><a href="global.html#createDBFolder">createDBFolder</a></li>
+        <li><a href="global.html#createEntry">createEntry</a></li>
         <li><a href="global.html#createSchema">createSchema</a></li>
         <li><a href="global.html#createSchemaFolder">createSchemaFolder</a></li>
         <li><a href="global.html#createSequence">createSequence</a></li>
         <li><a href="global.html#createTable">createTable</a></li>
         <li><a href="global.html#createTableFolder">createTableFolder</a></li>
         <li><a href="global.html#createUser">createUser</a></li>
+        <li><a href="global.html#deleteEntry">deleteEntry</a></li>
         <li><a href="global.html#deleteTableContent">deleteTableContent</a></li>
         <li><a href="global.html#dropDB">dropDB</a></li>
         <li><a href="global.html#dropSchema">dropSchema</a></li>
@@ -5727,13 +6690,16 @@
         <li><a href="global.html#dropTable">dropTable</a></li>
         <li><a href="global.html#dropUser">dropUser</a></li>
         <li><a href="global.html#existsDB">existsDB</a></li>
+        <li><a href="global.html#existsEntry">existsEntry</a></li>
         <li><a href="global.html#existsSchema">existsSchema</a></li>
         <li><a href="global.html#existsSequence">existsSequence</a></li>
         <li><a href="global.html#existsTable">existsTable</a></li>
+        <li><a href="global.html#existsUser">existsUser</a></li>
         <li><a href="global.html#getUserPrivileges">getUserPrivileges</a></li>
         <li><a href="global.html#insertTableContent">insertTableContent</a></li>
         <li><a href="global.html#log">log</a></li>
         <li><a href="global.html#readDBFile">readDBFile</a></li>
+        <li><a href="global.html#readEntry">readEntry</a></li>
         <li><a href="global.html#readSchemaFile">readSchemaFile</a></li>
         <li><a href="global.html#readSequence">readSequence</a></li>
         <li><a href="global.html#readSequenceFile">readSequenceFile</a></li>
@@ -5742,6 +6708,7 @@
         <li><a href="global.html#readTableStructure">readTableStructure</a></li>
         <li><a href="global.html#restoreDB">restoreDB</a></li>
         <li><a href="global.html#selectTableContent">selectTableContent</a></li>
+        <li><a href="global.html#updateEntry">updateEntry</a></li>
         <li><a href="global.html#updateSequence">updateSequence</a></li>
         <li><a href="global.html#updateTableContent">updateTableContent</a></li>
         <li><a href="global.html#updateUser">updateUser</a></li>
@@ -5757,7 +6724,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Dec 27 2018 20:54:52
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Dec 28 2018 18:27:46
     GMT-0200 (GMT-02:00)
 </footer>
 

@@ -85,8 +85,22 @@ function createUser(username, password, privileges) {
             throw new Error("Invalid username");
         }
 
-        table.insert('jsdb', 'public', 'users', ["DEFAULT", username, md5(`${password}`), "DEFAULT", JSON.stringify(privileges)]);
-        return `Created user ${username}`;
+        let user = table.select(
+            'jsdb',
+            'public',
+            'users',
+            ["id"],
+            {
+                "where": `\`username\` == '${username}'`
+            }
+        );
+
+        if (user.length === 0) {
+            table.insert('jsdb', 'public', 'users', ["DEFAULT", username, md5(`${password}`), "DEFAULT", JSON.stringify(privileges)]);
+            return `Created user ${username}`;
+        } else {
+            throw new Error(`User ${username} already exists`);
+        }
     }
 }
 
@@ -202,11 +216,48 @@ function getUserPrivileges(username) {
     }
 }
 
+/**
+ * @summary Check if the user exists
+ *
+ * @param username {String} The username
+ * @param throws {boolean} If true, throw an error if the user does not exist
+ *
+ * @returns {boolean} Return true if the user exists
+ * @throws {Error} If the user does not exist, throw an error
+ */
+function existsUser(username, throws = true) {
+    if (typeof username === "string") {
+        let user = table.select(
+            'jsdb',
+            'public',
+            'users',
+            ["id"],
+            {
+                "where": `\`username\` == '${username}'`
+            }
+        );
+
+        if (user.length === 0) {
+            if (throws) {
+                throw new Error(`User ${username} does not exist`);
+            } else {
+                return false;
+            }
+        } else if (!user[0].valid) {
+            throw new Error(`User ${username} is disabled`);
+        }
+
+        return true;
+    }
+}
+
 exports.auth = authUser;
 exports.create = createUser;
 exports.update = updateUser;
 exports.drop = dropUser;
-exports.getPrivileges = getUserPrivileges;</code></pre>
+exports.getPrivileges = getUserPrivileges;
+
+exports.exists = existsUser;</code></pre>
         </article>
     </section>
 
@@ -221,12 +272,14 @@ exports.getPrivileges = getUserPrivileges;</code></pre>
         <li><a href="global.html#backupDB">backupDB</a></li>
         <li><a href="global.html#createDB">createDB</a></li>
         <li><a href="global.html#createDBFolder">createDBFolder</a></li>
+        <li><a href="global.html#createEntry">createEntry</a></li>
         <li><a href="global.html#createSchema">createSchema</a></li>
         <li><a href="global.html#createSchemaFolder">createSchemaFolder</a></li>
         <li><a href="global.html#createSequence">createSequence</a></li>
         <li><a href="global.html#createTable">createTable</a></li>
         <li><a href="global.html#createTableFolder">createTableFolder</a></li>
         <li><a href="global.html#createUser">createUser</a></li>
+        <li><a href="global.html#deleteEntry">deleteEntry</a></li>
         <li><a href="global.html#deleteTableContent">deleteTableContent</a></li>
         <li><a href="global.html#dropDB">dropDB</a></li>
         <li><a href="global.html#dropSchema">dropSchema</a></li>
@@ -234,13 +287,16 @@ exports.getPrivileges = getUserPrivileges;</code></pre>
         <li><a href="global.html#dropTable">dropTable</a></li>
         <li><a href="global.html#dropUser">dropUser</a></li>
         <li><a href="global.html#existsDB">existsDB</a></li>
+        <li><a href="global.html#existsEntry">existsEntry</a></li>
         <li><a href="global.html#existsSchema">existsSchema</a></li>
         <li><a href="global.html#existsSequence">existsSequence</a></li>
         <li><a href="global.html#existsTable">existsTable</a></li>
+        <li><a href="global.html#existsUser">existsUser</a></li>
         <li><a href="global.html#getUserPrivileges">getUserPrivileges</a></li>
         <li><a href="global.html#insertTableContent">insertTableContent</a></li>
         <li><a href="global.html#log">log</a></li>
         <li><a href="global.html#readDBFile">readDBFile</a></li>
+        <li><a href="global.html#readEntry">readEntry</a></li>
         <li><a href="global.html#readSchemaFile">readSchemaFile</a></li>
         <li><a href="global.html#readSequence">readSequence</a></li>
         <li><a href="global.html#readSequenceFile">readSequenceFile</a></li>
@@ -249,6 +305,7 @@ exports.getPrivileges = getUserPrivileges;</code></pre>
         <li><a href="global.html#readTableStructure">readTableStructure</a></li>
         <li><a href="global.html#restoreDB">restoreDB</a></li>
         <li><a href="global.html#selectTableContent">selectTableContent</a></li>
+        <li><a href="global.html#updateEntry">updateEntry</a></li>
         <li><a href="global.html#updateSequence">updateSequence</a></li>
         <li><a href="global.html#updateTableContent">updateTableContent</a></li>
         <li><a href="global.html#updateUser">updateUser</a></li>
@@ -264,7 +321,7 @@ exports.getPrivileges = getUserPrivileges;</code></pre>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Dec 27 2018 20:54:52
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Dec 28 2018 18:27:45
     GMT-0200 (GMT-02:00)
 </footer>
 

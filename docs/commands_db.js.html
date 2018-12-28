@@ -117,13 +117,6 @@ function readDBFile() {
         });
     }
 
-    DBList.forEach(dbName => {
-        if (!fs.existsSync(`${config.startDir}dbs/${dbName}`) &amp;&amp; !fs.existsSync(`${config.startDir}dbs/${dbName}.jsdb`)) {
-            createDBFolder(dbName);
-            schema.create(dbName, "public");
-        }
-    });
-
     /*
     * Creates JSDB admin database
     * */
@@ -177,7 +170,51 @@ function readDBFile() {
                 ]
             }
         );
+
+        table.create('jsdb', 'public', 'registry',
+            {
+                'id': {
+                    'type': 'number',
+                    'unique': true,
+                    'autoIncrement': true,
+                    'notNull': true
+                },
+
+                'entryName': {
+                    'type': 'string',
+                    'unique': true,
+                    'notNull': true
+                },
+
+                'type': {
+                    'type': 'string',
+                    'notNull': true
+                },
+
+                'value': {
+                    'type': 'string',
+                    'notNull': true
+                },
+            },
+            {
+                'primaryKey': [
+                    'id'
+                ]
+            }
+        );
+
+        /* Insert default registry entries */
+        table.insert('jsdb', 'public', 'registry', ["DEFAULT", 'jsdb.server.ignAuth', 'boolean', JSON.stringify(false)]);
+        table.insert('jsdb', 'public', 'registry', ["DEFAULT", 'jsdb.server.port', 'number', JSON.stringify(6637)]);
+        table.insert('jsdb', 'public', 'registry', ["DEFAULT", 'jsdb.server.startDir', 'string', './']);
     }
+
+    DBList.forEach(dbName => {
+        if (!fs.existsSync(`${config.startDir}dbs/${dbName}`) &amp;&amp; !fs.existsSync(`${config.startDir}dbs/${dbName}.jsdb`)) {
+            createDBFolder(dbName);
+            schema.create(dbName, "public");
+        }
+    });
 
     return DBList;
 }
@@ -226,17 +263,22 @@ function dropDB(dbName, ifExists = false) {
  * @summary Check if the DB exists
  *
  * @param dbName {string} The name of DB
+ * @param throws {boolean} If true, throw an error if the DB does not exist
  *
  * @returns {boolean} Return true if the DB exists
  * @throws {Error} If the DB does not exist, throw an error
  */
-function existsDB(dbName) {
-    if (typeof dbName === "string") {
+function existsDB(dbName, throws = true) {
+    if (typeof dbName === "string" &amp;&amp; typeof throws === "boolean") {
         let DBList = readDBFile();
         if (DBList.indexOf(dbName) !== -1) {
             return true;
         } else {
-            throw new Error(`Database ${dbName} does not exist.`);
+            if (throws) {
+                throw new Error(`Database ${dbName} does not exist.`);
+            } else {
+                return false;
+            }
         }
     }
 }
@@ -303,12 +345,14 @@ exports.restore = restoreDB;
         <li><a href="global.html#backupDB">backupDB</a></li>
         <li><a href="global.html#createDB">createDB</a></li>
         <li><a href="global.html#createDBFolder">createDBFolder</a></li>
+        <li><a href="global.html#createEntry">createEntry</a></li>
         <li><a href="global.html#createSchema">createSchema</a></li>
         <li><a href="global.html#createSchemaFolder">createSchemaFolder</a></li>
         <li><a href="global.html#createSequence">createSequence</a></li>
         <li><a href="global.html#createTable">createTable</a></li>
         <li><a href="global.html#createTableFolder">createTableFolder</a></li>
         <li><a href="global.html#createUser">createUser</a></li>
+        <li><a href="global.html#deleteEntry">deleteEntry</a></li>
         <li><a href="global.html#deleteTableContent">deleteTableContent</a></li>
         <li><a href="global.html#dropDB">dropDB</a></li>
         <li><a href="global.html#dropSchema">dropSchema</a></li>
@@ -316,13 +360,16 @@ exports.restore = restoreDB;
         <li><a href="global.html#dropTable">dropTable</a></li>
         <li><a href="global.html#dropUser">dropUser</a></li>
         <li><a href="global.html#existsDB">existsDB</a></li>
+        <li><a href="global.html#existsEntry">existsEntry</a></li>
         <li><a href="global.html#existsSchema">existsSchema</a></li>
         <li><a href="global.html#existsSequence">existsSequence</a></li>
         <li><a href="global.html#existsTable">existsTable</a></li>
+        <li><a href="global.html#existsUser">existsUser</a></li>
         <li><a href="global.html#getUserPrivileges">getUserPrivileges</a></li>
         <li><a href="global.html#insertTableContent">insertTableContent</a></li>
         <li><a href="global.html#log">log</a></li>
         <li><a href="global.html#readDBFile">readDBFile</a></li>
+        <li><a href="global.html#readEntry">readEntry</a></li>
         <li><a href="global.html#readSchemaFile">readSchemaFile</a></li>
         <li><a href="global.html#readSequence">readSequence</a></li>
         <li><a href="global.html#readSequenceFile">readSequenceFile</a></li>
@@ -331,6 +378,7 @@ exports.restore = restoreDB;
         <li><a href="global.html#readTableStructure">readTableStructure</a></li>
         <li><a href="global.html#restoreDB">restoreDB</a></li>
         <li><a href="global.html#selectTableContent">selectTableContent</a></li>
+        <li><a href="global.html#updateEntry">updateEntry</a></li>
         <li><a href="global.html#updateSequence">updateSequence</a></li>
         <li><a href="global.html#updateTableContent">updateTableContent</a></li>
         <li><a href="global.html#updateUser">updateUser</a></li>
@@ -346,7 +394,7 @@ exports.restore = restoreDB;
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Dec 27 2018 20:54:52
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Dec 28 2018 18:27:45
     GMT-0200 (GMT-02:00)
 </footer>
 

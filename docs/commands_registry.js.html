@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: commands/registry.js</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link href="styles/prettify-tomorrow.css" rel="stylesheet" type="text/css">
+    <link href="styles/jsdoc-default.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: commands/registry.js</h1>
+
+
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file This file contains functions to interact with registry entries
+ *
+ * @author Dhiego Cassiano Fogaça Barbosa &lt;modscleo4@outlook.com>
+ */
+
+const table = require("./table");
+
+/**
+ * @summary Create a registry entry
+ *
+ * @param entryName {String} The entry name
+ * @param type {String} The entry type
+ * @param value {*} The value for the entry
+ *
+ * @returns {String} If Ok, returns 'Created entry ${entryName}'
+ * @throws {Error} If the entry already exists, throw an error
+ */
+function createEntry(entryName, type, value) {
+    if (typeof entryName === "string" &amp;&amp; typeof type === "string") {
+        let entry = table.select(
+            'jsdb',
+            'public',
+            'registry',
+            ["type"],
+            {
+                'where': `\`entryName\` == '${entryName}'`
+            }
+        );
+
+        if (entry.length === 0) {
+            if (typeof value !== type) {
+                throw new Error("Invalid type");
+            }
+
+            if (typeof value === "string") {
+                table.insert('jsdb', 'public', 'registry', ["DEFAULT", entryName, type, value]);
+            } else {
+                table.insert('jsdb', 'public', 'registry', ["DEFAULT", entryName, type, JSON.stringify(value)]);
+            }
+
+            return `Created entry ${entryName}`;
+        } else {
+            throw new Error(`Entry ${entryName} already exists`);
+        }
+    }
+}
+
+/**
+ * @summary Read an entry value
+ *
+ * @param entryName {String} The entry name
+ *
+ * @returns {Object} If the entry exists, return the entry value
+ * @throws {Error} If the entry does not exist, throw an error
+ */
+function readEntry(entryName) {
+    if (typeof entryName === "string") {
+        let entry = table.select(
+            'jsdb',
+            'public',
+            'registry',
+            ["value", "type"],
+            {
+                'where': `\`entryName\` == '${entryName}'`
+            }
+        );
+
+        if (entry.length === 0) {
+            throw new Error(`Entry ${entryName} does not exist`);
+        }
+
+        if (entry[0].type === "string") {
+            return entry[0].value;
+        } else {
+            return JSON.parse(entry[0].value);
+        }
+    }
+}
+
+/**
+ * @summary Update an entry value
+ *
+ * @param entryName {String} The entry name
+ * @param value {*} The new value for the entry
+ *
+ * @returns {String} If Ok, returns 'Updated entry ${entryName}'
+ * @throws {Error} If the entry does not exist, throw an error
+ */
+function updateEntry(entryName, value) {
+    if (typeof entryName === "string") {
+        let entry = table.select(
+            'jsdb',
+            'public',
+            'registry',
+            ["type"],
+            {
+                'where': `\`entryName\` == '${entryName}'`
+            }
+        );
+
+        if (entry.length === 0) {
+            throw new Error(`Entry ${entryName} does not exist`);
+        }
+
+        if (typeof value !== entry[0].type) {
+            throw new Error("Invalid type");
+        }
+
+        if (typeof value === "string") {
+            table.update('jsdb', 'public', 'registry', {"value": value}, {'where': `\`entryName\` == '${entryName}'`});
+        } else {
+            table.update('jsdb', 'public', 'registry', {"value": JSON.stringify(value)}, {'where': `\`entryName\` == '${entryName}'`});
+        }
+        return `Updated entry ${entryName}`;
+    }
+}
+
+/**
+ * @summary Delete an entry
+ *
+ * @param entryName {String} The entry name
+ *
+ * @returns {String} If Ok, returns 'Deleted entry ${entryName}'
+ * @throws {Error} If the entry does not exist, throw an error
+ */
+function deleteEntry(entryName) {
+    if (typeof entryName === "string") {
+        if (existsEntry(entryName)) {
+            if (entryName.startsWith('jsdb.')) {
+                throw new Error('JSDB entries cannot be deleted');
+            }
+
+            table.delete('jsdb', 'public', 'registry', {'where': `\`entryName\` == '${entryName}'`});
+
+            return `Deleted entry ${entryName}`;
+        }
+    }
+}
+
+/**
+ * @summary Check if the registry entry exists
+ *
+ * @param entryName {String} The entry name
+ * @param throws {boolean} If true, throw an error if the sequence does not exist
+ *
+ * @returns {boolean} Return true if the entry exists
+ * @throws {Error} If the entry does not exist, throw an error
+ */
+function existsEntry(entryName, throws = true) {
+    if (typeof entryName === "string") {
+        let entry = table.select(
+            'jsdb',
+            'public',
+            'registry',
+            ["type"],
+            {
+                'where': `\`entryName\` == '${entryName}'`
+            }
+        );
+
+        if (entry.length === 0) {
+            if (throws) {
+                throw new Error(`Entry ${entryName} does not exist`);
+            } else {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+exports.create = createEntry;
+exports.read = readEntry;
+exports.update = updateEntry;
+exports.delete = deleteEntry;
+
+exports.exists = existsEntry;</code></pre>
+        </article>
+    </section>
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2>
+    <h3>Global</h3>
+    <ul>
+        <li><a href="global.html#authUser">authUser</a></li>
+        <li><a href="global.html#backupDB">backupDB</a></li>
+        <li><a href="global.html#createDB">createDB</a></li>
+        <li><a href="global.html#createDBFolder">createDBFolder</a></li>
+        <li><a href="global.html#createEntry">createEntry</a></li>
+        <li><a href="global.html#createSchema">createSchema</a></li>
+        <li><a href="global.html#createSchemaFolder">createSchemaFolder</a></li>
+        <li><a href="global.html#createSequence">createSequence</a></li>
+        <li><a href="global.html#createTable">createTable</a></li>
+        <li><a href="global.html#createTableFolder">createTableFolder</a></li>
+        <li><a href="global.html#createUser">createUser</a></li>
+        <li><a href="global.html#deleteEntry">deleteEntry</a></li>
+        <li><a href="global.html#deleteTableContent">deleteTableContent</a></li>
+        <li><a href="global.html#dropDB">dropDB</a></li>
+        <li><a href="global.html#dropSchema">dropSchema</a></li>
+        <li><a href="global.html#dropSequence">dropSequence</a></li>
+        <li><a href="global.html#dropTable">dropTable</a></li>
+        <li><a href="global.html#dropUser">dropUser</a></li>
+        <li><a href="global.html#existsDB">existsDB</a></li>
+        <li><a href="global.html#existsEntry">existsEntry</a></li>
+        <li><a href="global.html#existsSchema">existsSchema</a></li>
+        <li><a href="global.html#existsSequence">existsSequence</a></li>
+        <li><a href="global.html#existsTable">existsTable</a></li>
+        <li><a href="global.html#existsUser">existsUser</a></li>
+        <li><a href="global.html#getUserPrivileges">getUserPrivileges</a></li>
+        <li><a href="global.html#insertTableContent">insertTableContent</a></li>
+        <li><a href="global.html#log">log</a></li>
+        <li><a href="global.html#readDBFile">readDBFile</a></li>
+        <li><a href="global.html#readEntry">readEntry</a></li>
+        <li><a href="global.html#readSchemaFile">readSchemaFile</a></li>
+        <li><a href="global.html#readSequence">readSequence</a></li>
+        <li><a href="global.html#readSequenceFile">readSequenceFile</a></li>
+        <li><a href="global.html#readTableContent">readTableContent</a></li>
+        <li><a href="global.html#readTableFile">readTableFile</a></li>
+        <li><a href="global.html#readTableStructure">readTableStructure</a></li>
+        <li><a href="global.html#restoreDB">restoreDB</a></li>
+        <li><a href="global.html#selectTableContent">selectTableContent</a></li>
+        <li><a href="global.html#updateEntry">updateEntry</a></li>
+        <li><a href="global.html#updateSequence">updateSequence</a></li>
+        <li><a href="global.html#updateTableContent">updateTableContent</a></li>
+        <li><a href="global.html#updateUser">updateUser</a></li>
+        <li><a href="global.html#writeDBFile">writeDBFile</a></li>
+        <li><a href="global.html#writeSchemaFile">writeSchemaFile</a></li>
+        <li><a href="global.html#writeSequenceFile">writeSequenceFile</a></li>
+        <li><a href="global.html#writeTableContent">writeTableContent</a></li>
+        <li><a href="global.html#writeTableFile">writeTableFile</a></li>
+        <li><a href="global.html#writeTableStructure">writeTableStructure</a></li>
+    </ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Dec 28 2018 18:27:45
+    GMT-0200 (GMT-02:00)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>
