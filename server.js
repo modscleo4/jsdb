@@ -154,7 +154,7 @@ if (address !== "" && port !== 0 && dir !== "") {
         if (table.select('jsdb', 'public', 'users', ['*'], {"where": '\`username\` == \'jsdbadmin\''}).length === 0) {
             let stdin = process.openStdin();
 
-            console.log('Insert jsdbadmin password: ');
+            process.stdout.write('Insert jsdbadmin password: ');
 
             stdin.addListener("data", d => {
                 d = d.toLocaleString().trim();
