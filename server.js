@@ -110,6 +110,7 @@ db.readFile();
 
 /* Load registry configs */
 config.ignAuth = registry.read('jsdb.server.ignAuth');
+config.createZip = registry.read('jsdb.server.createZip');
 dir = registry.read('jsdb.server.startDir');
 port = registry.read('jsdb.server.port');
 

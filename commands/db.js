@@ -183,6 +183,7 @@ function readDBFile() {
         table.insert('jsdb', 'public', 'registry', ["DEFAULT", 'jsdb.server.ignAuth', 'boolean', JSON.stringify(false)]);
         table.insert('jsdb', 'public', 'registry', ["DEFAULT", 'jsdb.server.port', 'number', JSON.stringify(6637)]);
         table.insert('jsdb', 'public', 'registry', ["DEFAULT", 'jsdb.server.startDir', 'string', './']);
+        table.insert('jsdb', 'public', 'registry', ["DEFAULT", 'jsdb.server.createZip', 'boolean', JSON.stringify(false)]);
     }
 
     DBList.forEach(dbName => {
