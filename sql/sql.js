@@ -414,7 +414,23 @@ function parseSQL(sql, socketIndex) {
                             o.message = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === "USER") {
+                        /* @TODO: CREATE USER */
+                        let username = t[2][1];
+                        let password = "";
+                        let privileges = {"*": 0};
 
+                        try {
+                            userPrivileges = getPermissions("jsdb");
+                            if (!userPrivileges.create) {
+                                o.code = 1;
+                                o.message = "Not enough permissions";
+                            } else {
+                                //o.data = user.create(username, password, privileges);
+                            }
+                        } catch (e) {
+                            o.code = 1;
+                            o.message = e.message;
+                        }
                     } else if (t[1][1].toUpperCase() === "ENTRY") {
                         let entryName = t[2][1];
                         let type;

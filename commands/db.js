@@ -188,8 +188,8 @@ function readDBFile() {
 
     DBList.forEach(dbName => {
         if (!fs.existsSync(`${config.startDir}dbs/${dbName}`) && !fs.existsSync(`${config.startDir}dbs/${dbName}.jsdb`)) {
-            createDBFolder(dbName);
-            schema.create(dbName, "public");
+            DBList.splice(DBList.indexOf(dbName), 1);
+            writeDBFile(JSON.stringify(DBList));
         }
     });
 
