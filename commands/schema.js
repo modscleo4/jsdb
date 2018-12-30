@@ -65,7 +65,7 @@ function createSchemaFolder(dbName, schemaName) {
  */
 function readSchemaFile(dbName) {
     if (typeof dbName === "string") {
-        let r = [];
+        let SCHList = [];
 
         /*
         * Checking if the database exists
@@ -76,25 +76,26 @@ function readSchemaFile(dbName) {
                 return [];
             }
 
-            r = JSON.parse(fs.readFileSync(`${config.startDir}dbs/${dbName}/${f_schlist}`, 'utf8'));
+            SCHList = JSON.parse(fs.readFileSync(`${config.startDir}dbs/${dbName}/${f_schlist}`, 'utf8'));
 
-            r.forEach(schName => {
+            SCHList.forEach(schName => {
                 if (!fs.existsSync(`${config.startDir}dbs/${dbName}/${schName}`)) {
-                    createSchemaFolder(dbName, schName);
+                    SCHList.splice(SCHList.indexOf(schName), 1);
+                    writeSchemaFile(dbName, JSON.stringify(SCHList));
                 }
             });
 
             fs.readdirSync(`${config.startDir}dbs/${dbName}/`).forEach(schName => {
                 if (schName !== f_schlist) {
-                    if (r.indexOf(schName) === -1) {
-                        r.push(schName);
-                        writeSchemaFile(dbName, JSON.stringify(r));
+                    if (SCHList.indexOf(schName) === -1) {
+                        SCHList.push(schName);
+                        writeSchemaFile(dbName, JSON.stringify(SCHList));
                     }
                 }
             });
         }
 
-        return r;
+        return SCHList;
     }
 }
 

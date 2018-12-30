@@ -130,7 +130,8 @@ function readTableFile(dbName, schemaName) {
 
             TableList.forEach(tableName => {
                 if (!fs.existsSync(`${config.startDir}dbs/${dbName}/${schemaName}/${tableName}/`)) {
-                    createTableFolder(dbName, schemaName, tableName);
+                    TableList.splice(TableList.indexOf(tableName), 1);
+                    writeTableFile(dbName, schemaName, JSON.stringify(TableList));
                 }
             });
 

@@ -287,6 +287,8 @@ function backupDB(dbName) {
 function restoreDB(dbName) {
     if (typeof dbName === "string") {
         if (fs.existsSync(`${config.startDir}dbs/${dbName}.jsdb`)) {
+            config.rmdirRSync(`${config.startDir}dbs/${dbName}`);
+
             let zip = new admzip(`${config.startDir}dbs/${dbName}.jsdb`);
             zip.extractAllTo(`${config.startDir}dbs/${dbName}`, true);
         } else {
