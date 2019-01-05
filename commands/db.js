@@ -297,7 +297,7 @@ function checkJSDBIntegrity() {
             },
             {
                 'primaryKey': [
-                    'id'
+                    'entryName'
                 ]
             }
         );

@@ -399,6 +399,7 @@ describe('User', function () {
     let prev;
 
     before(function () {
+        db.checkJSDBIntegrity();
         prev = sequence.read('jsdb', 'public', 'users_id_seq');
     });
 
@@ -462,6 +463,10 @@ describe('User', function () {
 });
 
 describe('Registry', function () {
+    before(function () {
+        db.checkJSDBIntegrity();
+    });
+
     describe('#createEntry()', function () {
         it('Should return \'Created entry internalentry:test\'', function () {
             assert.strictEqual(registry.create('internalentry:test', 'number', 1), "Created entry internalentry:test")
