@@ -4,7 +4,9 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
+const db = require("./db");
 const table = require("./table");
+const config = require("../config");
 
 /**
  * @summary Create a registry entry
@@ -34,9 +36,9 @@ function createEntry(entryName, type, value) {
             }
 
             if (typeof value === "string") {
-                table.insert('jsdb', 'public', 'registry', ["DEFAULT", entryName, type, value]);
+                table.insert('jsdb', 'public', 'registry', [entryName, type, value]);
             } else {
-                table.insert('jsdb', 'public', 'registry', ["DEFAULT", entryName, type, JSON.stringify(value)]);
+                table.insert('jsdb', 'public', 'registry', [entryName, type, JSON.stringify(value)]);
             }
 
             return `Created entry ${entryName}`;
@@ -171,9 +173,25 @@ function existsEntry(entryName, throws = true) {
     }
 }
 
+/**
+ * @summary Reads the entire registry
+ */
+function readAllRegistry() {
+    db.checkJSDBIntegrity();
+
+    /* Load registry configs */
+    config.server.ignAuth = readEntry('jsdb.server.ignAuth');
+    config.db.createZip = readEntry('jsdb.db.createZip');
+    config.server.startDir = readEntry('jsdb.server.startDir');
+    config.server.port = readEntry('jsdb.server.port');
+    config.registry.instantApplyChanges = readEntry('jsdb.registry.instantApplyChanges');
+}
+
 exports.create = createEntry;
 exports.read = readEntry;
 exports.update = updateEntry;
 exports.delete = deleteEntry;
 
 exports.exists = existsEntry;
+
+exports.readAll = readAllRegistry;

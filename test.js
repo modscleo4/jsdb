@@ -462,12 +462,6 @@ describe('User', function () {
 });
 
 describe('Registry', function () {
-    let prev;
-
-    before(function () {
-        prev = sequence.read('jsdb', 'public', 'registry_id_seq');
-    });
-
     describe('#createEntry()', function () {
         it('Should return \'Created entry internalentry:test\'', function () {
             assert.strictEqual(registry.create('internalentry:test', 'number', 1), "Created entry internalentry:test")
@@ -526,9 +520,5 @@ describe('Registry', function () {
                 registry.exists('internalentry:test')
             });
         });
-    });
-
-    after(function () {
-        sequence.update('jsdb', 'public', 'registry_id_seq', prev);
     });
 });

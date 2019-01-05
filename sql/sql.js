@@ -761,6 +761,9 @@ function parseSQL(sql, socketIndex) {
 
                         try {
                             userPrivileges = getPermissions("jsdb");
+                            if (config.registry.instantApplyChanges) {
+                                registry.readAll();
+                            }
                             if (!userPrivileges.update) {
                                 output.code = 1;
                                 output.message = "Not enough permissions";
@@ -913,7 +916,38 @@ function parseSQL(sql, socketIndex) {
                             output.message = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === "SEQUENCE") {
+                        let seqName;
+                        let a;
+                        let ifExists = false;
 
+                        /*
+                        * Gets the table name
+                        * */
+                        for (let i = 1; i < t.length; i++) {
+                            if (t[i][1].toUpperCase() === "SEQUENCE") {
+                                a = i + 1;
+                                seqName = t[i + 1][1];
+                            }
+
+                            if (t[i][1].toUpperCase() === "IF" && t[i + 1][1].toUpperCase() === "EXISTS") {
+                                a = i + 2;
+                                seqName = t[i + 2][1];
+                                ifExists = true;
+                                break;
+                            }
+                        }
+
+                        try {
+                            if (!userPrivileges.delete) {
+                                output.code = 1;
+                                output.message = "Not enough permissions";
+                            } else {
+                                output.data = sequence.drop(dbName.get(), schemaName.get(), seqName, ifExists);
+                            }
+                        } catch (e) {
+                            output.code = 1;
+                            output.message = e.message;
+                        }
                     } else if (t[1][1].toUpperCase() === "TABLE") {
                         let tableName;
                         let a;

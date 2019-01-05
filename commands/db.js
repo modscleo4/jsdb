@@ -7,6 +7,7 @@
 const fs = require('fs');
 const schema = require('./schema');
 const table = require('./table');
+const registry = require('./registry');
 const config = require('../config');
 const admzip = require('adm-zip');
 
@@ -46,11 +47,11 @@ function createDB(dbName) {
  */
 function createDBFolder(dbName) {
     if (typeof dbName === "string") {
-        if (!fs.existsSync(`${config.startDir}dbs/`)) {
-            fs.mkdirSync(`${config.startDir}dbs/`);
+        if (!fs.existsSync(`${config.server.startDir}dbs/`)) {
+            fs.mkdirSync(`${config.server.startDir}dbs/`);
         }
 
-        fs.mkdirSync(`${config.startDir}dbs/${dbName}`);
+        fs.mkdirSync(`${config.server.startDir}dbs/${dbName}`);
     }
 }
 
@@ -62,14 +63,14 @@ function createDBFolder(dbName) {
 function readDBFile() {
     let DBList = [];
 
-    if (!fs.existsSync(`${config.startDir}dbs/${f_dblist}`)) {
+    if (!fs.existsSync(`${config.server.startDir}dbs/${f_dblist}`)) {
         writeDBFile(JSON.stringify([]));
         return readDBFile();
     }
 
-    DBList = JSON.parse(fs.readFileSync(`${config.startDir}dbs/${f_dblist}`, 'utf8'));
+    DBList = JSON.parse(fs.readFileSync(`${config.server.startDir}dbs/${f_dblist}`, 'utf8'));
 
-    fs.readdirSync(`${config.startDir}dbs/`).forEach(dbName => {
+    fs.readdirSync(`${config.server.startDir}dbs/`).forEach(dbName => {
         if (dbName !== f_dblist && !dbName.endsWith('.jsdb')) {
             if (DBList.indexOf(dbName) === -1) {
                 DBList.push(dbName);
@@ -81,12 +82,12 @@ function readDBFile() {
     /*
     * Compress/decompress .jsdb files
     * */
-    if (config.createZip) {
+    if (config.db.createZip) {
         DBList.forEach(dbName => {
-            if (fs.existsSync(`${config.startDir}dbs/${dbName}`)) {
+            if (fs.existsSync(`${config.server.startDir}dbs/${dbName}`)) {
                 backupDB(dbName);
 
-                config.rmdirRSync(`${config.startDir}dbs/${dbName}/`);
+                config.rmdirRSync(`${config.server.startDir}dbs/${dbName}/`);
             }
 
             restoreDB(dbName);
@@ -98,7 +99,7 @@ function readDBFile() {
     * */
     if (DBList.indexOf("jsdb") === -1) {
         DBList.push('jsdb');
-        if (!fs.existsSync(`${config.startDir}dbs/jsdb/`)) {
+        if (!fs.existsSync(`${config.server.startDir}dbs/jsdb/`)) {
             createDBFolder('jsdb');
         }
 
@@ -106,88 +107,10 @@ function readDBFile() {
         if (schema.readFile('jsdb').indexOf('public') === -1) {
             schema.create('jsdb', "public");
         }
-
-        table.create('jsdb', 'public', 'users',
-            {
-                'id': {
-                    'type': 'number',
-                    'unique': true,
-                    'autoIncrement': true,
-                    'notNull': true
-                },
-
-                'username': {
-                    'type': 'string',
-                    'unique': true,
-                    'notNull': true
-                },
-
-                'password': {
-                    'type': 'string',
-                    'notNull': true
-                },
-
-                'valid': {
-                    'type': 'boolean',
-                    'default': true,
-                    'notNull': true
-                },
-
-                'privileges': {
-                    'type': 'object',
-                    'default': {},
-                    'notNull': false
-                },
-            },
-
-            {
-                'primaryKey': [
-                    'id'
-                ]
-            }
-        );
-
-        table.create('jsdb', 'public', 'registry',
-            {
-                'id': {
-                    'type': 'number',
-                    'unique': true,
-                    'autoIncrement': true,
-                    'notNull': true
-                },
-
-                'entryName': {
-                    'type': 'string',
-                    'unique': true,
-                    'notNull': true
-                },
-
-                'type': {
-                    'type': 'string',
-                    'notNull': true
-                },
-
-                'value': {
-                    'type': 'string',
-                    'notNull': true
-                },
-            },
-            {
-                'primaryKey': [
-                    'id'
-                ]
-            }
-        );
-
-        /* Insert default registry entries */
-        table.insert('jsdb', 'public', 'registry', ["DEFAULT", 'jsdb.server.ignAuth', 'boolean', JSON.stringify(false)]);
-        table.insert('jsdb', 'public', 'registry', ["DEFAULT", 'jsdb.server.port', 'number', JSON.stringify(6637)]);
-        table.insert('jsdb', 'public', 'registry', ["DEFAULT", 'jsdb.server.startDir', 'string', './']);
-        table.insert('jsdb', 'public', 'registry', ["DEFAULT", 'jsdb.server.createZip', 'boolean', JSON.stringify(false)]);
     }
 
     DBList.forEach(dbName => {
-        if (!fs.existsSync(`${config.startDir}dbs/${dbName}`) && !fs.existsSync(`${config.startDir}dbs/${dbName}.jsdb`)) {
+        if (!fs.existsSync(`${config.server.startDir}dbs/${dbName}`) && !fs.existsSync(`${config.server.startDir}dbs/${dbName}.jsdb`)) {
             DBList.splice(DBList.indexOf(dbName), 1);
             writeDBFile(JSON.stringify(DBList));
         }
@@ -203,11 +126,11 @@ function readDBFile() {
  */
 function writeDBFile(content) {
     if (typeof content === "string") {
-        if (!fs.existsSync(`${config.startDir}dbs/`)) {
-            fs.mkdirSync(`${config.startDir}dbs/`);
+        if (!fs.existsSync(`${config.server.startDir}dbs/`)) {
+            fs.mkdirSync(`${config.server.startDir}dbs/`);
         }
 
-        fs.writeFileSync(`${config.startDir}dbs/${f_dblist}`, content);
+        fs.writeFileSync(`${config.server.startDir}dbs/${f_dblist}`, content);
     }
 }
 
@@ -222,12 +145,16 @@ function writeDBFile(content) {
  */
 function dropDB(dbName, ifExists = false) {
     if (typeof dbName === "string" && typeof ifExists === "boolean") {
+        if (dbName === 'jsdb') {
+            throw new Error('JSDB database cannot be dropped');
+        }
+
         if ((ifExists && readDBFile().indexOf(dbName) !== -1) || (!ifExists && existsDB(dbName))) {
             let DBList = readDBFile();
             let i = DBList.indexOf(dbName);
             DBList.splice(i, 1);
             writeDBFile(JSON.stringify(DBList));
-            config.rmdirRSync(`${config.startDir}dbs/${dbName}/`);
+            config.rmdirRSync(`${config.server.startDir}dbs/${dbName}/`);
 
             return `Dropped database ${dbName}.`;
         } else {
@@ -271,8 +198,8 @@ function backupDB(dbName) {
     if (typeof dbName === "string") {
         if (existsDB(dbName)) {
             let zip = new admzip();
-            zip.addLocalFolder(`${config.startDir}dbs/${dbName}`);
-            zip.writeZip(`${config.startDir}dbs/${dbName}.jsdb`);
+            zip.addLocalFolder(`${config.server.startDir}dbs/${dbName}`);
+            zip.writeZip(`${config.server.startDir}dbs/${dbName}.jsdb`);
         }
     }
 }
@@ -286,14 +213,114 @@ function backupDB(dbName) {
  */
 function restoreDB(dbName) {
     if (typeof dbName === "string") {
-        if (fs.existsSync(`${config.startDir}dbs/${dbName}.jsdb`)) {
-            config.rmdirRSync(`${config.startDir}dbs/${dbName}`);
+        if (fs.existsSync(`${config.server.startDir}dbs/${dbName}.jsdb`)) {
+            config.rmdirRSync(`${config.server.startDir}dbs/${dbName}`);
 
-            let zip = new admzip(`${config.startDir}dbs/${dbName}.jsdb`);
-            zip.extractAllTo(`${config.startDir}dbs/${dbName}`, true);
+            let zip = new admzip(`${config.server.startDir}dbs/${dbName}.jsdb`);
+            zip.extractAllTo(`${config.server.startDir}dbs/${dbName}`, true);
         } else {
             throw new Error(`Backup file for ${dbName} does not exist`);
         }
+    }
+}
+
+/**
+ * @summary Checks the JSDB database integrity
+ */
+function checkJSDBIntegrity() {
+    readDBFile();
+
+    if (!schema.exists('jsdb', 'public', false)) {
+        schema.create('jsdb', 'public');
+    }
+
+    if (!table.exists('jsdb', 'public', 'users', false)) {
+        table.create('jsdb', 'public', 'users',
+            {
+                'id': {
+                    'type': 'number',
+                    'unique': true,
+                    'autoIncrement': true,
+                    'notNull': true
+                },
+
+                'username': {
+                    'type': 'string',
+                    'unique': true,
+                    'notNull': true
+                },
+
+                'password': {
+                    'type': 'string',
+                    'notNull': true
+                },
+
+                'valid': {
+                    'type': 'boolean',
+                    'default': true,
+                    'notNull': true
+                },
+
+                'privileges': {
+                    'type': 'object',
+                    'default': {},
+                    'notNull': false
+                },
+            },
+
+            {
+                'primaryKey': [
+                    'id'
+                ]
+            }
+        );
+    }
+
+    if (!table.exists('jsdb', 'public', 'registry', false)) {
+        table.create('jsdb', 'public', 'registry',
+            {
+                'entryName': {
+                    'type': 'string',
+                    'unique': true,
+                    'notNull': true
+                },
+
+                'type': {
+                    'type': 'string',
+                    'notNull': true
+                },
+
+                'value': {
+                    'type': 'string',
+                    'notNull': true
+                },
+            },
+            {
+                'primaryKey': [
+                    'id'
+                ]
+            }
+        );
+    }
+
+    if (!registry.exists('jsdb.server.ignAuth', false)) {
+        registry.create('jsdb.server.ignAuth', 'boolean', false);
+    }
+
+    if (!registry.exists('jsdb.server.port', false)) {
+        registry.create('jsdb.server.port', 'number', 6637);
+    }
+
+    if (!registry.exists('jsdb.server.startDir', false)) {
+        registry.create('jsdb.server.startDir', 'string', './');
+    }
+
+    if (!registry.exists('jsdb.db.createZip', false)) {
+        registry.create('jsdb.db.createZip', 'boolean', false);
+    }
+
+    if (!registry.exists('jsdb.registry.instantApplyChanges', false)) {
+        registry.create('jsdb.registry.instantApplyChanges', 'boolean', false);
     }
 }
 
@@ -309,3 +336,5 @@ exports.exists = existsDB;
 
 exports.backup = backupDB;
 exports.restore = restoreDB;
+
+exports.checkJSDBIntegrity = checkJSDBIntegrity;

@@ -23,7 +23,7 @@ exports.f_seqlist = f_seqlist;
  * @throws {Error} If the sequence already exists, throw an error
  * */
 function createSequence(dbName, schemaName, seqName, options = {"start": 1, "inc": 1}) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof  options === "object") {
+    if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof options === "object") {
         let SequenceList = readSequenceFile(dbName, schemaName);
 
         if (SequenceList.hasOwnProperty(seqName)) {
@@ -49,12 +49,12 @@ function createSequence(dbName, schemaName, seqName, options = {"start": 1, "inc
 function readSequenceFile(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
         if (schema.exists(dbName, schemaName)) {
-            if (!fs.existsSync(`${config.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`)) {
+            if (!fs.existsSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`)) {
                 writeSequenceFile(dbName, schemaName, JSON.stringify({}));
                 return {};
             }
 
-            return JSON.parse(fs.readFileSync(`${config.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`, 'utf8'));
+            return JSON.parse(fs.readFileSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`, 'utf8'));
         }
     }
 }
@@ -71,7 +71,7 @@ function readSequenceFile(dbName, schemaName) {
 function writeSequenceFile(dbName, schemaName, content) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof content === "string") {
         if (schema.exists(dbName, schemaName)) {
-            fs.writeFileSync(`${config.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`, content);
+            fs.writeFileSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`, content);
         }
     }
 }
@@ -164,9 +164,13 @@ function updateSequence(dbName, schemaName, seqName, content) {
  * */
 function dropSequence(dbName, schemaName, seqName, ifExists = false) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof ifExists === "boolean") {
+        if (dbName === 'jsdb' && schemaName === 'public') {
+            throw new Error('JSDB sequences in public schema cannot be dropped');
+        }
+
         if ((ifExists && readSequenceFile(dbName, schemaName).hasOwnProperty(seqName)) || (!ifExists && existsSequence(dbName, schemaName, seqName))) {
             let SequenceList = readSequenceFile(dbName, schemaName);
-            delete(SequenceList[seqName]);
+            delete (SequenceList[seqName]);
 
             writeSequenceFile(dbName, schemaName, JSON.stringify(SequenceList));
 

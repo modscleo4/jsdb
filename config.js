@@ -6,17 +6,26 @@
 
 const fs = require('fs');
 
-let ignAuth = false;
-exports.ignAuth = ignAuth;
+let server = {
+    ignAuth: false,
+    startDir: "./",
+    port: 6637
+};
 
-let startDir = "";
-exports.startDir = startDir;
+let db = {
+    createZip: false
+};
+
+let registry = {
+    instantApplyChanges: false
+};
+
+exports.server = server;
+exports.db = db;
+exports.registry = registry;
 
 let sockets = [];
 exports.sockets = sockets;
-
-let createZip = false;
-exports.createZip = createZip;
 
 exports.addSocket = function addSocket(socket) {
     sockets.push(socket);

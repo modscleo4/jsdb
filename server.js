@@ -37,7 +37,7 @@ let server = net.createServer(socket => {
             return;
         }
 
-        if (config.ignAuth && sqlCmd.includes("credentials: ")) {
+        if (config.server.ignAuth && sqlCmd.includes("credentials: ")) {
             socket.username = "grantall::jsdbadmin";
             config.addSocket(socket);
             socket.write("AUTHOK");
@@ -45,7 +45,7 @@ let server = net.createServer(socket => {
             return;
         }
 
-        if (socket.username === null && !config.ignAuth) {
+        if (socket.username === null && !config.server.ignAuth) {
             try {
                 if (!sqlCmd.includes("credentials: ")) {
                     let message = "Username and password not informed";
@@ -103,54 +103,46 @@ let server = net.createServer(socket => {
 });
 
 let address = "localhost";
-let port;
-let dir;
 
-db.readFile();
-
-/* Load registry configs */
-config.ignAuth = registry.read('jsdb.server.ignAuth');
-config.createZip = registry.read('jsdb.server.createZip');
-dir = registry.read('jsdb.server.startDir');
-port = registry.read('jsdb.server.port');
+db.checkJSDBIntegrity();
+registry.readAll();
 
 let params = [];
 
 for (let i = 0; i < process.argv.length; i++) {
     if (process.argv[i] === "-d" || process.argv[i] === "--dir") {
-        dir = process.argv[i + 1];
+        config.server.startDir = process.argv[i + 1];
         params.push('d');
     } else if (process.argv[i] === "-p" || process.argv[i] === "--port") {
-        port = parseInt(process.argv[i + 1]);
+        config.server.port = parseInt(process.argv[i + 1]);
         params.push('p');
     } else if (process.argv[i] === "-N" || process.argv[i] === "--noAuth") {
-        config.ignAuth = true;
+        config.server.ignAuth = true;
         params.push('N');
     } else if (process.argv[i] === "-Z" || process.argv[i] === "--createZip") {
-        config.createZip = true;
+        config.db.createZip = true;
         params.push('Z');
     }
 }
 
-if (dir === "") {
-    dir = "./";
+if (config.server.startDir === "") {
+    config.server.startDir = "./";
 }
 
-if (port <= 0 || port >= 65535) {
-    port = 6637;
+if (config.server.port <= 0 || config.server.port >= 65535) {
+    config.server.port = 6637;
 }
 
-if (address !== "" && port !== 0 && dir !== "") {
-    server.listen(port, address);
+if (address !== "" && config.server.port !== 0 && config.server.startDir !== "") {
+    server.listen(config.server.port, address);
     logger.log(0, `Server started with parameters [${params.join(", ")}]`);
-    console.log(`Running server on ${address}:${port}, ${dir}`);
-    if (config.ignAuth) {
+    console.log(`Running server on ${address}:${config.server.port}, ${config.server.startDir}`);
+    if (config.server.ignAuth) {
         console.log('Warning: running without authentication!');
         logger.log(1, `Warning: Server started without authentication`);
     }
-    config.startDir = dir;
 
-    if (!config.ignAuth) {
+    if (!config.server.ignAuth) {
         if (table.select('jsdb', 'public', 'users', ['*'], {"where": '\`username\` == \'jsdbadmin\''}).length === 0) {
             let stdin = process.openStdin();
 

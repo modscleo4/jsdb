@@ -48,8 +48,8 @@ function createSchema(dbName, schemaName) {
 function createSchemaFolder(dbName, schemaName) {
     if (typeof dbName === "string" && typeof schemaName === "string") {
         if (db.exists(dbName)) {
-            if (!fs.existsSync(`${config.startDir}dbs/${dbName}/${schemaName}`)) {
-                fs.mkdirSync(`${config.startDir}dbs/${dbName}/${schemaName}`);
+            if (!fs.existsSync(`${config.server.startDir}dbs/${dbName}/${schemaName}`)) {
+                fs.mkdirSync(`${config.server.startDir}dbs/${dbName}/${schemaName}`);
             }
         }
     }
@@ -71,21 +71,21 @@ function readSchemaFile(dbName) {
         * Checking if the database exists
         * */
         if (db.exists(dbName)) {
-            if (!fs.existsSync(`${config.startDir}dbs/${dbName}/${f_schlist}`)) {
+            if (!fs.existsSync(`${config.server.startDir}dbs/${dbName}/${f_schlist}`)) {
                 writeSchemaFile(dbName, JSON.stringify([]));
                 return [];
             }
 
-            SCHList = JSON.parse(fs.readFileSync(`${config.startDir}dbs/${dbName}/${f_schlist}`, 'utf8'));
+            SCHList = JSON.parse(fs.readFileSync(`${config.server.startDir}dbs/${dbName}/${f_schlist}`, 'utf8'));
 
             SCHList.forEach(schName => {
-                if (!fs.existsSync(`${config.startDir}dbs/${dbName}/${schName}`)) {
+                if (!fs.existsSync(`${config.server.startDir}dbs/${dbName}/${schName}`)) {
                     SCHList.splice(SCHList.indexOf(schName), 1);
                     writeSchemaFile(dbName, JSON.stringify(SCHList));
                 }
             });
 
-            fs.readdirSync(`${config.startDir}dbs/${dbName}/`).forEach(schName => {
+            fs.readdirSync(`${config.server.startDir}dbs/${dbName}/`).forEach(schName => {
                 if (schName !== f_schlist) {
                     if (SCHList.indexOf(schName) === -1) {
                         SCHList.push(schName);
@@ -110,7 +110,7 @@ function readSchemaFile(dbName) {
 function writeSchemaFile(dbName, content) {
     if (typeof dbName === "string" && typeof content === "string") {
         if (db.exists(dbName)) {
-            fs.writeFileSync(`${config.startDir}dbs/${dbName}/${f_schlist}`, content);
+            fs.writeFileSync(`${config.server.startDir}dbs/${dbName}/${f_schlist}`, content);
         }
     }
 }
@@ -127,12 +127,16 @@ function writeSchemaFile(dbName, content) {
  */
 function dropSchema(dbName, schemaName, ifExists = false) {
     if (typeof dbName === "string" && typeof schemaName === "string" && typeof ifExists === "boolean") {
+        if (dbName === 'jsdb' && schemaName === 'public') {
+            throw new Error('JSDB database public schema cannot be dropped');
+        }
+
         if ((ifExists && readSchemaFile(dbName).indexOf(schemaName) !== -1) || (!ifExists && existsSchema(dbName, schemaName))) {
             let SCHList = readSchemaFile(dbName);
             let i = SCHList.indexOf(schemaName);
             SCHList.splice(i, 1);
             writeSchemaFile(dbName, JSON.stringify(SCHList));
-            config.rmdirRSync(`${config.startDir}dbs/${dbName}/${schemaName}/`);
+            config.rmdirRSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/`);
 
             return `Dropped schema ${schemaName}.`;
         } else {
