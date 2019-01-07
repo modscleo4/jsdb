@@ -417,10 +417,37 @@ function parseSQL(sql, socketIndex) {
                             output.message = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === "USER") {
-                        /* @TODO: CREATE USER */
                         let username = t[2][1];
                         let password = "";
                         let privileges = {"*": 0};
+                        let a = 0;
+                        let valid = true;
+
+                        for (let i = 1; i < t.length; i++) {
+                            if (t[i + 2][0] === "LEFT_PAREN" || t[i + 2][0] === "SEPARATOR") {
+                                for (let j = i + 3; j < t.length; j++) {
+                                    if (t[j][0] === "RIGHT_PAREN" || t[j][0] === "SEPARATOR") {
+                                        if (t[j][0] === "RIGHT_PAREN") {
+                                            a = -1;
+                                        }
+
+                                        break;
+                                    }
+
+                                    if (t[j][1].toUpperCase() === "PASSWORD") {
+                                        password = t[j + 2][1];
+                                    } else if (t[j][1].toUpperCase() === "PRIVILEGES") {
+                                        privileges = JSON.parse(t[j + 2][1]);
+                                    } else if (t[j][1].toUpperCase() === "VALID") {
+                                        valid = (t[j + 2][1].toUpperCase() === "TRUE");
+                                    }
+                                }
+
+                                if (a === -1) {
+                                    break;
+                                }
+                            }
+                        }
 
                         try {
                             userPrivileges = getPermissions("jsdb");
@@ -428,7 +455,7 @@ function parseSQL(sql, socketIndex) {
                                 output.code = 1;
                                 output.message = "Not enough permissions";
                             } else {
-                                //o.data = user.create(username, password, privileges);
+                                output.data = user.create(username, password, privileges, valid);
                             }
                         } catch (e) {
                             output.code = 1;
@@ -682,7 +709,40 @@ function parseSQL(sql, socketIndex) {
                         output.message = e.message;
                     }
                 } else if (t[0][1].toUpperCase() === "ALTER") {
-                    if (t[1][1].toUpperCase() === "USER") {
+                    if (t[1][1].toUpperCase() === "SEQUENCE") {
+                        let seqName = t[2][1];
+                        let update = {};
+
+                        for (let j = 0; j < t.length; j++) {
+                            if (t[j][0] !== "LITERAL" && t[j][0] !== "NUMBER") {
+                                break;
+                            }
+
+                            if (t[j][1].toUpperCase() === "INCREMENT" && t[j + 1][1].toUpperCase() === "BY") {
+                                update.inc = parseInt(t[j + 2][1]);
+                            } else if (t[j][1].toUpperCase() === "START" && t[j + 1][1].toUpperCase() === "WITH") {
+                                update.start = parseInt(t[j + 2][1]);
+                            }
+                        }
+
+                        try {
+                            if (!userPrivileges.update) {
+                                output.code = 1;
+                                output.message = "Not enough permissions";
+                            } else {
+                                if (!update.hasOwnProperty('inc')) {
+                                    update.inc = sequence.read(dbName.get(), schemaName.get(), seqName).inc;
+                                } else if (!update.hasOwnProperty('start')) {
+                                    update.start = sequence.read(dbName.get(), schemaName.get(), seqName).start;
+                                }
+
+                                output.data = sequence.update(dbName.get(), schemaName.get(), seqName, update);
+                            }
+                        } catch (e) {
+                            output.code = 1;
+                            output.message = e.message;
+                        }
+                    } else if (t[1][1].toUpperCase() === "USER") {
                         let username = t[2][1];
                         let update = {};
 

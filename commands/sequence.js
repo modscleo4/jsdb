@@ -141,6 +141,10 @@ function updateSequence(dbName, schemaName, seqName, content) {
             let SequenceList = readSequenceFile(dbName, schemaName);
 
             if (content !== null) {
+                if (!content.hasOwnProperty('start') || !content.hasOwnProperty('inc')) {
+                    throw new Error(`Invalid update data for sequence ${seqName}`);
+                }
+
                 SequenceList[seqName] = content;
             }
 

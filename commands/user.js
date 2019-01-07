@@ -51,11 +51,12 @@ function authUser(username, password) {
  * @param username {string} The username
  * @param password {string} The password
  * @param privileges {Object} The user privileges
+ * @param valid {boolean} If the new user is valid or not
  *
  * @returns {String} If Ok, Returns 'Created user ${username}'
  * @throws {Error} If the user already exists, throw an error
  */
-function createUser(username, password, privileges) {
+function createUser(username, password, privileges, valid = true) {
     if (typeof username === "string" && typeof password === "string" && typeof privileges === "object") {
         if (username === "grantall::jsdbadmin") {
             throw new Error("Invalid username");
@@ -72,7 +73,7 @@ function createUser(username, password, privileges) {
         );
 
         if (user.length === 0) {
-            table.insert('jsdb', 'public', 'users', ["DEFAULT", username, md5(`${password}`), "DEFAULT", JSON.stringify(privileges)]);
+            table.insert('jsdb', 'public', 'users', ["DEFAULT", username, md5(`${password}`), valid, JSON.stringify(privileges)]);
             return `Created user ${username}`;
         } else {
             throw new Error(`User ${username} already exists`);

@@ -3,7 +3,7 @@ const config = require('./config');
 /*
 * Ignore authentication for test purposes
 * */
-config.ignAuth = true;
+config.server.ignAuth = true;
 
 const db = require("./commands/db");
 const schema = require("./commands/schema");
