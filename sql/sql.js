@@ -79,6 +79,8 @@ function parseSQL(sql, socketIndex) {
 
         sql = sql.split(';');
 
+        output.time = performance.now();
+
         let perf = true;
         for (let i = 0; i < sql.length; i++) {
             let sqlString = sql[i].trim();
@@ -92,9 +94,7 @@ function parseSQL(sql, socketIndex) {
                 output.sql = sqlString;
                 output.code = 0;
 
-                if (perf) {
-                    output.time = performance.now();
-                } else {
+                if (!perf) {
                     output.time = 'NOTIME';
                 }
 
@@ -1256,10 +1256,6 @@ function parseSQL(sql, socketIndex) {
                     output.message = `Unrecognized command: ${output.sql}`;
                 }
 
-                if (perf) {
-                    output.time = performance.now() - output.time;
-                }
-
                 if (output.code !== 0) {
                     // Restore backup
                     dbs.forEach(dbN => {
@@ -1271,6 +1267,11 @@ function parseSQL(sql, socketIndex) {
                 }
             }
         }
+
+        if (perf) {
+            output.time = performance.now() - output.time;
+        }
+
         return output;
     }
 }
