@@ -23,6 +23,20 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>/**
+ * Copyright 2019 Dhiego Casssiano Fogaça Barbosa
+
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+
+ * http://www.apache.org/licenses/LICENSE-2.0
+
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  * @file This is the script that parses the SQL
  *
  * @author Dhiego Cassiano Fogaça Barbosa &lt;modscleo4@outlook.com>
@@ -441,10 +455,37 @@ function parseSQL(sql, socketIndex) {
                             output.message = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === "USER") {
-                        /* @TODO: CREATE USER */
                         let username = t[2][1];
                         let password = "";
                         let privileges = {"*": 0};
+                        let a = 0;
+                        let valid = true;
+
+                        for (let i = 1; i &lt; t.length; i++) {
+                            if (t[i + 2][0] === "LEFT_PAREN" || t[i + 2][0] === "SEPARATOR") {
+                                for (let j = i + 3; j &lt; t.length; j++) {
+                                    if (t[j][0] === "RIGHT_PAREN" || t[j][0] === "SEPARATOR") {
+                                        if (t[j][0] === "RIGHT_PAREN") {
+                                            a = -1;
+                                        }
+
+                                        break;
+                                    }
+
+                                    if (t[j][1].toUpperCase() === "PASSWORD") {
+                                        password = t[j + 2][1];
+                                    } else if (t[j][1].toUpperCase() === "PRIVILEGES") {
+                                        privileges = JSON.parse(t[j + 2][1]);
+                                    } else if (t[j][1].toUpperCase() === "VALID") {
+                                        valid = (t[j + 2][1].toUpperCase() === "TRUE");
+                                    }
+                                }
+
+                                if (a === -1) {
+                                    break;
+                                }
+                            }
+                        }
 
                         try {
                             userPrivileges = getPermissions("jsdb");
@@ -452,7 +493,7 @@ function parseSQL(sql, socketIndex) {
                                 output.code = 1;
                                 output.message = "Not enough permissions";
                             } else {
-                                //o.data = user.create(username, password, privileges);
+                                output.data = user.create(username, password, privileges, valid);
                             }
                         } catch (e) {
                             output.code = 1;
@@ -706,7 +747,40 @@ function parseSQL(sql, socketIndex) {
                         output.message = e.message;
                     }
                 } else if (t[0][1].toUpperCase() === "ALTER") {
-                    if (t[1][1].toUpperCase() === "USER") {
+                    if (t[1][1].toUpperCase() === "SEQUENCE") {
+                        let seqName = t[2][1];
+                        let update = {};
+
+                        for (let j = 0; j &lt; t.length; j++) {
+                            if (t[j][0] !== "LITERAL" &amp;&amp; t[j][0] !== "NUMBER") {
+                                break;
+                            }
+
+                            if (t[j][1].toUpperCase() === "INCREMENT" &amp;&amp; t[j + 1][1].toUpperCase() === "BY") {
+                                update.inc = parseInt(t[j + 2][1]);
+                            } else if (t[j][1].toUpperCase() === "START" &amp;&amp; t[j + 1][1].toUpperCase() === "WITH") {
+                                update.start = parseInt(t[j + 2][1]);
+                            }
+                        }
+
+                        try {
+                            if (!userPrivileges.update) {
+                                output.code = 1;
+                                output.message = "Not enough permissions";
+                            } else {
+                                if (!update.hasOwnProperty('inc')) {
+                                    update.inc = sequence.read(dbName.get(), schemaName.get(), seqName).inc;
+                                } else if (!update.hasOwnProperty('start')) {
+                                    update.start = sequence.read(dbName.get(), schemaName.get(), seqName).start;
+                                }
+
+                                output.data = sequence.update(dbName.get(), schemaName.get(), seqName, update);
+                            }
+                        } catch (e) {
+                            output.code = 1;
+                            output.message = e.message;
+                        }
+                    } else if (t[1][1].toUpperCase() === "USER") {
                         let username = t[2][1];
                         let update = {};
 
@@ -1292,7 +1366,7 @@ module.exports = parseSQL;
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Jan 05 2019 20:46:51
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Jan 08 2019 03:09:15
     GMT-0200 (GMT-02:00)
 </footer>
 
