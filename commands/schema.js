@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Dhiego Casssiano Fogaça Barbosa
+ * Copyright 2019 Dhiego Cassiano Fogaça Barbosa
 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
+const config = require('../config');
+const db = require("./db");
+
 const fs = require('fs');
 
-const db = require("./db");
-const config = require('../config');
-
 const f_schlist = 'schlist.json';
-
+exports.f_schlist = f_schlist;
 
 /**
  * @summary Create a schema

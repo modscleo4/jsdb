@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Dhiego Casssiano Fogaça Barbosa
+ * Copyright 2019 Dhiego Cassiano Fogaça Barbosa
 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,16 +20,23 @@
 
 const fs = require('fs');
 
+/* This makes the Date() available for all modules and stores the date-time when the server started */
+let date = new Date();
+exports.date = date;
+
+/* Config vars for server */
 let server = {
     ignAuth: false,
     startDir: "./",
     port: 6637
 };
 
+/* Config vars for DB */
 let db = {
     createZip: false
 };
 
+/* Config vars for registry manager */
 let registry = {
     instantApplyChanges: false
 };
@@ -38,6 +45,7 @@ exports.server = server;
 exports.db = db;
 exports.registry = registry;
 
+/* Store all sockets connected */
 let sockets = [];
 exports.sockets = sockets;
 
@@ -62,6 +70,3 @@ exports.rmdirRSync = function rmdirRSync(path) {
         fs.rmdirSync(path);
     }
 };
-
-let date = new Date();
-exports.date = date;

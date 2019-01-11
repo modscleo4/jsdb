@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Dhiego Casssiano Fogaça Barbosa
+ * Copyright 2019 Dhiego Cassiano Fogaça Barbosa
 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,15 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
+const config = require("../config");
 const db = require("../commands/db");
 const schema = require("../commands/schema");
 const sequence = require("../commands/sequence");
 const table = require("../commands/table");
-const sql_parser = require("sql-parser/lib/sql_parser");
-const config = require("../config");
 const user = require("../commands/user");
 const registry = require("../commands/registry");
 
+const sql_parser = require("sql-parser/lib/sql_parser");
 const md5 = require('md5');
 
 const {

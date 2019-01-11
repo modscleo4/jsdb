@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Dhiego Casssiano Fogaça Barbosa
+ * Copyright 2019 Dhiego Cassiano Fogaça Barbosa
 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,16 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
-const fs = require('fs');
+const config = require('../config');
 const schema = require('./schema');
 const table = require('./table');
 const registry = require('./registry');
-const config = require('../config');
+
+const fs = require('fs');
 const admzip = require('adm-zip');
 
 const f_dblist = 'dblist.json';
+exports.f_dblist = f_dblist;
 
 /**
  * @summary Create a DB

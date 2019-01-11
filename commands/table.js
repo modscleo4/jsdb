@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Dhiego Casssiano Fogaça Barbosa
+ * Copyright 2019 Dhiego Cassiano Fogaça Barbosa
 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,16 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
-const fs = require('fs');
+const config = require('../config');
 const schema = require('./schema');
 const sequence = require('./sequence');
-const config = require('../config');
+
+const fs = require('fs');
 
 const f_tablelist = 'tablelist.json';
 const f_tablestruct = 'tablestruct.json';
 const f_tabledata = 'tabledata.json';
-
+exports.f_tablelist = f_tablelist;
 exports.f_tablestruct = f_tablestruct;
 exports.f_tabledata = f_tabledata;
 

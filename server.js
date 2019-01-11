@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Dhiego Casssiano Fogaça Barbosa
+ * Copyright 2019 Dhiego Cassiano Fogaça Barbosa
 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
+const config = require('./config');
 const db = require("./commands/db");
 const table = require("./commands/table");
 const user = require('./commands/user');
-const sql = require("./sql/sql");
-const config = require('./config');
 const registry = require('./commands/registry');
 const logger = require('./lib/logger');
+const sql = require("./sql/sql");
 
 const net = require('net');
 
@@ -116,6 +116,7 @@ let server = net.createServer(socket => {
     })
 });
 
+/* @TODO: this should be the public IP of the server */
 let address = "localhost";
 
 registry.readAll();
