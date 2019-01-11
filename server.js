@@ -44,7 +44,7 @@ let server = net.createServer(socket => {
     socket.username = null;
 
     socket.on('data', data => {
-        let sqlCmd = data.toLocaleString();
+        let sqlCmd = data.toLocaleString().trim();
 
         if (sqlCmd === "PING") {
             socket.write("PONG");
@@ -118,7 +118,6 @@ let server = net.createServer(socket => {
 
 let address = "localhost";
 
-db.checkJSDBIntegrity();
 registry.readAll();
 
 let params = [];
@@ -141,6 +140,11 @@ for (let i = 0; i < process.argv.length; i++) {
 
 if (config.server.startDir === "") {
     config.server.startDir = "./";
+}
+
+/* Ensure startDir ends with / */
+if (!config.server.startDir.endsWith("/")) {
+    config.server.startDir += "/";
 }
 
 if (config.server.port <= 0 || config.server.port >= 65535) {
