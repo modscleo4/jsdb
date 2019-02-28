@@ -44,7 +44,7 @@ exports.f_tabledata = f_tabledata;
  * @throws {Error} If the table already exists, throw an error
  * */
 function createTable(dbName, schemaName, tableName, tableStruct, metadata = null) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof tableStruct === "object" && typeof metadata === "object") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string' && typeof tableStruct === 'object' && typeof metadata === 'object') {
         let TableList = readTableFile(dbName, schemaName);
 
         if (TableList.indexOf(tableName) !== -1) {
@@ -87,7 +87,7 @@ function createTable(dbName, schemaName, tableName, tableStruct, metadata = null
  * @throws {Error} If the table does not exist, throw an error
  * */
 function readTableStructure(dbName, schemaName, tableName) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string') {
         if (existsTable(dbName, schemaName, tableName)) {
             if (!fs.existsSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tablestruct}`)) {
                 dropTable(dbName, schemaName, tableName, true);
@@ -108,7 +108,7 @@ function readTableStructure(dbName, schemaName, tableName) {
  * @param tableStruct {string} Named Object containing the structure for the table
  * */
 function writeTableStructure(dbName, schemaName, tableName, tableStruct) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof tableStruct === "string") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string' && typeof tableStruct === 'string') {
         if (existsTable(dbName, schemaName, tableName)) {
             fs.writeFileSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tablestruct}`, tableStruct);
         }
@@ -125,7 +125,7 @@ function writeTableStructure(dbName, schemaName, tableName, tableStruct) {
  * @throws {Error} If the schema does not exist, throw an error
  */
 function readTableFile(dbName, schemaName) {
-    if (typeof dbName === "string" && typeof schemaName === "string") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string') {
         if (schema.exists(dbName, schemaName)) {
             if (!fs.existsSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${f_tablelist}`)) {
                 writeTableFile(dbName, schemaName, JSON.stringify([]));
@@ -165,7 +165,7 @@ function readTableFile(dbName, schemaName) {
  * @throws {Error} If the schema does not exist, throw an error
  */
 function writeTableFile(dbName, schemaName, content) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof content === "string") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof content === 'string') {
         if (schema.exists(dbName, schemaName)) {
             fs.writeFileSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${f_tablelist}`, content);
         }
@@ -182,7 +182,7 @@ function writeTableFile(dbName, schemaName, content) {
  * @throws {Error} If the schema does not exist, throw an error
  * */
 function createTableFolder(dbName, schemaName, tableName) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string') {
         if (schema.exists(dbName, schemaName)) {
             if (!fs.existsSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${tableName}/`)) {
                 fs.mkdirSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${tableName}`);
@@ -202,7 +202,7 @@ function createTableFolder(dbName, schemaName, tableName) {
  * @throws {Error} If the table does not exist, throw an error
  * */
 function readTableContent(dbName, schemaName, tableName) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string') {
         if (existsTable(dbName, schemaName, tableName)) {
             return JSON.parse(fs.readFileSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tabledata}`, 'utf8'));
         }
@@ -221,7 +221,7 @@ function readTableContent(dbName, schemaName, tableName) {
  * @returns {string} If Ok, returns 'Line inserted.'
  * */
 function writeTableContent(dbName, schemaName, tableName, content, override = false) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof content === "object" && typeof override === "boolean") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string' && typeof content === 'object' && typeof override === 'boolean') {
         let TableContent = [];
 
         /*
@@ -241,7 +241,7 @@ function writeTableContent(dbName, schemaName, tableName, content, override = fa
 
         fs.writeFileSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tabledata}`, JSON.stringify(TableContent));
 
-        return "Line inserted.";
+        return 'Line inserted.';
     }
 }
 
@@ -257,7 +257,7 @@ function writeTableContent(dbName, schemaName, tableName, content, override = fa
  * @throws {Error} If the table does not exist and ifExists is false, throw an error
  * */
 function dropTable(dbName, schemaName, tableName, ifExists = false) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof ifExists === "boolean") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string' && typeof ifExists === 'boolean') {
         if (dbName === 'jsdb' && schemaName === 'public' && (tableName === 'users' || tableName === 'registry')) {
             throw new Error('JSDB database tables cannot be dropped');
         }
@@ -289,7 +289,7 @@ function dropTable(dbName, schemaName, tableName, ifExists = false) {
  * @throws {Error} If the table does not exist, throw an error
  * */
 function selectTableContent(dbName, schemaName, tableName, columns, options) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof columns === "object" && typeof options === "object") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string' && typeof columns === 'object' && typeof options === 'object') {
         let TableList = readTableFile(dbName, schemaName);
 
         if (TableList.indexOf(tableName) === -1) {
@@ -299,16 +299,16 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
         let TableContent = readTableContent(dbName, schemaName, tableName);
         let TableStruct = readTableStructure(dbName, schemaName, tableName);
 
-        if (typeof options.limoffset !== "undefined") {
+        if (typeof options.limoffset !== 'undefined') {
             let limit = options.limoffset.limit;
             let offset = options.limoffset.offset;
 
-            if (typeof TableContent[limit - 1] === "undefined") {
-                throw new Error("LIMIT greater than number of rows");
+            if (typeof TableContent[limit - 1] === 'undefined') {
+                throw new Error('LIMIT greater than number of rows');
             }
 
-            if (typeof TableContent[offset] === "undefined") {
-                throw new Error("OFFSET greater than number of rows");
+            if (typeof TableContent[offset] === 'undefined') {
+                throw new Error('OFFSET greater than number of rows');
             }
 
             TableContent = TableContent.splice(offset, limit);
@@ -332,7 +332,7 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
         }
 
         let r = [];
-        if (columns[0] === "*") {
+        if (columns[0] === '*') {
             for (let i = 0; i < TableContent.length; i++) {
                 let j = 0;
                 r[i] = {};
@@ -368,13 +368,13 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
             }
         }
 
-        if (typeof options.where !== "undefined") {
+        if (typeof options.where !== 'undefined') {
             for (let i = 0; i < r.length; i++) {
                 let e = options.where;
                 for (let key in aaa[i]) {
                     if (aaa[i].hasOwnProperty(key)) {
                         if (e.search(new RegExp(`\`${key}\``, 'g')) !== -1) {
-                            if (TableStruct[key].type === "string") {
+                            if (TableStruct[key].type === 'string') {
                                 e = e.replace(new RegExp(`\`${key}\``, 'g'), `'${aaa[i][key].toString()}'`);
                             } else {
                                 e = e.replace(new RegExp(`\`${key}\``, 'g'), aaa[i][key].toString());
@@ -391,7 +391,7 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
             }
         }
 
-        if (typeof options.orderby !== "undefined") {
+        if (typeof options.orderby !== 'undefined') {
             function getC(orderBy) {
                 if (!orderBy[0].hasOwnProperty('column')) {
                     if (!TableStruct[`${tableName}.metadata`].hasOwnProperty('primaryKey')) {
@@ -415,8 +415,8 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
             }
 
             function getM(orderBy) {
-                if (typeof orderBy[0].mode === "undefined") {
-                    return "ASC";
+                if (typeof orderBy[0].mode === 'undefined') {
+                    return 'ASC';
                 } else {
                     return orderBy[0].mode;
                 }
@@ -430,7 +430,7 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
                     let c = getC(orderBy);
                     let m = getM(orderBy);
 
-                    if (m.toUpperCase() === "DESC") {
+                    if (m.toUpperCase() === 'DESC') {
                         if (a[c] < b[c]) {
                             return 1;
                         } else if (a[c] > b[c]) {
@@ -476,7 +476,7 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
  * @throws {Error} If the table does not exist, throw an error
  * */
 function insertTableContent(dbName, schemaName, tableName, content, columns = null) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof content === "object" && typeof columns === "object") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string' && typeof content === 'object' && typeof columns === 'object') {
         let TableList = readTableFile(dbName, schemaName);
 
         if (TableList.indexOf(tableName) === -1) {
@@ -540,22 +540,22 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
                         i = columns.length - 1;
                     }
 
-                    columns[i] = ".ignore";
+                    columns[i] = '.ignore';
                 }
 
                 /*
                 * Ignore tablename.metadata Object to avoid errors
                 * */
                 if (key !== `${tableName}.metadata`) {
-                    if (TableStruct[key].type === "object" && content[i].toUpperCase() !== "DEFAULT") {
+                    if (TableStruct[key].type === 'object' && content[i].toUpperCase() !== 'DEFAULT') {
                         content[i] = JSON.parse(content[i]);
                     }
 
                     /*
                     * Key is not provided
                     * */
-                    if (typeof content[i] === "undefined") {
-                        content[i] = "DEFAULT";
+                    if (typeof content[i] === 'undefined') {
+                        content[i] = 'DEFAULT';
                     }
 
                     if (content[i] === null) {
@@ -573,14 +573,14 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
                         });
                     }
 
-                    if (typeof content[i] === "string" && content[i].toUpperCase() === 'DEFAULT') {
+                    if (typeof content[i] === 'string' && content[i].toUpperCase() === 'DEFAULT') {
                         let a;
 
                         /*
                         * If true, it's a sequence
                         * */
-                        if (typeof TableStruct[key].default === "string" && (a = TableStruct[key].default.search("sequence[(].*[)]")) !== -1) {
-                            let seqName = TableStruct[key].default.slice(a + "sequence(".length, TableStruct[key].default.length - 1);
+                        if (typeof TableStruct[key].default === 'string' && (a = TableStruct[key].default.search('sequence[(].*[)]')) !== -1) {
+                            let seqName = TableStruct[key].default.slice(a + 'sequence('.length, TableStruct[key].default.length - 1);
                             let Seq = sequence.read(dbName, schemaName, seqName);
 
                             content[i] = Seq.start;
@@ -597,7 +597,7 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
                         throw new Error(`Invalid type for column \`${key}\`: ${content[i]}(${typeof content[i]})`);
                     }
 
-                    if (typeof content[i] !== "undefined") {
+                    if (typeof content[i] !== 'undefined') {
                         ContentW[c] = content[i];
                         delete (content[i]);
                     }
@@ -609,7 +609,7 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
 
                         let f = true;
                         for (let j = 0; j < columns.length; j++) {
-                            if (columns[j] !== ".ignore") {
+                            if (columns[j] !== '.ignore') {
                                 f = false;
                                 break;
                             }
@@ -621,7 +621,7 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
                         } else {
                             for (let ca = 0; ca < TColumns.length; ca++) {
                                 for (let aux = 0; aux < columns.length; aux++) {
-                                    if (columns[aux] !== ".ignore" && TColumns.indexOf(columns[aux]) === -1) {
+                                    if (columns[aux] !== '.ignore' && TColumns.indexOf(columns[aux]) === -1) {
                                         throw new Error(`Invalid column: ${columns[aux]}`);
                                     }
 
@@ -663,7 +663,7 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
  * @throws {Error} If the table does not exist, throw an error
  * */
 function updateTableContent(dbName, schemaName, tableName, update, options) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof update === "object" && typeof options === "object") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string' && typeof update === 'object' && typeof options === 'object') {
         if (existsTable(dbName, schemaName, tableName)) {
             let TableContent = readTableContent(dbName, schemaName, tableName);
             let TableStruct = readTableStructure(dbName, schemaName, tableName);
@@ -671,12 +671,12 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
 
             let limit;
             let offset;
-            if (typeof options.limoffset !== "undefined") {
+            if (typeof options.limoffset !== 'undefined') {
                 limit = options.limoffset.limit;
                 offset = options.limoffset.offset;
 
-                if (typeof TableContent[offset] === "undefined") {
-                    throw new Error("OFFSET greater than number of rows");
+                if (typeof TableContent[offset] === 'undefined') {
+                    throw new Error('OFFSET greater than number of rows');
                 }
             }
 
@@ -700,13 +700,13 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
 
             let b = 0;
             let c = 0;
-            if (typeof options.where !== "undefined") {
+            if (typeof options.where !== 'undefined') {
                 for (let i = 0; i < TableContent.length; i++) {
                     let e = options.where;
                     for (let key in aaa[i]) {
                         if (aaa[i].hasOwnProperty(key)) {
                             if (e.search(new RegExp(`\`${key}\``, 'g')) !== -1) {
-                                if (TableStruct[key].type === "string") {
+                                if (TableStruct[key].type === 'string') {
                                     e = e.replace(new RegExp(`\`${key}\``, 'g'), `'${aaa[i][key].toString()}'`);
                                 } else {
                                     e = e.replace(new RegExp(`\`${key}\``, 'g'), aaa[i][key].toString());
@@ -731,17 +731,17 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
                                     }
                                 }
 
-                                if (TableStruct[key].type === "object") {
+                                if (TableStruct[key].type === 'object') {
                                     update[key] = JSON.parse(update[key]);
                                 }
 
-                                if (typeof update[key] === "string" && update[key].toUpperCase() === 'DEFAULT') {
+                                if (typeof update[key] === 'string' && update[key].toUpperCase() === 'DEFAULT') {
                                     let a;
                                     /*
                                     * If true, it's a sequence
                                     * */
-                                    if (typeof TableStruct[key].default === "string" && (a = TableStruct[key].default.search("sequence[(].*[)]")) !== -1) {
-                                        let seqName = TableStruct[key].default.slice(a + "sequence(".length, TableStruct[key].default.length - 1);
+                                    if (typeof TableStruct[key].default === 'string' && (a = TableStruct[key].default.search('sequence[(].*[)]')) !== -1) {
+                                        let seqName = TableStruct[key].default.slice(a + 'sequence('.length, TableStruct[key].default.length - 1);
                                         let Seq = sequence.read(dbName, schemaName, seqName);
 
                                         update[key] = Seq.start;
@@ -755,7 +755,7 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
                                     }
                                 } else {
                                     if (typeof update[key] !== TableStruct[key].type) {
-                                        throw Error("Invalid type");
+                                        throw Error('Invalid type');
                                     }
                                 }
 
@@ -767,21 +767,21 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
                                     });
                                 }
 
-                                if (typeof offset !== "undefined") {
+                                if (typeof offset !== 'undefined') {
                                     TableContent[i + offset][j] = update[key];
                                 } else {
                                     TableContent[i][j] = update[key];
                                 }
 
                                 if (isDefault) {
-                                    update[key] = "DEFAULT";
+                                    update[key] = 'DEFAULT';
                                 }
                             }
                         }
                     }
 
                     c++;
-                    if (typeof limit !== "undefined") {
+                    if (typeof limit !== 'undefined') {
                         if (c === limit) {
                             break;
                         }
@@ -808,7 +808,7 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
  * @throws {Error} If the table does not exist, throw an error
  * */
 function deleteTableContent(dbName, schemaName, tableName, options) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string" && typeof options === "object") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string' && typeof options === 'object') {
         if (existsTable(dbName, schemaName, tableName)) {
 
             let TableContent = readTableContent(dbName, schemaName, tableName);
@@ -816,16 +816,16 @@ function deleteTableContent(dbName, schemaName, tableName, options) {
 
             let limit;
             let offset;
-            if (typeof options.limoffset !== "undefined") {
+            if (typeof options.limoffset !== 'undefined') {
                 limit = options.limoffset.limit;
                 offset = options.limoffset.offset;
 
-                if (typeof TableContent[limit - 1] === "undefined") {
-                    throw new Error("LIMIT greater than number of rows");
+                if (typeof TableContent[limit - 1] === 'undefined') {
+                    throw new Error('LIMIT greater than number of rows');
                 }
 
-                if (typeof TableContent[offset] === "undefined") {
-                    throw new Error("OFFSET greater than number of rows");
+                if (typeof TableContent[offset] === 'undefined') {
+                    throw new Error('OFFSET greater than number of rows');
                 }
             }
 
@@ -854,7 +854,7 @@ function deleteTableContent(dbName, schemaName, tableName, options) {
                     for (let key in aaa[i]) {
                         if (aaa[i].hasOwnProperty(key)) {
                             if (e.search(new RegExp(`\`${key}\``, 'g')) !== -1) {
-                                if (TableStruct[key].type === "string") {
+                                if (TableStruct[key].type === 'string') {
                                     e = e.replace(new RegExp(`\`${key}\``, 'g'), `'${aaa[i][key].toString()}'`);
                                 } else {
                                     e = e.replace(new RegExp(`\`${key}\``, 'g'), aaa[i][key].toString());
@@ -865,7 +865,7 @@ function deleteTableContent(dbName, schemaName, tableName, options) {
 
                     if (eval(e)) {
                         b++;
-                        if (typeof offset !== "undefined") {
+                        if (typeof offset !== 'undefined') {
                             TableContent.splice(i + offset, 1);
                             aaa.splice(i + offset, 1);
                         } else {
@@ -877,7 +877,7 @@ function deleteTableContent(dbName, schemaName, tableName, options) {
                     }
 
                     c++;
-                    if (typeof limit !== "undefined") {
+                    if (typeof limit !== 'undefined') {
                         if (c === limit) {
                             break;
                         }
@@ -904,7 +904,7 @@ function deleteTableContent(dbName, schemaName, tableName, options) {
  * @throws {Error} If the table does not exist, throw an error
  */
 function existsTable(dbName, schemaName, tableName, throws = true) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof tableName === "string") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string') {
         if (schema.exists(dbName, schemaName)) {
             let TableList = readTableFile(dbName, schemaName);
             if (TableList.indexOf(tableName) !== -1) {

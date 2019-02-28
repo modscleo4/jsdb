@@ -27,7 +27,7 @@ exports.date = date;
 /* Config vars for server */
 let server = {
     ignAuth: false,
-    startDir: "./",
+    startDir: './',
     port: 6637
 };
 

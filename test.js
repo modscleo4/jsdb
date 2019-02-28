@@ -5,10 +5,10 @@ const config = require('./config');
 * */
 config.server.ignAuth = true;
 
-const db = require("./commands/db");
-const schema = require("./commands/schema");
-const sequence = require("./commands/sequence");
-const table = require("./commands/table");
+const db = require('./commands/db');
+const schema = require('./commands/schema');
+const sequence = require('./commands/sequence');
+const table = require('./commands/table');
 const user = require('./commands/user');
 const registry = require('./commands/registry');
 
@@ -150,8 +150,8 @@ describe('Sequence', function () {
     describe('#readSequence()', function () {
         it('Should return the sequence in a named array', function () {
             assert.strictEqual(JSON.stringify(sequence.read('a', 'public', 'a_seq')), JSON.stringify({
-                "start": 1,
-                "inc": 1
+                'start': 1,
+                'inc': 1
             }));
         });
     });
@@ -159,8 +159,8 @@ describe('Sequence', function () {
     describe('#updateSequence()', function () {
         it('Should return \'Updated sequence a.\'', function () {
             assert.strictEqual(sequence.update('a', 'public', 'a_seq', {
-                "start": 2,
-                "inc": 1
+                'start': 2,
+                'inc': 1
             }), 'Updated sequence a_seq.');
         });
     });
@@ -168,8 +168,8 @@ describe('Sequence', function () {
     describe('#readSequence()', function () {
         it('Should return the sequence in a named array', function () {
             assert.strictEqual(JSON.stringify(sequence.read('a', 'public', 'a_seq')), JSON.stringify({
-                "start": 2,
-                "inc": 1
+                'start': 2,
+                'inc': 1
             }));
         });
     });
@@ -205,7 +205,7 @@ describe('Sequence', function () {
     describe('#updateSequence()', function () {
         it('Should throw \'Sequence public.a_seq does not exist.\'', function () {
             assert.throws(() => {
-                sequence.update('a', 'public', 'a_seq', {"start": 2, "inc": 1})
+                sequence.update('a', 'public', 'a_seq', {'start': 2, 'inc': 1})
             });
         });
     });
@@ -223,11 +223,11 @@ describe('Table', function () {
     describe('#createTable()', function () {
         it('Should return \'Created table public.a in DB a\'', function () {
             assert.strictEqual(table.create('a', 'public', 'a', {
-                "id": {
-                    "type": "number",
-                    "unique": true,
-                    "autoIncrement": true,
-                    "notNull": true
+                'id': {
+                    'type': 'number',
+                    'unique': true,
+                    'autoIncrement': true,
+                    'notNull': true
                 }
             }), 'Created table public.a in DB a');
         });
@@ -236,7 +236,7 @@ describe('Table', function () {
     describe('#createTable()', function () {
         it('Should throw \'Table public.a already exists in DB a\'', function () {
             assert.throws(() => {
-                table.create('a', 'public', 'a', {"id": {"type": "number"}});
+                table.create('a', 'public', 'a', {'id': {'type': 'number'}});
             });
         });
     });
@@ -249,13 +249,13 @@ describe('Table', function () {
 
     describe('#insertTableContent()', function () {
         it('Should return \'Line inserted\'', function () {
-            assert.strictEqual(table.insert('a', 'public', 'a', ["DEFAULT"]), 'Line inserted.');
+            assert.strictEqual(table.insert('a', 'public', 'a', ['DEFAULT']), 'Line inserted.');
         });
     });
 
     describe('#insertTableContent()', function () {
         it('Should return \'Line inserted\'', function () {
-            assert.strictEqual(table.insert('a', 'public', 'a', ["DEFAULT"]), 'Line inserted.');
+            assert.strictEqual(table.insert('a', 'public', 'a', ['DEFAULT']), 'Line inserted.');
         });
     });
 
@@ -278,7 +278,7 @@ describe('Table', function () {
     describe('#insertTableContent()', function () {
         it('Should throw \'Invalid type for column `id`: a(string)\'', function () {
             assert.throws(() => {
-                table.insert('a', 'public', 'a', ["a"])
+                table.insert('a', 'public', 'a', ['a'])
             });
         });
     });
@@ -286,55 +286,55 @@ describe('Table', function () {
     describe('#insertTableContent()', function () {
         it('Should throw \'Invalid column : a\'', function () {
             assert.throws(() => {
-                table.insert('a', 'public', 'a', ["DEFAULT"], ["a"])
+                table.insert('a', 'public', 'a', ['DEFAULT'], ['a'])
             });
         });
     });
 
     describe('#selectTableContent()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.strictEqual(JSON.stringify(table.select('a', 'public', 'a', ["*"], {})), JSON.stringify([{"id": 1}, {"id": 2}]));
+            assert.strictEqual(JSON.stringify(table.select('a', 'public', 'a', ['*'], {})), JSON.stringify([{'id': 1}, {'id': 2}]));
         });
     });
 
     describe('#selectTableContent()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.strictEqual(JSON.stringify(table.select('a', 'public', 'a', ["*"], {"where": "`id` == 1"})), JSON.stringify([{"id": 1}]));
+            assert.strictEqual(JSON.stringify(table.select('a', 'public', 'a', ['*'], {'where': '`id` == 1'})), JSON.stringify([{'id': 1}]));
         });
     });
 
     describe('#selectTableContent()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.strictEqual(JSON.stringify(table.select('a', 'public', 'a', ["*"], {
-                "orderby": [{
-                    "column": "id",
-                    "mode": "DESC"
+            assert.strictEqual(JSON.stringify(table.select('a', 'public', 'a', ['*'], {
+                'orderby': [{
+                    'column': 'id',
+                    'mode': 'DESC'
                 }]
-            })), JSON.stringify([{"id": 2}, {"id": 1}]));
+            })), JSON.stringify([{'id': 2}, {'id': 1}]));
         });
     });
 
     describe('#updateTableContent()', function () {
         it('Should return \'Updated 2 line(s) from public:a.\'', function () {
-            assert.strictEqual(table.update('a', 'public', 'a', {"id": "DEFAULT"}, {"where": "true"}), 'Updated 2 line(s) from public:a.');
+            assert.strictEqual(table.update('a', 'public', 'a', {'id': 'DEFAULT'}, {'where': 'true'}), 'Updated 2 line(s) from public:a.');
         });
     });
 
     describe('#selectTableContent()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.strictEqual(JSON.stringify(table.select('a', 'public', 'a', ["*"], {})), JSON.stringify([{"id": 3}, {"id": 4}]));
+            assert.strictEqual(JSON.stringify(table.select('a', 'public', 'a', ['*'], {})), JSON.stringify([{'id': 3}, {'id': 4}]));
         });
     });
 
     describe('#deleteTableContent()', function () {
         it('Should return \'Deleted 2 line(s) from public:a.\'', function () {
-            assert.strictEqual(table.delete('a', 'public', 'a', {"where": "`id` > 2"}), 'Deleted 2 line(s) from public:a.');
+            assert.strictEqual(table.delete('a', 'public', 'a', {'where': '`id` > 2'}), 'Deleted 2 line(s) from public:a.');
         });
     });
 
     describe('#selectTableContent()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.strictEqual(JSON.stringify(table.select('a', 'public', 'a', ["*"], {})), JSON.stringify([]));
+            assert.strictEqual(JSON.stringify(table.select('a', 'public', 'a', ['*'], {})), JSON.stringify([]));
         });
     });
 
@@ -361,7 +361,7 @@ describe('Table', function () {
     describe('#insertTableContent()', function () {
         it('Should throw \'Table public.a does not exist.\'', function () {
             assert.throws(() => {
-                table.insert('a', 'public', 'a', ["DEFAULT"])
+                table.insert('a', 'public', 'a', ['DEFAULT'])
             });
         });
     });
@@ -369,7 +369,7 @@ describe('Table', function () {
     describe('#selectTableContent()', function () {
         it('Should throw \'Table public.a does not exist.\'', function () {
             assert.throws(() => {
-                table.select('a', 'public', 'a', ["*"], {})
+                table.select('a', 'public', 'a', ['*'], {})
             });
         });
     });
@@ -377,7 +377,7 @@ describe('Table', function () {
     describe('#updateTableContent()', function () {
         it('Should throw \'Table public.a does not exist.\'', function () {
             assert.throws(() => {
-                table.update('a', 'public', 'a', {"id": "DEFAULT"}, {"where": "true"})
+                table.update('a', 'public', 'a', {'id': 'DEFAULT'}, {'where': 'true'})
             });
         });
     });
@@ -385,7 +385,7 @@ describe('Table', function () {
     describe('#deleteTableContent()', function () {
         it('Should throw \'Table public.a does not exist.\'', function () {
             assert.throws(() => {
-                table.delete('a', 'public', 'a', {"where": "true"})
+                table.delete('a', 'public', 'a', {'where': 'true'})
             });
         });
     });
@@ -405,7 +405,7 @@ describe('User', function () {
 
     describe('#createUser()', function () {
         it('Should return \'Created user internaluser:test\'', function () {
-            assert.strictEqual(user.create('internaluser:test', 'jsdbadmin', {"test": 15}), "Created user internaluser:test")
+            assert.strictEqual(user.create('internaluser:test', 'jsdbadmin', {'test': 15}), 'Created user internaluser:test')
         });
     });
 
@@ -425,13 +425,13 @@ describe('User', function () {
 
     describe('#getUserPrivileges()', function () {
         it('Should return the user privileges', function () {
-            assert.strictEqual(JSON.stringify(user.getPrivileges('internaluser:test')), JSON.stringify({"test": 15}))
+            assert.strictEqual(JSON.stringify(user.getPrivileges('internaluser:test')), JSON.stringify({'test': 15}))
         });
     });
 
     describe('#updateUser()', function () {
         it('Should return \'User internaluser:test updated\'', function () {
-            assert.strictEqual(user.update('internaluser:test', {"username": 'internaluser:test2'}), 'User internaluser:test updated');
+            assert.strictEqual(user.update('internaluser:test', {'username': 'internaluser:test2'}), 'User internaluser:test updated');
         });
     });
 
@@ -469,7 +469,7 @@ describe('Registry', function () {
 
     describe('#createEntry()', function () {
         it('Should return \'Created entry internalentry:test\'', function () {
-            assert.strictEqual(registry.create('internalentry:test', 'number', 1), "Created entry internalentry:test")
+            assert.strictEqual(registry.create('internalentry:test', 'number', 1), 'Created entry internalentry:test')
         });
     });
 

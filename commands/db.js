@@ -38,10 +38,10 @@ exports.f_dblist = f_dblist;
  * @throws {Error} If the DB already exists, throw an error
  */
 function createDB(dbName) {
-    if (typeof dbName === "string") {
+    if (typeof dbName === 'string') {
         let DBList = readDBFile();
         if (DBList.indexOf(dbName) !== -1) {
-            schema.create(dbName, "public");
+            schema.create(dbName, 'public');
 
             throw new Error(`DB ${dbName} already exists.`);
         } else {
@@ -49,7 +49,7 @@ function createDB(dbName) {
             writeDBFile(JSON.stringify(DBList));
             createDBFolder(dbName);
 
-            schema.create(dbName, "public");
+            schema.create(dbName, 'public');
 
             return `Created DB ${dbName}.`;
         }
@@ -62,7 +62,7 @@ function createDB(dbName) {
  * @param dbName {string} The name of DB
  */
 function createDBFolder(dbName) {
-    if (typeof dbName === "string") {
+    if (typeof dbName === 'string') {
         if (!fs.existsSync(`${config.server.startDir}dbs/`)) {
             fs.mkdirSync(`${config.server.startDir}dbs/`);
         }
@@ -113,7 +113,7 @@ function readDBFile() {
     /*
     * Creates JSDB admin database
     * */
-    if (DBList.indexOf("jsdb") === -1) {
+    if (DBList.indexOf('jsdb') === -1) {
         DBList.push('jsdb');
         if (!fs.existsSync(`${config.server.startDir}dbs/jsdb/`)) {
             createDBFolder('jsdb');
@@ -121,7 +121,7 @@ function readDBFile() {
 
         writeDBFile(JSON.stringify(DBList));
         if (schema.readFile('jsdb').indexOf('public') === -1) {
-            schema.create('jsdb', "public");
+            schema.create('jsdb', 'public');
         }
     }
 
@@ -141,7 +141,7 @@ function readDBFile() {
  * @param content {string} A JSON string of the indexed Object containing all the DBs
  */
 function writeDBFile(content) {
-    if (typeof content === "string") {
+    if (typeof content === 'string') {
         if (!fs.existsSync(`${config.server.startDir}dbs/`)) {
             fs.mkdirSync(`${config.server.startDir}dbs/`);
         }
@@ -160,7 +160,7 @@ function writeDBFile(content) {
  * @throws {Error} If the DB does not exist and ifExists is false, throw an error
  */
 function dropDB(dbName, ifExists = false) {
-    if (typeof dbName === "string" && typeof ifExists === "boolean") {
+    if (typeof dbName === 'string' && typeof ifExists === 'boolean') {
         if (dbName === 'jsdb') {
             throw new Error('JSDB database cannot be dropped');
         }
@@ -189,7 +189,7 @@ function dropDB(dbName, ifExists = false) {
  * @throws {Error} If the DB does not exist, throw an error
  */
 function existsDB(dbName, throws = true) {
-    if (typeof dbName === "string" && typeof throws === "boolean") {
+    if (typeof dbName === 'string' && typeof throws === 'boolean') {
         let DBList = readDBFile();
         if (DBList.indexOf(dbName) !== -1) {
             return true;
@@ -211,7 +211,7 @@ function existsDB(dbName, throws = true) {
  * @throws {Error} If the DB does not exist, throw an error
  */
 function backupDB(dbName) {
-    if (typeof dbName === "string") {
+    if (typeof dbName === 'string') {
         if (existsDB(dbName)) {
             let zip = new admzip();
             zip.addLocalFolder(`${config.server.startDir}dbs/${dbName}`);
@@ -228,7 +228,7 @@ function backupDB(dbName) {
  * @throws {Error} If the backup file does not exits, throw an error
  */
 function restoreDB(dbName) {
-    if (typeof dbName === "string") {
+    if (typeof dbName === 'string') {
         if (fs.existsSync(`${config.server.startDir}dbs/${dbName}.jsdb`)) {
             config.rmdirRSync(`${config.server.startDir}dbs/${dbName}`);
 

@@ -19,7 +19,7 @@
  */
 
 const config = require('../config');
-const db = require("./db");
+const db = require('./db');
 
 const fs = require('fs');
 
@@ -36,7 +36,7 @@ exports.f_schlist = f_schlist;
  * @throws {Error} If the schema already exists, throw an error
  */
 function createSchema(dbName, schemaName) {
-    if (typeof dbName === "string" && typeof schemaName === "string") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string') {
         let SCHList = readSchemaFile(dbName);
 
         if (SCHList.indexOf(schemaName) !== -1) {
@@ -60,7 +60,7 @@ function createSchema(dbName, schemaName) {
  * @throws {Error} If the DB does not exist, throw an error
  */
 function createSchemaFolder(dbName, schemaName) {
-    if (typeof dbName === "string" && typeof schemaName === "string") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string') {
         if (db.exists(dbName)) {
             if (!fs.existsSync(`${config.server.startDir}dbs/${dbName}/${schemaName}`)) {
                 fs.mkdirSync(`${config.server.startDir}dbs/${dbName}/${schemaName}`);
@@ -78,7 +78,7 @@ function createSchemaFolder(dbName, schemaName) {
  * @throws {Error} If the DB does not exist, throw an error
  */
 function readSchemaFile(dbName) {
-    if (typeof dbName === "string") {
+    if (typeof dbName === 'string') {
         let SCHList = [];
 
         /*
@@ -122,7 +122,7 @@ function readSchemaFile(dbName) {
  * @throws {Error} If the DB does not exist, throw an error
  */
 function writeSchemaFile(dbName, content) {
-    if (typeof dbName === "string" && typeof content === "string") {
+    if (typeof dbName === 'string' && typeof content === 'string') {
         if (db.exists(dbName)) {
             fs.writeFileSync(`${config.server.startDir}dbs/${dbName}/${f_schlist}`, content);
         }
@@ -140,7 +140,7 @@ function writeSchemaFile(dbName, content) {
  * @throws {Error} If the schema does not exist and ifExists is false, throw an error
  */
 function dropSchema(dbName, schemaName, ifExists = false) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof ifExists === "boolean") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof ifExists === 'boolean') {
         if (dbName === 'jsdb' && schemaName === 'public') {
             throw new Error('JSDB database public schema cannot be dropped');
         }
@@ -170,7 +170,7 @@ function dropSchema(dbName, schemaName, ifExists = false) {
  * @throws {Error} If the schema does not exist, throw an error
  */
 function existsSchema(dbName, schemaName, throws = true) {
-    if (typeof dbName === "string" && typeof schemaName === "string") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string') {
         if (db.exists(dbName)) {
             let SCHList = readSchemaFile(dbName);
             if (SCHList.indexOf(schemaName) !== -1) {

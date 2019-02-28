@@ -18,7 +18,7 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
-const table = require("./table");
+const table = require('./table');
 
 const md5 = require('md5');
 
@@ -32,19 +32,19 @@ const md5 = require('md5');
  * @throws {Error} If the username or the password is wrong, throw an error
  */
 function authUser(username, password) {
-    if (typeof username === "string" && typeof password === "string") {
-        if (username === "grantall::jsdbadmin") {
-            throw new Error("AUTHERR: Wrong password");
+    if (typeof username === 'string' && typeof password === 'string') {
+        if (username === 'grantall::jsdbadmin') {
+            throw new Error('AUTHERR: Wrong password');
         }
 
         let users = table.select(
             'jsdb',
             'public',
             'users',
-            ["password", "valid", "privileges"],
+            ['password', 'valid', 'privileges'],
             {
-                "where": `\`username\` == '${username}'`,
-                "orderby": [{"column": 'username', "mode": 'ASC'}]
+                'where': `\`username\` == '${username}'`,
+                'orderby': [{'column': 'username', 'mode': 'ASC'}]
             }
         );
 
@@ -55,7 +55,7 @@ function authUser(username, password) {
         if (users[0].password === md5(password)) {
             return true;
         } else {
-            throw new Error("AUTHERR: Wrong password");
+            throw new Error('AUTHERR: Wrong password');
         }
     }
 }
@@ -72,23 +72,23 @@ function authUser(username, password) {
  * @throws {Error} If the user already exists, throw an error
  */
 function createUser(username, password, privileges, valid = true) {
-    if (typeof username === "string" && typeof password === "string" && typeof privileges === "object") {
-        if (username === "grantall::jsdbadmin") {
-            throw new Error("Invalid username");
+    if (typeof username === 'string' && typeof password === 'string' && typeof privileges === 'object') {
+        if (username === 'grantall::jsdbadmin') {
+            throw new Error('Invalid username');
         }
 
         let user = table.select(
             'jsdb',
             'public',
             'users',
-            ["id"],
+            ['id'],
             {
-                "where": `\`username\` == '${username}'`
+                'where': `\`username\` == '${username}'`
             }
         );
 
         if (user.length === 0) {
-            table.insert('jsdb', 'public', 'users', ["DEFAULT", username, md5(`${password}`), valid, JSON.stringify(privileges)]);
+            table.insert('jsdb', 'public', 'users', ['DEFAULT', username, md5(`${password}`), valid, JSON.stringify(privileges)]);
             return `Created user ${username}`;
         } else {
             throw new Error(`User ${username} already exists`);
@@ -106,21 +106,21 @@ function createUser(username, password, privileges, valid = true) {
  * @throws {Error} If the username is invalid, throw an error
  */
 function updateUser(username, update) {
-    if (typeof username === "string" && typeof update === "object") {
+    if (typeof username === 'string' && typeof update === 'object') {
 
         /* grantall::jsdbadmin is not a real user, this is for avoid errors */
-        if (username === "grantall::jsdbadmin") {
-            throw new Error("Invalid username");
+        if (username === 'grantall::jsdbadmin') {
+            throw new Error('Invalid username');
         }
 
         let users = table.select(
             'jsdb',
             'public',
             'users',
-            ["password", "privileges"],
+            ['password', 'privileges'],
             {
-                "where": `\`username\` == '${username}'`,
-                "orderby": [{"column": 'username', "mode": 'ASC'}]
+                'where': `\`username\` == '${username}'`,
+                'orderby': [{'column': 'username', 'mode': 'ASC'}]
             }
         );
 
@@ -147,7 +147,7 @@ function updateUser(username, update) {
             update.privileges = JSON.stringify(update.privileges);
         }
 
-        table.update("jsdb", "public", "users", update, {"where": `\`username\` == '${username}'`});
+        table.update('jsdb', 'public', 'users', update, {'where': `\`username\` == '${username}'`});
         return `User ${username} updated`;
     }
 }
@@ -161,16 +161,16 @@ function updateUser(username, update) {
  * @throws {Error} If the username is invalid, throw an error
  */
 function dropUser(username) {
-    if (typeof username === "string") {
+    if (typeof username === 'string') {
 
         /* grantall::jsdbadmin is not a real user, this is for avoid errors
         * Do not allow delete user jsdbadmin */
 
-        if (username === "grantall::jsdbadmin" || username === 'jsdbadmin') {
-            throw new Error("Invalid username");
+        if (username === 'grantall::jsdbadmin' || username === 'jsdbadmin') {
+            throw new Error('Invalid username');
         }
 
-        table.delete("jsdb", "public", "users", {"where": `\`username\` == '${username}'`});
+        table.delete('jsdb', 'public', 'users', {'where': `\`username\` == '${username}'`});
         return `User ${username} deleted`;
     }
 }
@@ -184,19 +184,19 @@ function dropUser(username) {
  * @throws {Error} If the username is wrong, throw an error
  */
 function getUserPrivileges(username) {
-    if (typeof username === "string") {
-        if (username === "grantall::jsdbadmin") {
-            return {"*": 15};
+    if (typeof username === 'string') {
+        if (username === 'grantall::jsdbadmin') {
+            return {'*': 15};
         }
 
         let users = table.select(
             'jsdb',
             'public',
             'users',
-            ["valid", "privileges"],
+            ['valid', 'privileges'],
             {
-                "where": `\`username\` == '${username}'`,
-                "orderby": [{"column": 'username', "mode": 'ASC'}]
+                'where': `\`username\` == '${username}'`,
+                'orderby': [{'column': 'username', 'mode': 'ASC'}]
             }
         );
 
@@ -218,14 +218,14 @@ function getUserPrivileges(username) {
  * @throws {Error} If the user does not exist, throw an error
  */
 function existsUser(username, throws = true) {
-    if (typeof username === "string") {
+    if (typeof username === 'string') {
         let user = table.select(
             'jsdb',
             'public',
             'users',
-            ["id"],
+            ['id'],
             {
-                "where": `\`username\` == '${username}'`
+                'where': `\`username\` == '${username}'`
             }
         );
 

@@ -37,8 +37,8 @@ exports.f_seqlist = f_seqlist;
  * @returns {string} If everything runs ok, returns 'Created sequence ${schemaName}.${seqName} in DB ${dbName}.'
  * @throws {Error} If the sequence already exists, throw an error
  * */
-function createSequence(dbName, schemaName, seqName, options = {"start": 1, "inc": 1}) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof options === "object") {
+function createSequence(dbName, schemaName, seqName, options = {'start': 1, 'inc': 1}) {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof seqName === 'string' && typeof options === 'object') {
         let SequenceList = readSequenceFile(dbName, schemaName);
 
         if (SequenceList.hasOwnProperty(seqName)) {
@@ -62,7 +62,7 @@ function createSequence(dbName, schemaName, seqName, options = {"start": 1, "inc
  * @throws {Error} If the schema does not exist, throw an error
  * */
 function readSequenceFile(dbName, schemaName) {
-    if (typeof dbName === "string" && typeof schemaName === "string") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string') {
         if (schema.exists(dbName, schemaName)) {
             if (!fs.existsSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`)) {
                 writeSequenceFile(dbName, schemaName, JSON.stringify({}));
@@ -84,7 +84,7 @@ function readSequenceFile(dbName, schemaName) {
  * @throws {Error} If the schema does not exist, throw an error
  * */
 function writeSequenceFile(dbName, schemaName, content) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof content === "string") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof content === 'string') {
         if (schema.exists(dbName, schemaName)) {
             fs.writeFileSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`, content);
         }
@@ -103,7 +103,7 @@ function writeSequenceFile(dbName, schemaName, content) {
  * @throws {Error} If the schema/sequence does not exist, throw an error
  * */
 function existsSequence(dbName, schemaName, seqName, throws = true) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof seqName === 'string') {
         if (schema.exists(dbName, schemaName)) {
             let TableList = readSequenceFile(dbName, schemaName);
             if (TableList.hasOwnProperty(seqName)) {
@@ -130,7 +130,7 @@ function existsSequence(dbName, schemaName, seqName, throws = true) {
  * @throws {Error} If the sequence does not exist, throw an error
  * */
 function readSequence(dbName, schemaName, seqName) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof seqName === 'string') {
         if (existsSequence(dbName, schemaName, seqName)) {
             let SequenceList = readSequenceFile(dbName, schemaName);
 
@@ -151,7 +151,7 @@ function readSequence(dbName, schemaName, seqName) {
  * @throws {Error} If the sequence does not exist, throw an error
  * */
 function updateSequence(dbName, schemaName, seqName, content) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof content === "object") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof seqName === 'string' && typeof content === 'object') {
         if (existsSequence(dbName, schemaName, seqName)) {
             let SequenceList = readSequenceFile(dbName, schemaName);
 
@@ -182,7 +182,7 @@ function updateSequence(dbName, schemaName, seqName, content) {
  * @throws {Error} If the sequence does not exist and ifExists is false, throw an error
  * */
 function dropSequence(dbName, schemaName, seqName, ifExists = false) {
-    if (typeof dbName === "string" && typeof schemaName === "string" && typeof seqName === "string" && typeof ifExists === "boolean") {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof seqName === 'string' && typeof ifExists === 'boolean') {
         if (dbName === 'jsdb' && schemaName === 'public') {
             throw new Error('JSDB sequences in public schema cannot be dropped');
         }

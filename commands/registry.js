@@ -18,9 +18,9 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
-const config = require("../config");
-const db = require("./db");
-const table = require("./table");
+const config = require('../config');
+const db = require('./db');
+const table = require('./table');
 
 /**
  * @summary Create a registry entry
@@ -33,12 +33,12 @@ const table = require("./table");
  * @throws {Error} If the entry already exists, throw an error
  */
 function createEntry(entryName, type, value) {
-    if (typeof entryName === "string" && typeof type === "string") {
+    if (typeof entryName === 'string' && typeof type === 'string') {
         let entry = table.select(
             'jsdb',
             'public',
             'registry',
-            ["type"],
+            ['type'],
             {
                 'where': `\`entryName\` == '${entryName}'`
             }
@@ -46,10 +46,10 @@ function createEntry(entryName, type, value) {
 
         if (entry.length === 0) {
             if (typeof value !== type) {
-                throw new Error("Invalid type");
+                throw new Error('Invalid type');
             }
 
-            if (typeof value === "string") {
+            if (typeof value === 'string') {
                 table.insert('jsdb', 'public', 'registry', [entryName, type, value]);
             } else {
                 table.insert('jsdb', 'public', 'registry', [entryName, type, JSON.stringify(value)]);
@@ -71,12 +71,12 @@ function createEntry(entryName, type, value) {
  * @throws {Error} If the entry does not exist, throw an error
  */
 function readEntry(entryName) {
-    if (typeof entryName === "string") {
+    if (typeof entryName === 'string') {
         let entry = table.select(
             'jsdb',
             'public',
             'registry',
-            ["value", "type"],
+            ['value', 'type'],
             {
                 'where': `\`entryName\` == '${entryName}'`
             }
@@ -86,7 +86,7 @@ function readEntry(entryName) {
             throw new Error(`Entry ${entryName} does not exist`);
         }
 
-        if (entry[0].type === "string") {
+        if (entry[0].type === 'string') {
             return entry[0].value;
         } else {
             return JSON.parse(entry[0].value);
@@ -104,12 +104,12 @@ function readEntry(entryName) {
  * @throws {Error} If the entry does not exist, throw an error
  */
 function updateEntry(entryName, value) {
-    if (typeof entryName === "string") {
+    if (typeof entryName === 'string') {
         let entry = table.select(
             'jsdb',
             'public',
             'registry',
-            ["type"],
+            ['type'],
             {
                 'where': `\`entryName\` == '${entryName}'`
             }
@@ -120,13 +120,13 @@ function updateEntry(entryName, value) {
         }
 
         if (typeof value !== entry[0].type) {
-            throw new Error("Invalid type");
+            throw new Error('Invalid type');
         }
 
-        if (typeof value === "string") {
-            table.update('jsdb', 'public', 'registry', {"value": value}, {'where': `\`entryName\` == '${entryName}'`});
+        if (typeof value === 'string') {
+            table.update('jsdb', 'public', 'registry', {'value': value}, {'where': `\`entryName\` == '${entryName}'`});
         } else {
-            table.update('jsdb', 'public', 'registry', {"value": JSON.stringify(value)}, {'where': `\`entryName\` == '${entryName}'`});
+            table.update('jsdb', 'public', 'registry', {'value': JSON.stringify(value)}, {'where': `\`entryName\` == '${entryName}'`});
         }
         return `Updated entry ${entryName}`;
     }
@@ -141,7 +141,7 @@ function updateEntry(entryName, value) {
  * @throws {Error} If the entry does not exist, throw an error
  */
 function deleteEntry(entryName) {
-    if (typeof entryName === "string") {
+    if (typeof entryName === 'string') {
         if (existsEntry(entryName)) {
             if (entryName.startsWith('jsdb.')) {
                 throw new Error('JSDB entries cannot be deleted');
@@ -164,12 +164,12 @@ function deleteEntry(entryName) {
  * @throws {Error} If the entry does not exist, throw an error
  */
 function existsEntry(entryName, throws = true) {
-    if (typeof entryName === "string") {
+    if (typeof entryName === 'string') {
         let entry = table.select(
             'jsdb',
             'public',
             'registry',
-            ["type"],
+            ['type'],
             {
                 'where': `\`entryName\` == '${entryName}'`
             }
