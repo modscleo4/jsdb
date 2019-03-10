@@ -2,3 +2,6 @@ dbs
 logs
 .idea
 docgen.bat
+node_modules/
+package-lock.json
+logo.svg

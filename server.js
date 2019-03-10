@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
 
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@
 
 const config = require('./config');
 const db = require('./commands/db');
+const schema = require('./commands/schema');
 const table = require('./commands/table');
 const user = require('./commands/user');
 const registry = require('./commands/registry');
@@ -29,20 +30,16 @@ const sql = require('./sql/sql');
 const net = require('net');
 
 let server = net.createServer(socket => {
-    socket.dbName = 'jsdb';
-    socket.schemaName = 'public';
-    socket.bufferData  = '';
-
+    let connection = new config.Connection();
+    connection.Socket = socket;
     logger.log(0, `User connected, IP: ${socket.remoteAddress}`);
 
     db.readFile();
 
     socket.on('end', () => {
         logger.log(0, `[${socket.remoteAddress}] User disconnected`);
-        config.removeSocket(socket);
+        config.removeConnection(connection);
     });
-
-    socket.username = null;
 
     socket.on('data', data => {
         let sqlCmd = data.toLocaleString().trim();
@@ -53,14 +50,14 @@ let server = net.createServer(socket => {
         }
 
         if (config.server.ignAuth && sqlCmd.includes('credentials: ')) {
-            socket.username = 'grantall::jsdbadmin';
-            config.addSocket(socket);
+            connection.Username = 'grantall::jsdbadmin';
+            config.addConnection(connection);
             socket.write('AUTHOK');
             logger.log(1, `[${socket.remoteAddress}] User authenticated (NOAUTH)`);
             return;
         }
 
-        if (socket.username === null && !config.server.ignAuth) {
+        if (connection.Username === null && !config.server.ignAuth) {
             try {
                 if (!sqlCmd.includes('credentials: ')) {
                     let message = 'Username and password not informed';
@@ -72,8 +69,8 @@ let server = net.createServer(socket => {
                     let credentials = JSON.parse(sqlCmd.replace(/credentials: /, ''));
                     user.auth(credentials.username, credentials.password);
 
-                    socket.username = credentials.username;
-                    config.addSocket(socket);
+                    connection.Username = credentials.username;
+                    config.addConnection(connection);
 
                     socket.write('AUTHOK');
                     logger.log(0, `[${socket.remoteAddress}] User authenticated, username: ${credentials.username}`);
@@ -88,8 +85,8 @@ let server = net.createServer(socket => {
         }
 
         try {
-            logger.log(0, `[${socket.username}@${socket.remoteAddress}] SQL: ${sqlCmd}`);
-            let r = sql(sqlCmd, config.sockets.indexOf(socket));
+            logger.log(0, `[${connection.Username}@${socket.remoteAddress}] SQL: ${sqlCmd}`);
+            let r = sql(sqlCmd, config.connections.indexOf(connection));
 
             if (typeof r === 'object') {
                 r = JSON.stringify(r);
@@ -98,7 +95,7 @@ let server = net.createServer(socket => {
             socket.write(r);
         } catch (err) {
             socket.write(JSON.stringify({'code': 1, 'message': err.message}));
-            logger.log(2, `[${socket.username}@${socket.remoteAddress}] ${err.message}`);
+            logger.log(2, `[${connection.Username}@${socket.remoteAddress}] ${err.message}`);
         }
     });
 

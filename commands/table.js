@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
 
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -287,6 +287,8 @@ function dropTable(dbName, schemaName, tableName, ifExists = false) {
  *
  * @returns {Object} returns an indexed Object with multiple named Objects containg the data of each cell
  * @throws {Error} If the table does not exist, throw an error
+ *
+ * @todo: This should return one row at a time
  * */
 function selectTableContent(dbName, schemaName, tableName, columns, options) {
     if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string' && typeof columns === 'object' && typeof options === 'object') {
@@ -299,7 +301,7 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
         let TableContent = readTableContent(dbName, schemaName, tableName);
         let TableStruct = readTableStructure(dbName, schemaName, tableName);
 
-        if (typeof options.limoffset !== 'undefined') {
+        if ('limoffset' in options) {
             let limit = options.limoffset.limit;
             let offset = options.limoffset.offset;
 
@@ -368,7 +370,7 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
             }
         }
 
-        if (typeof options.where !== 'undefined') {
+        if ('where' in options) {
             for (let i = 0; i < r.length; i++) {
                 let e = options.where;
                 for (let key in aaa[i]) {
@@ -391,7 +393,7 @@ function selectTableContent(dbName, schemaName, tableName, columns, options) {
             }
         }
 
-        if (typeof options.orderby !== 'undefined') {
+        if ('orderby' in options) {
             function getC(orderBy) {
                 if (!orderBy[0].hasOwnProperty('column')) {
                     if (!TableStruct[`${tableName}.metadata`].hasOwnProperty('primaryKey')) {
@@ -485,6 +487,7 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
 
         let TableStruct = readTableStructure(dbName, schemaName, tableName);
         let TColumns = Object.keys(TableStruct);
+
         /*
         * Remove <tableName>.metadata from Columns list
         * */
@@ -567,7 +570,8 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
                     if (TableStruct[key].unique === true) {
                         let TableContent = readTableContent(dbName, schemaName, tableName);
                         TableContent.forEach(c => {
-                            if (c[i] === content[i]) {
+                            if (c[i] !== null && c[i] === content[i]) {
+                                // Check for unique values (and ignore the null ones)
                                 throw new Error(`Value already exists: ${c[i]}`);
                             }
                         });
@@ -671,7 +675,7 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
 
             let limit;
             let offset;
-            if (typeof options.limoffset !== 'undefined') {
+            if ('limoffset' in options) {
                 limit = options.limoffset.limit;
                 offset = options.limoffset.offset;
 
@@ -700,7 +704,7 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
 
             let b = 0;
             let c = 0;
-            if (typeof options.where !== 'undefined') {
+            if ('where' in options) {
                 for (let i = 0; i < TableContent.length; i++) {
                     let e = options.where;
                     for (let key in aaa[i]) {
@@ -761,7 +765,8 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
 
                                 if (TableStruct[key].unique === true) {
                                     TableContent.forEach(c => {
-                                        if (c[j] === update[key]) {
+                                        if (c[j] !== null && c[j] === update[key]) {
+                                            // Check for unique values (and ignore the null ones)
                                             throw new Error(`Value already exists: ${c[j]}`);
                                         }
                                     });
@@ -816,7 +821,7 @@ function deleteTableContent(dbName, schemaName, tableName, options) {
 
             let limit;
             let offset;
-            if (typeof options.limoffset !== 'undefined') {
+            if ('limoffset' in options) {
                 limit = options.limoffset.limit;
                 offset = options.limoffset.offset;
 
@@ -848,7 +853,7 @@ function deleteTableContent(dbName, schemaName, tableName, options) {
 
             let b = 0;
             let c = 0;
-            if (options.where !== null) {
+            if ('where' in options) {
                 for (let i = 0; i < TableContent.length; i++) {
                     let e = options.where;
                     for (let key in aaa[i]) {

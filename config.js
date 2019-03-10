@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
 
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,47 @@
  *
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
+
+class Connection {
+    constructor() {
+        this.dbName = 'jsdb';
+        this.schemaName = 'public';
+        this.username = null;
+    }
+
+    get Socket() {
+        return this.socket;
+    }
+
+    set Socket(value) {
+        this.socket = value;
+    }
+
+    get DBName() {
+        return this.dbName;
+    }
+
+    set DBName(value) {
+        this.dbName = value;
+    }
+
+    get SchemaName() {
+        return this.schemaName;
+    }
+
+    set SchemaName(value) {
+        this.schemaName = value;
+    }
+
+    get Username() {
+        return this.username;
+    }
+
+    set Username(value) {
+        this.username = value;
+    }
+}
+exports.Connection = Connection;
 
 const fs = require('fs');
 
@@ -46,15 +87,15 @@ exports.db = db;
 exports.registry = registry;
 
 /* Store all sockets connected */
-let sockets = [];
-exports.sockets = sockets;
+let connections = [];
+exports.connections = connections;
 
-exports.addSocket = function addSocket(socket) {
-    sockets.push(socket);
+exports.addConnection = function addConnection(connection) {
+    connections.push(connection);
 };
 
-exports.removeSocket = function removeSocket(socket) {
-    sockets.splice(sockets.indexOf(socket), 1);
+exports.removeConnection = function removeConnection(connection) {
+    connections.splice(connections.indexOf(connection), 1);
 };
 
 exports.rmdirRSync = function rmdirRSync(path) {

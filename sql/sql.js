@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
 
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,23 +32,23 @@ const {
     performance
 } = require('perf_hooks');
 
-function parseSQL(sql, socketIndex) {
+function parseSQL(sql, connectionIndex) {
     let dbs = [];
 
     let dbName = {
         get: function () {
-            return config.sockets[socketIndex].dbName;
+            return config.connections[connectionIndex].DBName;
         },
 
         set: function (dbS) {
             if (db.exists(dbS)) {
-                /* Do not include the DB more than once */
+                // Do not include the DB more than once
                 if (dbs.indexOf(dbS) === -1) {
                     dbs.push(dbS);
                     db.backup(dbS);
                 }
 
-                config.sockets[socketIndex].dbName = dbS;
+                config.connections[connectionIndex].DBName = dbS;
                 return `Using database ${dbS}.`;
             }
         }
@@ -56,12 +56,12 @@ function parseSQL(sql, socketIndex) {
 
     let schemaName = {
         get: function () {
-            return config.sockets[socketIndex].schemaName;
+            return config.connections[connectionIndex].schemaName;
         },
 
         set: function (schemaS) {
             if (schema.exists(dbName.get(), schemaS)) {
-                config.sockets[socketIndex].schemaName = schemaS;
+                config.connections[connectionIndex].SchemaName = schemaS;
                 return `Changed schema to ${schemaS}.`;
             }
         }
@@ -125,7 +125,7 @@ function parseSQL(sql, socketIndex) {
                 * Get user permissions on database
                 * */
                 function getPermissions(dbN = dbName.get()) {
-                    let userPrivileges = user.getPrivileges(config.sockets[socketIndex].username);
+                    let userPrivileges = user.getPrivileges(config.connections[connectionIndex].username);
                     if (!userPrivileges.hasOwnProperty('*')) {
                         if (userPrivileges.hasOwnProperty(dbN)) {
                             let dbPerm = userPrivileges[dbN];
@@ -801,7 +801,7 @@ function parseSQL(sql, socketIndex) {
 
                         try {
                             userPrivileges = getPermissions('jsdb');
-                            if (!userPrivileges.update || username === config.sockets[socketIndex].username) {
+                            if (!userPrivileges.update || username === config.connections[connectionIndex].username) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
@@ -1059,7 +1059,7 @@ function parseSQL(sql, socketIndex) {
 
                         try {
                             userPrivileges = getPermissions('jsdb');
-                            if (!userPrivileges.delete || username === config.sockets[socketIndex].username) {
+                            if (!userPrivileges.delete || username === config.connections[connectionIndex].username) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
