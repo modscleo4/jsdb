@@ -254,7 +254,7 @@ function checkJSDBIntegrity() {
         table.create('jsdb', 'public', 'users',
             {
                 'id': {
-                    'type': 'number',
+                    'type': 'integer',
                     'unique': true,
                     'autoIncrement': true,
                     'notNull': true
