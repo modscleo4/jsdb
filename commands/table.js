@@ -219,25 +219,26 @@ function readTableContent(dbName, schemaName, tableName) {
  * @param dbName {string} The name of DB
  * @param schemaName {string} The name of the schema
  * @param tableName {string} The table name
- * @param content {Object} Indexed Object containing the data in the table
+ * @param content {Array} Indexed Array containing the data in the table
  * @param override {boolean} If true, overrides the existing table data
  *
  * @returns {string} If Ok, returns 'Line inserted.'
  * */
 function writeTableContent(dbName, schemaName, tableName, content, override = false) {
     if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string' && typeof content === 'object' && typeof override === 'boolean') {
-        let TableContent;
+        let TableContent = [];
+
+        // Checks if tabledata.json exists to avoid loops
+
+        if (fs.existsSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tabledata}`)) {
+            TableContent = readTableContent(dbName, schemaName, tableName);
+        }
 
         if (content !== null) {
             if (override) {
                 TableContent = content;
             } else {
-                // Checks if tabledata.json exists to avoid loops
-
-                if (fs.existsSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tabledata}`)) {
-                    TableContent = readTableContent(dbName, schemaName, tableName);
-                    TableContent.push(content);
-                }
+                TableContent.push(content);
             }
         }
 
@@ -289,8 +290,6 @@ function dropTable(dbName, schemaName, tableName, ifExists = false) {
  *
  * @returns {Object} returns an indexed Object with multiple named Objects containg the data of each cell
  * @throws {Error} If the table does not exist, throw an error
- *
- * @todo: This should return one row at a time
  * */
 function selectTableContent(dbName, schemaName, tableName, columns, options) {
     if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string' && typeof columns === 'object' && typeof options === 'object') {
@@ -746,6 +745,8 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
                                     if (typeof TableStruct[key].default === 'string' && (a = TableStruct[key].default.search('sequence[(].*[)]')) !== -1) {
                                         let seqName = TableStruct[key].default.slice(a + 'sequence('.length, TableStruct[key].default.length - 1);
                                         update[key] = sequence.increment(dbName, schemaName, seqName);
+
+                                        isDefault = true;
                                     } else {
                                         update[key] = TableStruct[key].default;
                                     }

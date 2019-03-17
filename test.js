@@ -224,7 +224,7 @@ describe('Table', function () {
         it('Should return \'Created table public.a in DB a\'', function () {
             assert.strictEqual(table.create('a', 'public', 'a', {
                 'id': {
-                    'type': 'number',
+                    'type': 'integer',
                     'unique': true,
                     'autoIncrement': true,
                     'notNull': true
@@ -236,7 +236,7 @@ describe('Table', function () {
     describe('#createTable()', function () {
         it('Should throw \'Table public.a already exists in DB a\'', function () {
             assert.throws(() => {
-                table.create('a', 'public', 'a', {'id': {'type': 'number'}});
+                table.create('a', 'public', 'a', {'id': {'type': 'integer'}});
             });
         });
     });
