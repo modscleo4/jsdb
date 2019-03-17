@@ -60,10 +60,14 @@ function createTable(dbName, schemaName, tableName, tableStruct, metadata = null
 
             for (let key in tableStruct) {
                 if (tableStruct.hasOwnProperty(key)) {
-                    if (tableStruct[key].type === 'number' && tableStruct[key].autoIncrement) {
-                        delete (tableStruct[key].autoIncrement);
-                        tableStruct[key].default = `sequence(${tableName}_${key}_seq)`;
-                        sequence.create(dbName, schemaName, `${tableName}_${key}_seq`);
+                    if (tableStruct[key].autoIncrement) {
+                        if (tableStruct[key].type === 'integer') {
+                            delete (tableStruct[key].autoIncrement);
+                            tableStruct[key].default = `sequence(${tableName}_${key}_seq)`;
+                            sequence.create(dbName, schemaName, `${tableName}_${key}_seq`);
+                        } else {
+                            throw new Error("only columns of type integer can have the autoincrement property");
+                        }
                     }
                 }
             }
@@ -222,20 +226,18 @@ function readTableContent(dbName, schemaName, tableName) {
  * */
 function writeTableContent(dbName, schemaName, tableName, content, override = false) {
     if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof tableName === 'string' && typeof content === 'object' && typeof override === 'boolean') {
-        let TableContent = [];
-
-        /*
-        * Checks if tabledata.json exists to avoid loops
-        * */
-        if (fs.existsSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tabledata}`)) {
-            TableContent = readTableContent(dbName, schemaName, tableName);
-        }
+        let TableContent;
 
         if (content !== null) {
             if (override) {
                 TableContent = content;
             } else {
-                TableContent.push(content);
+                // Checks if tabledata.json exists to avoid loops
+
+                if (fs.existsSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${tableName}/${f_tabledata}`)) {
+                    TableContent = readTableContent(dbName, schemaName, tableName);
+                    TableContent.push(content);
+                }
             }
         }
 
@@ -585,20 +587,17 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
                         * */
                         if (typeof TableStruct[key].default === 'string' && (a = TableStruct[key].default.search('sequence[(].*[)]')) !== -1) {
                             let seqName = TableStruct[key].default.slice(a + 'sequence('.length, TableStruct[key].default.length - 1);
-                            let Seq = sequence.read(dbName, schemaName, seqName);
-
-                            content[i] = Seq.start;
-
-                            Seq.start = Seq.start + Seq.inc;
-
-                            sequence.update(dbName, schemaName, seqName, Seq);
+                            content[i] = sequence.increment(dbName, schemaName, seqName);
                         } else {
                             content[i] = TableStruct[key].default;
                         }
                     }
 
                     if (typeof content[i] !== TableStruct[key].type) {
-                        throw new Error(`Invalid type for column \`${key}\`: ${content[i]}(${typeof content[i]})`);
+                        if (!(TableStruct[key].type === 'integer' && Number.isInteger(content[i]))) {
+                            /// The types are dfferent and the number is not integer
+                            throw new Error(`Invalid type for column \`${key}\`: ${content[i]}(${typeof content[i]})`);
+                        }
                     }
 
                     if (typeof content[i] !== 'undefined') {
@@ -746,20 +745,16 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
                                     * */
                                     if (typeof TableStruct[key].default === 'string' && (a = TableStruct[key].default.search('sequence[(].*[)]')) !== -1) {
                                         let seqName = TableStruct[key].default.slice(a + 'sequence('.length, TableStruct[key].default.length - 1);
-                                        let Seq = sequence.read(dbName, schemaName, seqName);
-
-                                        update[key] = Seq.start;
-                                        isDefault = true;
-
-                                        Seq.start = Seq.start + Seq.inc;
-
-                                        sequence.update(dbName, schemaName, seqName, Seq);
+                                        update[key] = sequence.increment(dbName, schemaName, seqName);
                                     } else {
                                         update[key] = TableStruct[key].default;
                                     }
                                 } else {
                                     if (typeof update[key] !== TableStruct[key].type) {
-                                        throw Error('Invalid type');
+                                        if (!(TableStruct[key].type === 'integer' && Number.isInteger(update[key]))) {
+                                            /// The types are dfferent and the number is not integer
+                                            throw new Error(`Invalid type for column \`${key}\`: ${update[key]}(${typeof update[key]})`);
+                                        }
                                     }
                                 }
 

@@ -20,7 +20,6 @@
 
 const config = require('./config');
 const db = require('./commands/db');
-const schema = require('./commands/schema');
 const table = require('./commands/table');
 const user = require('./commands/user');
 const registry = require('./commands/registry');

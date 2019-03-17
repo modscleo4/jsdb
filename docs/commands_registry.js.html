@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <title>JSDoc: Source: commands/registry.js</title>
 
-    <script src="scripts/prettify/prettify.js"></script>
-    <script src="scripts/prettify/lang-css.js"></script>
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
     <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link href="styles/prettify-tomorrow.css" rel="stylesheet" type="text/css">
-    <link href="styles/jsdoc-default.css" rel="stylesheet" type="text/css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
 </head>
 
 <body>
@@ -19,17 +19,21 @@
 
     <h1 class="page-title">Source: commands/registry.js</h1>
 
+    
 
+
+
+    
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>/**
- * Copyright 2019 Dhiego Casssiano Fogaça Barbosa
+ * Copyright 2019 Dhiego Cassiano Fogaça Barbosa
 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
 
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -42,9 +46,9 @@
  * @author Dhiego Cassiano Fogaça Barbosa &lt;modscleo4@outlook.com>
  */
 
-const db = require("./db");
-const table = require("./table");
-const config = require("../config");
+const config = require('../config');
+const db = require('./db');
+const table = require('./table');
 
 /**
  * @summary Create a registry entry
@@ -57,12 +61,12 @@ const config = require("../config");
  * @throws {Error} If the entry already exists, throw an error
  */
 function createEntry(entryName, type, value) {
-    if (typeof entryName === "string" &amp;&amp; typeof type === "string") {
+    if (typeof entryName === 'string' &amp;&amp; typeof type === 'string') {
         let entry = table.select(
             'jsdb',
             'public',
             'registry',
-            ["type"],
+            ['type'],
             {
                 'where': `\`entryName\` == '${entryName}'`
             }
@@ -70,10 +74,10 @@ function createEntry(entryName, type, value) {
 
         if (entry.length === 0) {
             if (typeof value !== type) {
-                throw new Error("Invalid type");
+                throw new Error('Invalid type');
             }
 
-            if (typeof value === "string") {
+            if (typeof value === 'string') {
                 table.insert('jsdb', 'public', 'registry', [entryName, type, value]);
             } else {
                 table.insert('jsdb', 'public', 'registry', [entryName, type, JSON.stringify(value)]);
@@ -95,12 +99,12 @@ function createEntry(entryName, type, value) {
  * @throws {Error} If the entry does not exist, throw an error
  */
 function readEntry(entryName) {
-    if (typeof entryName === "string") {
+    if (typeof entryName === 'string') {
         let entry = table.select(
             'jsdb',
             'public',
             'registry',
-            ["value", "type"],
+            ['value', 'type'],
             {
                 'where': `\`entryName\` == '${entryName}'`
             }
@@ -110,7 +114,7 @@ function readEntry(entryName) {
             throw new Error(`Entry ${entryName} does not exist`);
         }
 
-        if (entry[0].type === "string") {
+        if (entry[0].type === 'string') {
             return entry[0].value;
         } else {
             return JSON.parse(entry[0].value);
@@ -128,12 +132,12 @@ function readEntry(entryName) {
  * @throws {Error} If the entry does not exist, throw an error
  */
 function updateEntry(entryName, value) {
-    if (typeof entryName === "string") {
+    if (typeof entryName === 'string') {
         let entry = table.select(
             'jsdb',
             'public',
             'registry',
-            ["type"],
+            ['type'],
             {
                 'where': `\`entryName\` == '${entryName}'`
             }
@@ -144,13 +148,13 @@ function updateEntry(entryName, value) {
         }
 
         if (typeof value !== entry[0].type) {
-            throw new Error("Invalid type");
+            throw new Error('Invalid type');
         }
 
-        if (typeof value === "string") {
-            table.update('jsdb', 'public', 'registry', {"value": value}, {'where': `\`entryName\` == '${entryName}'`});
+        if (typeof value === 'string') {
+            table.update('jsdb', 'public', 'registry', {'value': value}, {'where': `\`entryName\` == '${entryName}'`});
         } else {
-            table.update('jsdb', 'public', 'registry', {"value": JSON.stringify(value)}, {'where': `\`entryName\` == '${entryName}'`});
+            table.update('jsdb', 'public', 'registry', {'value': JSON.stringify(value)}, {'where': `\`entryName\` == '${entryName}'`});
         }
         return `Updated entry ${entryName}`;
     }
@@ -165,7 +169,7 @@ function updateEntry(entryName, value) {
  * @throws {Error} If the entry does not exist, throw an error
  */
 function deleteEntry(entryName) {
-    if (typeof entryName === "string") {
+    if (typeof entryName === 'string') {
         if (existsEntry(entryName)) {
             if (entryName.startsWith('jsdb.')) {
                 throw new Error('JSDB entries cannot be deleted');
@@ -188,12 +192,12 @@ function deleteEntry(entryName) {
  * @throws {Error} If the entry does not exist, throw an error
  */
 function existsEntry(entryName, throws = true) {
-    if (typeof entryName === "string") {
+    if (typeof entryName === 'string') {
         let entry = table.select(
             'jsdb',
             'public',
             'registry',
-            ["type"],
+            ['type'],
             {
                 'where': `\`entryName\` == '${entryName}'`
             }
@@ -238,72 +242,21 @@ exports.readAll = readAllRegistry;
     </section>
 
 
+
+
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2>
-    <h3>Global</h3>
-    <ul>
-        <li><a href="global.html#authUser">authUser</a></li>
-        <li><a href="global.html#backupDB">backupDB</a></li>
-        <li><a href="global.html#checkJSDBIntegrity">checkJSDBIntegrity</a></li>
-        <li><a href="global.html#createDB">createDB</a></li>
-        <li><a href="global.html#createDBFolder">createDBFolder</a></li>
-        <li><a href="global.html#createEntry">createEntry</a></li>
-        <li><a href="global.html#createSchema">createSchema</a></li>
-        <li><a href="global.html#createSchemaFolder">createSchemaFolder</a></li>
-        <li><a href="global.html#createSequence">createSequence</a></li>
-        <li><a href="global.html#createTable">createTable</a></li>
-        <li><a href="global.html#createTableFolder">createTableFolder</a></li>
-        <li><a href="global.html#createUser">createUser</a></li>
-        <li><a href="global.html#deleteEntry">deleteEntry</a></li>
-        <li><a href="global.html#deleteTableContent">deleteTableContent</a></li>
-        <li><a href="global.html#dropDB">dropDB</a></li>
-        <li><a href="global.html#dropSchema">dropSchema</a></li>
-        <li><a href="global.html#dropSequence">dropSequence</a></li>
-        <li><a href="global.html#dropTable">dropTable</a></li>
-        <li><a href="global.html#dropUser">dropUser</a></li>
-        <li><a href="global.html#existsDB">existsDB</a></li>
-        <li><a href="global.html#existsEntry">existsEntry</a></li>
-        <li><a href="global.html#existsSchema">existsSchema</a></li>
-        <li><a href="global.html#existsSequence">existsSequence</a></li>
-        <li><a href="global.html#existsTable">existsTable</a></li>
-        <li><a href="global.html#existsUser">existsUser</a></li>
-        <li><a href="global.html#getUserPrivileges">getUserPrivileges</a></li>
-        <li><a href="global.html#insertTableContent">insertTableContent</a></li>
-        <li><a href="global.html#log">log</a></li>
-        <li><a href="global.html#readAllRegistry">readAllRegistry</a></li>
-        <li><a href="global.html#readDBFile">readDBFile</a></li>
-        <li><a href="global.html#readEntry">readEntry</a></li>
-        <li><a href="global.html#readSchemaFile">readSchemaFile</a></li>
-        <li><a href="global.html#readSequence">readSequence</a></li>
-        <li><a href="global.html#readSequenceFile">readSequenceFile</a></li>
-        <li><a href="global.html#readTableContent">readTableContent</a></li>
-        <li><a href="global.html#readTableFile">readTableFile</a></li>
-        <li><a href="global.html#readTableStructure">readTableStructure</a></li>
-        <li><a href="global.html#restoreDB">restoreDB</a></li>
-        <li><a href="global.html#selectTableContent">selectTableContent</a></li>
-        <li><a href="global.html#updateEntry">updateEntry</a></li>
-        <li><a href="global.html#updateSequence">updateSequence</a></li>
-        <li><a href="global.html#updateTableContent">updateTableContent</a></li>
-        <li><a href="global.html#updateUser">updateUser</a></li>
-        <li><a href="global.html#writeDBFile">writeDBFile</a></li>
-        <li><a href="global.html#writeSchemaFile">writeSchemaFile</a></li>
-        <li><a href="global.html#writeSequenceFile">writeSequenceFile</a></li>
-        <li><a href="global.html#writeTableContent">writeTableContent</a></li>
-        <li><a href="global.html#writeTableFile">writeTableFile</a></li>
-        <li><a href="global.html#writeTableStructure">writeTableStructure</a></li>
-    </ul>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#authUser">authUser</a></li><li><a href="global.html#backupDB">backupDB</a></li><li><a href="global.html#checkJSDBIntegrity">checkJSDBIntegrity</a></li><li><a href="global.html#createDB">createDB</a></li><li><a href="global.html#createDBFolder">createDBFolder</a></li><li><a href="global.html#createEntry">createEntry</a></li><li><a href="global.html#createSchema">createSchema</a></li><li><a href="global.html#createSchemaFolder">createSchemaFolder</a></li><li><a href="global.html#createSequence">createSequence</a></li><li><a href="global.html#createTable">createTable</a></li><li><a href="global.html#createTableFolder">createTableFolder</a></li><li><a href="global.html#createUser">createUser</a></li><li><a href="global.html#deleteEntry">deleteEntry</a></li><li><a href="global.html#deleteTableContent">deleteTableContent</a></li><li><a href="global.html#dropDB">dropDB</a></li><li><a href="global.html#dropSchema">dropSchema</a></li><li><a href="global.html#dropSequence">dropSequence</a></li><li><a href="global.html#dropTable">dropTable</a></li><li><a href="global.html#dropUser">dropUser</a></li><li><a href="global.html#existsDB">existsDB</a></li><li><a href="global.html#existsEntry">existsEntry</a></li><li><a href="global.html#existsSchema">existsSchema</a></li><li><a href="global.html#existsSequence">existsSequence</a></li><li><a href="global.html#existsTable">existsTable</a></li><li><a href="global.html#existsUser">existsUser</a></li><li><a href="global.html#getUserPrivileges">getUserPrivileges</a></li><li><a href="global.html#insertTableContent">insertTableContent</a></li><li><a href="global.html#log">log</a></li><li><a href="global.html#readAllRegistry">readAllRegistry</a></li><li><a href="global.html#readDBFile">readDBFile</a></li><li><a href="global.html#readEntry">readEntry</a></li><li><a href="global.html#readSchemaFile">readSchemaFile</a></li><li><a href="global.html#readSequence">readSequence</a></li><li><a href="global.html#readSequenceFile">readSequenceFile</a></li><li><a href="global.html#readTableContent">readTableContent</a></li><li><a href="global.html#readTableFile">readTableFile</a></li><li><a href="global.html#readTableStructure">readTableStructure</a></li><li><a href="global.html#restoreDB">restoreDB</a></li><li><a href="global.html#selectTableContent">selectTableContent</a></li><li><a href="global.html#updateEntry">updateEntry</a></li><li><a href="global.html#updateSequence">updateSequence</a></li><li><a href="global.html#updateTableContent">updateTableContent</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#writeDBFile">writeDBFile</a></li><li><a href="global.html#writeSchemaFile">writeSchemaFile</a></li><li><a href="global.html#writeSequenceFile">writeSequenceFile</a></li><li><a href="global.html#writeTableContent">writeTableContent</a></li><li><a href="global.html#writeTableFile">writeTableFile</a></li><li><a href="global.html#writeTableStructure">writeTableStructure</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Jan 08 2019 03:09:15
-    GMT-0200 (GMT-02:00)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Mar 14 2019 23:15:23 GMT-0300 (GMT-03:00)
 </footer>
 
 <script> prettyPrint(); </script>
-<script src="scripts/linenumber.js"></script>
+<script src="scripts/linenumber.js"> </script>
 </body>
 </html>

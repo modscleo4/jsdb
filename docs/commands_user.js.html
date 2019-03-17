@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <title>JSDoc: Source: commands/user.js</title>
 
-    <script src="scripts/prettify/prettify.js"></script>
-    <script src="scripts/prettify/lang-css.js"></script>
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
     <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link href="styles/prettify-tomorrow.css" rel="stylesheet" type="text/css">
-    <link href="styles/jsdoc-default.css" rel="stylesheet" type="text/css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
 </head>
 
 <body>
@@ -19,17 +19,21 @@
 
     <h1 class="page-title">Source: commands/user.js</h1>
 
+    
 
+
+
+    
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>/**
- * Copyright 2019 Dhiego Casssiano Fogaça Barbosa
+ * Copyright 2019 Dhiego Cassiano Fogaça Barbosa
 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
 
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -42,7 +46,9 @@
  * @author Dhiego Cassiano Fogaça Barbosa &lt;modscleo4@outlook.com>
  */
 
-const table = require("./table");
+const config = require('../config');
+const table = require('./table');
+
 const md5 = require('md5');
 
 /**
@@ -55,19 +61,19 @@ const md5 = require('md5');
  * @throws {Error} If the username or the password is wrong, throw an error
  */
 function authUser(username, password) {
-    if (typeof username === "string" &amp;&amp; typeof password === "string") {
-        if (username === "grantall::jsdbadmin") {
-            throw new Error("AUTHERR: Wrong password");
+    if (typeof username === 'string' &amp;&amp; typeof password === 'string') {
+        if (username === 'grantall::jsdbadmin') {
+            throw new Error('AUTHERR: Wrong password');
         }
 
         let users = table.select(
             'jsdb',
             'public',
             'users',
-            ["password", "valid", "privileges"],
+            ['password', 'valid', 'privileges'],
             {
-                "where": `\`username\` == '${username}'`,
-                "orderby": [{"column": 'username', "mode": 'ASC'}]
+                'where': `\`username\` == '${username}'`,
+                'orderby': [{'column': 'username', 'mode': 'ASC'}]
             }
         );
 
@@ -78,7 +84,7 @@ function authUser(username, password) {
         if (users[0].password === md5(password)) {
             return true;
         } else {
-            throw new Error("AUTHERR: Wrong password");
+            throw new Error('AUTHERR: Wrong password');
         }
     }
 }
@@ -95,23 +101,23 @@ function authUser(username, password) {
  * @throws {Error} If the user already exists, throw an error
  */
 function createUser(username, password, privileges, valid = true) {
-    if (typeof username === "string" &amp;&amp; typeof password === "string" &amp;&amp; typeof privileges === "object") {
-        if (username === "grantall::jsdbadmin") {
-            throw new Error("Invalid username");
+    if (typeof username === 'string' &amp;&amp; typeof password === 'string' &amp;&amp; typeof privileges === 'object') {
+        if (username === 'grantall::jsdbadmin') {
+            throw new Error('Invalid username');
         }
 
         let user = table.select(
             'jsdb',
             'public',
             'users',
-            ["id"],
+            ['id'],
             {
-                "where": `\`username\` == '${username}'`
+                'where': `\`username\` == '${username}'`
             }
         );
 
         if (user.length === 0) {
-            table.insert('jsdb', 'public', 'users', ["DEFAULT", username, md5(`${password}`), valid, JSON.stringify(privileges)]);
+            table.insert('jsdb', 'public', 'users', ['DEFAULT', username, md5(`${password}`), valid, JSON.stringify(privileges)]);
             return `Created user ${username}`;
         } else {
             throw new Error(`User ${username} already exists`);
@@ -129,21 +135,21 @@ function createUser(username, password, privileges, valid = true) {
  * @throws {Error} If the username is invalid, throw an error
  */
 function updateUser(username, update) {
-    if (typeof username === "string" &amp;&amp; typeof update === "object") {
+    if (typeof username === 'string' &amp;&amp; typeof update === 'object') {
 
         /* grantall::jsdbadmin is not a real user, this is for avoid errors */
-        if (username === "grantall::jsdbadmin") {
-            throw new Error("Invalid username");
+        if (username === 'grantall::jsdbadmin') {
+            throw new Error('Invalid username');
         }
 
         let users = table.select(
             'jsdb',
             'public',
             'users',
-            ["password", "privileges"],
+            ['password', 'privileges'],
             {
-                "where": `\`username\` == '${username}'`,
-                "orderby": [{"column": 'username', "mode": 'ASC'}]
+                'where': `\`username\` == '${username}'`,
+                'orderby': [{'column': 'username', 'mode': 'ASC'}]
             }
         );
 
@@ -170,7 +176,7 @@ function updateUser(username, update) {
             update.privileges = JSON.stringify(update.privileges);
         }
 
-        table.update("jsdb", "public", "users", update, {"where": `\`username\` == '${username}'`});
+        table.update('jsdb', 'public', 'users', update, {'where': `\`username\` == '${username}'`});
         return `User ${username} updated`;
     }
 }
@@ -184,16 +190,16 @@ function updateUser(username, update) {
  * @throws {Error} If the username is invalid, throw an error
  */
 function dropUser(username) {
-    if (typeof username === "string") {
+    if (typeof username === 'string') {
 
         /* grantall::jsdbadmin is not a real user, this is for avoid errors
         * Do not allow delete user jsdbadmin */
 
-        if (username === "grantall::jsdbadmin" || username === 'jsdbadmin') {
-            throw new Error("Invalid username");
+        if (username === 'grantall::jsdbadmin' || username === 'jsdbadmin') {
+            throw new Error('Invalid username');
         }
 
-        table.delete("jsdb", "public", "users", {"where": `\`username\` == '${username}'`});
+        table.delete('jsdb', 'public', 'users', {'where': `\`username\` == '${username}'`});
         return `User ${username} deleted`;
     }
 }
@@ -207,19 +213,19 @@ function dropUser(username) {
  * @throws {Error} If the username is wrong, throw an error
  */
 function getUserPrivileges(username) {
-    if (typeof username === "string") {
-        if (username === "grantall::jsdbadmin") {
-            return {"*": 15};
+    if (typeof username === 'string') {
+        if (username === 'grantall::jsdbadmin') {
+            return {'*': 15};
         }
 
         let users = table.select(
             'jsdb',
             'public',
             'users',
-            ["valid", "privileges"],
+            ['valid', 'privileges'],
             {
-                "where": `\`username\` == '${username}'`,
-                "orderby": [{"column": 'username', "mode": 'ASC'}]
+                'where': `\`username\` == '${username}'`,
+                'orderby': [{'column': 'username', 'mode': 'ASC'}]
             }
         );
 
@@ -241,14 +247,18 @@ function getUserPrivileges(username) {
  * @throws {Error} If the user does not exist, throw an error
  */
 function existsUser(username, throws = true) {
-    if (typeof username === "string") {
+    if (typeof username === 'string') {
+        if (config.server.ignAuth &amp;&amp; username === 'grantall::jsdbadmin') {
+            return true;
+        }
+
         let user = table.select(
             'jsdb',
             'public',
             'users',
-            ["id"],
+            ['id'],
             {
-                "where": `\`username\` == '${username}'`
+                'where': `\`username\` == '${username}'`
             }
         );
 
@@ -277,72 +287,21 @@ exports.exists = existsUser;</code></pre>
     </section>
 
 
+
+
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2>
-    <h3>Global</h3>
-    <ul>
-        <li><a href="global.html#authUser">authUser</a></li>
-        <li><a href="global.html#backupDB">backupDB</a></li>
-        <li><a href="global.html#checkJSDBIntegrity">checkJSDBIntegrity</a></li>
-        <li><a href="global.html#createDB">createDB</a></li>
-        <li><a href="global.html#createDBFolder">createDBFolder</a></li>
-        <li><a href="global.html#createEntry">createEntry</a></li>
-        <li><a href="global.html#createSchema">createSchema</a></li>
-        <li><a href="global.html#createSchemaFolder">createSchemaFolder</a></li>
-        <li><a href="global.html#createSequence">createSequence</a></li>
-        <li><a href="global.html#createTable">createTable</a></li>
-        <li><a href="global.html#createTableFolder">createTableFolder</a></li>
-        <li><a href="global.html#createUser">createUser</a></li>
-        <li><a href="global.html#deleteEntry">deleteEntry</a></li>
-        <li><a href="global.html#deleteTableContent">deleteTableContent</a></li>
-        <li><a href="global.html#dropDB">dropDB</a></li>
-        <li><a href="global.html#dropSchema">dropSchema</a></li>
-        <li><a href="global.html#dropSequence">dropSequence</a></li>
-        <li><a href="global.html#dropTable">dropTable</a></li>
-        <li><a href="global.html#dropUser">dropUser</a></li>
-        <li><a href="global.html#existsDB">existsDB</a></li>
-        <li><a href="global.html#existsEntry">existsEntry</a></li>
-        <li><a href="global.html#existsSchema">existsSchema</a></li>
-        <li><a href="global.html#existsSequence">existsSequence</a></li>
-        <li><a href="global.html#existsTable">existsTable</a></li>
-        <li><a href="global.html#existsUser">existsUser</a></li>
-        <li><a href="global.html#getUserPrivileges">getUserPrivileges</a></li>
-        <li><a href="global.html#insertTableContent">insertTableContent</a></li>
-        <li><a href="global.html#log">log</a></li>
-        <li><a href="global.html#readAllRegistry">readAllRegistry</a></li>
-        <li><a href="global.html#readDBFile">readDBFile</a></li>
-        <li><a href="global.html#readEntry">readEntry</a></li>
-        <li><a href="global.html#readSchemaFile">readSchemaFile</a></li>
-        <li><a href="global.html#readSequence">readSequence</a></li>
-        <li><a href="global.html#readSequenceFile">readSequenceFile</a></li>
-        <li><a href="global.html#readTableContent">readTableContent</a></li>
-        <li><a href="global.html#readTableFile">readTableFile</a></li>
-        <li><a href="global.html#readTableStructure">readTableStructure</a></li>
-        <li><a href="global.html#restoreDB">restoreDB</a></li>
-        <li><a href="global.html#selectTableContent">selectTableContent</a></li>
-        <li><a href="global.html#updateEntry">updateEntry</a></li>
-        <li><a href="global.html#updateSequence">updateSequence</a></li>
-        <li><a href="global.html#updateTableContent">updateTableContent</a></li>
-        <li><a href="global.html#updateUser">updateUser</a></li>
-        <li><a href="global.html#writeDBFile">writeDBFile</a></li>
-        <li><a href="global.html#writeSchemaFile">writeSchemaFile</a></li>
-        <li><a href="global.html#writeSequenceFile">writeSequenceFile</a></li>
-        <li><a href="global.html#writeTableContent">writeTableContent</a></li>
-        <li><a href="global.html#writeTableFile">writeTableFile</a></li>
-        <li><a href="global.html#writeTableStructure">writeTableStructure</a></li>
-    </ul>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#authUser">authUser</a></li><li><a href="global.html#backupDB">backupDB</a></li><li><a href="global.html#checkJSDBIntegrity">checkJSDBIntegrity</a></li><li><a href="global.html#createDB">createDB</a></li><li><a href="global.html#createDBFolder">createDBFolder</a></li><li><a href="global.html#createEntry">createEntry</a></li><li><a href="global.html#createSchema">createSchema</a></li><li><a href="global.html#createSchemaFolder">createSchemaFolder</a></li><li><a href="global.html#createSequence">createSequence</a></li><li><a href="global.html#createTable">createTable</a></li><li><a href="global.html#createTableFolder">createTableFolder</a></li><li><a href="global.html#createUser">createUser</a></li><li><a href="global.html#deleteEntry">deleteEntry</a></li><li><a href="global.html#deleteTableContent">deleteTableContent</a></li><li><a href="global.html#dropDB">dropDB</a></li><li><a href="global.html#dropSchema">dropSchema</a></li><li><a href="global.html#dropSequence">dropSequence</a></li><li><a href="global.html#dropTable">dropTable</a></li><li><a href="global.html#dropUser">dropUser</a></li><li><a href="global.html#existsDB">existsDB</a></li><li><a href="global.html#existsEntry">existsEntry</a></li><li><a href="global.html#existsSchema">existsSchema</a></li><li><a href="global.html#existsSequence">existsSequence</a></li><li><a href="global.html#existsTable">existsTable</a></li><li><a href="global.html#existsUser">existsUser</a></li><li><a href="global.html#getUserPrivileges">getUserPrivileges</a></li><li><a href="global.html#insertTableContent">insertTableContent</a></li><li><a href="global.html#log">log</a></li><li><a href="global.html#readAllRegistry">readAllRegistry</a></li><li><a href="global.html#readDBFile">readDBFile</a></li><li><a href="global.html#readEntry">readEntry</a></li><li><a href="global.html#readSchemaFile">readSchemaFile</a></li><li><a href="global.html#readSequence">readSequence</a></li><li><a href="global.html#readSequenceFile">readSequenceFile</a></li><li><a href="global.html#readTableContent">readTableContent</a></li><li><a href="global.html#readTableFile">readTableFile</a></li><li><a href="global.html#readTableStructure">readTableStructure</a></li><li><a href="global.html#restoreDB">restoreDB</a></li><li><a href="global.html#selectTableContent">selectTableContent</a></li><li><a href="global.html#updateEntry">updateEntry</a></li><li><a href="global.html#updateSequence">updateSequence</a></li><li><a href="global.html#updateTableContent">updateTableContent</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#writeDBFile">writeDBFile</a></li><li><a href="global.html#writeSchemaFile">writeSchemaFile</a></li><li><a href="global.html#writeSequenceFile">writeSequenceFile</a></li><li><a href="global.html#writeTableContent">writeTableContent</a></li><li><a href="global.html#writeTableFile">writeTableFile</a></li><li><a href="global.html#writeTableStructure">writeTableStructure</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Jan 08 2019 03:09:15
-    GMT-0200 (GMT-02:00)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Mar 14 2019 23:15:23 GMT-0300 (GMT-03:00)
 </footer>
 
 <script> prettyPrint(); </script>
-<script src="scripts/linenumber.js"></script>
+<script src="scripts/linenumber.js"> </script>
 </body>
 </html>

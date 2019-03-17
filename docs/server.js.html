@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <title>JSDoc: Source: server.js</title>
 
-    <script src="scripts/prettify/prettify.js"></script>
-    <script src="scripts/prettify/lang-css.js"></script>
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
     <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link href="styles/prettify-tomorrow.css" rel="stylesheet" type="text/css">
-    <link href="styles/jsdoc-default.css" rel="stylesheet" type="text/css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
 </head>
 
 <body>
@@ -19,17 +19,21 @@
 
     <h1 class="page-title">Source: server.js</h1>
 
+    
 
+
+
+    
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>/**
- * Copyright 2019 Dhiego Casssiano Fogaça Barbosa
+ * Copyright 2019 Dhiego Cassiano Fogaça Barbosa
 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
 
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -42,63 +46,60 @@
  * @author Dhiego Cassiano Fogaça Barbosa &lt;modscleo4@outlook.com>
  */
 
-const db = require("./commands/db");
-const table = require("./commands/table");
-const user = require('./commands/user');
-const sql = require("./sql/sql");
 const config = require('./config');
+const db = require('./commands/db');
+const table = require('./commands/table');
+const user = require('./commands/user');
 const registry = require('./commands/registry');
 const logger = require('./lib/logger');
+const sql = require('./sql/sql');
 
 const net = require('net');
 
 let server = net.createServer(socket => {
-    socket.dbName = "jsdb";
-    socket.schemaName = "public";
-
+    let connection = new config.Connection();
+    connection.Socket = socket;
     logger.log(0, `User connected, IP: ${socket.remoteAddress}`);
 
     db.readFile();
 
     socket.on('end', () => {
         logger.log(0, `[${socket.remoteAddress}] User disconnected`);
-        config.removeSocket(socket);
+        config.removeConnection(connection);
     });
 
-    socket.username = null;
-
     socket.on('data', data => {
-        let sqlCmd = data.toLocaleString();
+        let sqlCmd = data.toLocaleString().trim();
 
-        if (sqlCmd === "PING") {
-            socket.write("PONG");
+        if (sqlCmd === 'PING') {
+            socket.write('PONG');
             return;
         }
 
-        if (config.server.ignAuth &amp;&amp; sqlCmd.includes("credentials: ")) {
-            socket.username = "grantall::jsdbadmin";
-            config.addSocket(socket);
-            socket.write("AUTHOK");
+        if (config.server.ignAuth &amp;&amp; sqlCmd.includes('credentials: ')) {
+            connection.Username = 'grantall::jsdbadmin';
+            config.addConnection(connection);
+            socket.write('AUTHOK');
             logger.log(1, `[${socket.remoteAddress}] User authenticated (NOAUTH)`);
             return;
         }
 
-        if (socket.username === null &amp;&amp; !config.server.ignAuth) {
+        if (connection.Username === null &amp;&amp; !config.server.ignAuth) {
             try {
-                if (!sqlCmd.includes("credentials: ")) {
-                    let message = "Username and password not informed";
+                if (!sqlCmd.includes('credentials: ')) {
+                    let message = 'Username and password not informed';
                     logger.log(1, `[${socket.remoteAddress}] Authentication error: ${message}`);
                     socket.write(message);
                     socket.destroy();
                     return;
                 } else {
-                    let credentials = JSON.parse(sqlCmd.slice("credentials: ".length));
+                    let credentials = JSON.parse(sqlCmd.replace(/credentials: /, ''));
                     user.auth(credentials.username, credentials.password);
 
-                    socket.username = credentials.username;
-                    config.addSocket(socket);
+                    connection.Username = credentials.username;
+                    config.addConnection(connection);
 
-                    socket.write("AUTHOK");
+                    socket.write('AUTHOK');
                     logger.log(0, `[${socket.remoteAddress}] User authenticated, username: ${credentials.username}`);
                     return;
                 }
@@ -111,17 +112,17 @@ let server = net.createServer(socket => {
         }
 
         try {
-            logger.log(0, `[${socket.username}@${socket.remoteAddress}] SQL: ${sqlCmd}`);
-            let r = sql(sqlCmd, config.sockets.indexOf(socket));
+            logger.log(0, `[${connection.Username}@${socket.remoteAddress}] SQL: ${sqlCmd}`);
+            let r = sql(sqlCmd, config.connections.indexOf(connection));
 
-            if (typeof r === "object") {
+            if (typeof r === 'object') {
                 r = JSON.stringify(r);
             }
 
             socket.write(r);
         } catch (err) {
-            socket.write(`[{"code": 1, "message": "${err.message}"}]`);
-            logger.log(2, `[${socket.username}@${socket.remoteAddress}] ${err.message}`);
+            socket.write(JSON.stringify({'code': 1, 'message': err.message}));
+            logger.log(2, `[${connection.Username}@${socket.remoteAddress}] ${err.message}`);
         }
     });
 
@@ -140,40 +141,45 @@ let server = net.createServer(socket => {
     })
 });
 
-let address = "localhost";
+/* @todo: this should be the public IP of the server */
+let address = 'localhost';
 
-db.checkJSDBIntegrity();
 registry.readAll();
 
 let params = [];
 
 for (let i = 0; i &lt; process.argv.length; i++) {
-    if (process.argv[i] === "-d" || process.argv[i] === "--dir") {
+    if (process.argv[i] === '-d' || process.argv[i] === '--dir') {
         config.server.startDir = process.argv[i + 1];
         params.push('d');
-    } else if (process.argv[i] === "-p" || process.argv[i] === "--port") {
+    } else if (process.argv[i] === '-p' || process.argv[i] === '--port') {
         config.server.port = parseInt(process.argv[i + 1]);
         params.push('p');
-    } else if (process.argv[i] === "-N" || process.argv[i] === "--noAuth") {
+    } else if (process.argv[i] === '-N' || process.argv[i] === '--noAuth') {
         config.server.ignAuth = true;
         params.push('N');
-    } else if (process.argv[i] === "-Z" || process.argv[i] === "--createZip") {
+    } else if (process.argv[i] === '-Z' || process.argv[i] === '--createZip') {
         config.db.createZip = true;
         params.push('Z');
     }
 }
 
-if (config.server.startDir === "") {
-    config.server.startDir = "./";
+if (config.server.startDir === '') {
+    config.server.startDir = './';
+}
+
+/* Ensure startDir ends with / */
+if (!config.server.startDir.endsWith('/')) {
+    config.server.startDir += '/';
 }
 
 if (config.server.port &lt;= 0 || config.server.port >= 65535) {
     config.server.port = 6637;
 }
 
-if (address !== "" &amp;&amp; config.server.port !== 0 &amp;&amp; config.server.startDir !== "") {
+if (address !== '' &amp;&amp; config.server.port !== 0 &amp;&amp; config.server.startDir !== '') {
     server.listen(config.server.port, address);
-    logger.log(0, `Server started with parameters [${params.join(", ")}]`);
+    logger.log(0, `Server started with parameters [${params.join(', ')}]`);
     console.log(`Running server on ${address}:${config.server.port}, ${config.server.startDir}`);
     if (config.server.ignAuth) {
         console.log('Warning: running without authentication!');
@@ -181,18 +187,18 @@ if (address !== "" &amp;&amp; config.server.port !== 0 &amp;&amp; config.server.
     }
 
     if (!config.server.ignAuth) {
-        if (table.select('jsdb', 'public', 'users', ['*'], {"where": '\`username\` == \'jsdbadmin\''}).length === 0) {
+        if (table.select('jsdb', 'public', 'users', ['*'], {'where': '\`username\` == \'jsdbadmin\''}).length === 0) {
             let stdin = process.openStdin();
 
             process.stdout.write('Insert jsdbadmin password: ');
 
-            stdin.addListener("data", d => {
+            stdin.addListener('data', d => {
                 d = d.toLocaleString().trim();
                 if (d.length > 8) {
                     stdin.removeAllListeners('data');
 
-                    user.create('jsdbadmin', d, {"*": parseInt("1111", 2)});
-                    console.log("User created.");
+                    user.create('jsdbadmin', d, {'*': parseInt('1111', 2)});
+                    console.log('User created.');
                 } else {
                     console.log('jsdbadmin password must be greater than 8 characters!');
                 }
@@ -205,72 +211,21 @@ if (address !== "" &amp;&amp; config.server.port !== 0 &amp;&amp; config.server.
     </section>
 
 
+
+
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2>
-    <h3>Global</h3>
-    <ul>
-        <li><a href="global.html#authUser">authUser</a></li>
-        <li><a href="global.html#backupDB">backupDB</a></li>
-        <li><a href="global.html#checkJSDBIntegrity">checkJSDBIntegrity</a></li>
-        <li><a href="global.html#createDB">createDB</a></li>
-        <li><a href="global.html#createDBFolder">createDBFolder</a></li>
-        <li><a href="global.html#createEntry">createEntry</a></li>
-        <li><a href="global.html#createSchema">createSchema</a></li>
-        <li><a href="global.html#createSchemaFolder">createSchemaFolder</a></li>
-        <li><a href="global.html#createSequence">createSequence</a></li>
-        <li><a href="global.html#createTable">createTable</a></li>
-        <li><a href="global.html#createTableFolder">createTableFolder</a></li>
-        <li><a href="global.html#createUser">createUser</a></li>
-        <li><a href="global.html#deleteEntry">deleteEntry</a></li>
-        <li><a href="global.html#deleteTableContent">deleteTableContent</a></li>
-        <li><a href="global.html#dropDB">dropDB</a></li>
-        <li><a href="global.html#dropSchema">dropSchema</a></li>
-        <li><a href="global.html#dropSequence">dropSequence</a></li>
-        <li><a href="global.html#dropTable">dropTable</a></li>
-        <li><a href="global.html#dropUser">dropUser</a></li>
-        <li><a href="global.html#existsDB">existsDB</a></li>
-        <li><a href="global.html#existsEntry">existsEntry</a></li>
-        <li><a href="global.html#existsSchema">existsSchema</a></li>
-        <li><a href="global.html#existsSequence">existsSequence</a></li>
-        <li><a href="global.html#existsTable">existsTable</a></li>
-        <li><a href="global.html#existsUser">existsUser</a></li>
-        <li><a href="global.html#getUserPrivileges">getUserPrivileges</a></li>
-        <li><a href="global.html#insertTableContent">insertTableContent</a></li>
-        <li><a href="global.html#log">log</a></li>
-        <li><a href="global.html#readAllRegistry">readAllRegistry</a></li>
-        <li><a href="global.html#readDBFile">readDBFile</a></li>
-        <li><a href="global.html#readEntry">readEntry</a></li>
-        <li><a href="global.html#readSchemaFile">readSchemaFile</a></li>
-        <li><a href="global.html#readSequence">readSequence</a></li>
-        <li><a href="global.html#readSequenceFile">readSequenceFile</a></li>
-        <li><a href="global.html#readTableContent">readTableContent</a></li>
-        <li><a href="global.html#readTableFile">readTableFile</a></li>
-        <li><a href="global.html#readTableStructure">readTableStructure</a></li>
-        <li><a href="global.html#restoreDB">restoreDB</a></li>
-        <li><a href="global.html#selectTableContent">selectTableContent</a></li>
-        <li><a href="global.html#updateEntry">updateEntry</a></li>
-        <li><a href="global.html#updateSequence">updateSequence</a></li>
-        <li><a href="global.html#updateTableContent">updateTableContent</a></li>
-        <li><a href="global.html#updateUser">updateUser</a></li>
-        <li><a href="global.html#writeDBFile">writeDBFile</a></li>
-        <li><a href="global.html#writeSchemaFile">writeSchemaFile</a></li>
-        <li><a href="global.html#writeSequenceFile">writeSequenceFile</a></li>
-        <li><a href="global.html#writeTableContent">writeTableContent</a></li>
-        <li><a href="global.html#writeTableFile">writeTableFile</a></li>
-        <li><a href="global.html#writeTableStructure">writeTableStructure</a></li>
-    </ul>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#authUser">authUser</a></li><li><a href="global.html#backupDB">backupDB</a></li><li><a href="global.html#checkJSDBIntegrity">checkJSDBIntegrity</a></li><li><a href="global.html#createDB">createDB</a></li><li><a href="global.html#createDBFolder">createDBFolder</a></li><li><a href="global.html#createEntry">createEntry</a></li><li><a href="global.html#createSchema">createSchema</a></li><li><a href="global.html#createSchemaFolder">createSchemaFolder</a></li><li><a href="global.html#createSequence">createSequence</a></li><li><a href="global.html#createTable">createTable</a></li><li><a href="global.html#createTableFolder">createTableFolder</a></li><li><a href="global.html#createUser">createUser</a></li><li><a href="global.html#deleteEntry">deleteEntry</a></li><li><a href="global.html#deleteTableContent">deleteTableContent</a></li><li><a href="global.html#dropDB">dropDB</a></li><li><a href="global.html#dropSchema">dropSchema</a></li><li><a href="global.html#dropSequence">dropSequence</a></li><li><a href="global.html#dropTable">dropTable</a></li><li><a href="global.html#dropUser">dropUser</a></li><li><a href="global.html#existsDB">existsDB</a></li><li><a href="global.html#existsEntry">existsEntry</a></li><li><a href="global.html#existsSchema">existsSchema</a></li><li><a href="global.html#existsSequence">existsSequence</a></li><li><a href="global.html#existsTable">existsTable</a></li><li><a href="global.html#existsUser">existsUser</a></li><li><a href="global.html#getUserPrivileges">getUserPrivileges</a></li><li><a href="global.html#insertTableContent">insertTableContent</a></li><li><a href="global.html#log">log</a></li><li><a href="global.html#readAllRegistry">readAllRegistry</a></li><li><a href="global.html#readDBFile">readDBFile</a></li><li><a href="global.html#readEntry">readEntry</a></li><li><a href="global.html#readSchemaFile">readSchemaFile</a></li><li><a href="global.html#readSequence">readSequence</a></li><li><a href="global.html#readSequenceFile">readSequenceFile</a></li><li><a href="global.html#readTableContent">readTableContent</a></li><li><a href="global.html#readTableFile">readTableFile</a></li><li><a href="global.html#readTableStructure">readTableStructure</a></li><li><a href="global.html#restoreDB">restoreDB</a></li><li><a href="global.html#selectTableContent">selectTableContent</a></li><li><a href="global.html#updateEntry">updateEntry</a></li><li><a href="global.html#updateSequence">updateSequence</a></li><li><a href="global.html#updateTableContent">updateTableContent</a></li><li><a href="global.html#updateUser">updateUser</a></li><li><a href="global.html#writeDBFile">writeDBFile</a></li><li><a href="global.html#writeSchemaFile">writeSchemaFile</a></li><li><a href="global.html#writeSequenceFile">writeSequenceFile</a></li><li><a href="global.html#writeTableContent">writeTableContent</a></li><li><a href="global.html#writeTableFile">writeTableFile</a></li><li><a href="global.html#writeTableStructure">writeTableStructure</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Jan 08 2019 03:09:15
-    GMT-0200 (GMT-02:00)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Mar 14 2019 23:15:23 GMT-0300 (GMT-03:00)
 </footer>
 
 <script> prettyPrint(); </script>
-<script src="scripts/linenumber.js"></script>
+<script src="scripts/linenumber.js"> </script>
 </body>
 </html>

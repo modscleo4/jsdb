@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright 2019 Dhiego Cassiano Fogaça Barbosa
 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -89,6 +89,7 @@ function parseSQL(sql, connectionIndex) {
                     continue;
                 }
 
+
                 output.command = i;
                 output.sql = sqlString;
                 output.code = 0;
@@ -102,7 +103,6 @@ function parseSQL(sql, connectionIndex) {
                     let t = sql_parser.lexer.tokenize(sqlString);
                     t = t.splice(0, t.length - 1);
                     output.data = t;
-                    output.code = 0;
                     output.time = 'NOTIME';
                     return output;
                 }
@@ -125,7 +125,7 @@ function parseSQL(sql, connectionIndex) {
                 * Get user permissions on database
                 * */
                 function getPermissions(dbN = dbName.get()) {
-                    let userPrivileges = user.getPrivileges(config.connections[connectionIndex].username);
+                    let userPrivileges = user.getPrivileges(config.connections[connectionIndex].Username);
                     if (!userPrivileges.hasOwnProperty('*')) {
                         if (userPrivileges.hasOwnProperty(dbN)) {
                             let dbPerm = userPrivileges[dbN];
@@ -307,6 +307,21 @@ function parseSQL(sql, connectionIndex) {
                             output.code = 1;
                             output.message = e.message;
                         }
+                    } else if (t[1][1].toUpperCase() === 'SEQUENCE') {
+                        let seqName = t[2][1];
+
+                        try {
+                            userPrivileges = getPermissions(dbName.get());
+                            if (!userPrivileges.read) {
+                                output.code = 1;
+                                output.message = 'Not enough permissions';
+                            } else {
+                                output.data = sequence.read(dbName.get(), schemaName.get(), seqName).start;
+                            }
+                        } catch (e) {
+                            output.code = 1;
+                            output.message = e.message;
+                        }
                     } else {
                         output.code = 2;
                         output.message = `Unrecognized command: ${output.sql}`;
@@ -382,6 +397,8 @@ function parseSQL(sql, connectionIndex) {
                                     if (t[j][0] === 'LITERAL' || t[j][0] === 'BOOLEAN') {
                                         if (t[j][1].toUpperCase() === 'NUMBER') {
                                             tableStruct[t[i + 3][1]].type = 'number';
+                                        } else if (t[j][1].toUpperCase() === 'INTEGER') {
+                                            tableStruct[t[i + 3][1]].type = 'integer';
                                         } else if (t[j][1].toUpperCase() === 'STRING') {
                                             tableStruct[t[i + 3][1]].type = 'string';
                                         } else if (t[j][1].toUpperCase() === 'BOOLEAN') {
@@ -560,7 +577,7 @@ function parseSQL(sql, connectionIndex) {
                     }
 
                     for (let i = a + 1; i < t.length; i++) {
-                        if (t[i][1].toUpperCase() === 'VALUES' && t[i + 1][0] === 'LEFT_PAREN') {
+                        if (t[i][0] === "LITERAL" && t[i][1].toUpperCase() === 'VALUES' && t[i + 1][0] === 'LEFT_PAREN') {
                             content = [];
                             for (let j = i + 2; j < t.length; j++) {
                                 if (t[j][0] === 'RIGHT_PAREN') {
@@ -573,11 +590,19 @@ function parseSQL(sql, connectionIndex) {
                                 } else if (t[j][0] === 'LITERAL' && t[j][1].toUpperCase() === 'DEFAULT') {
                                     t[j][0] = 'STRING';
                                     t[j][1] = 'DEFAULT';
-                                } else if (t[j][0] === 'LITERAL' && t[j][1].toUpperCase() === 'MD5') {
-                                    if (t[j + 1][0] === 'LEFT_PAREN' && t[j + 3][0] === 'RIGHT_PAREN') {
-                                        t[j][0] = 'STRING';
-                                        t[j][1] = md5(t[j + 2][1]);
-                                        t.splice(j + 1, 3);
+                                } else if (t[j][0] === 'LITERAL') {
+                                    if (t[j][1].toUpperCase() === 'MD5') {
+                                        if (t[j + 1][0] === 'LEFT_PAREN' && t[j + 3][0] === 'RIGHT_PAREN') {
+                                            t[j][0] = 'STRING';
+                                            t[j][1] = md5(t[j + 2][1]);
+                                            t.splice(j + 1, 3);
+                                        }
+                                    } else if (t[j][1].toUpperCase() === 'NEXTVAL') {
+                                        if (t[j + 1][0] === 'LEFT_PAREN' && t[j + 3][0] === 'RIGHT_PAREN') {
+                                            t[j][0] = 'NUMBER';
+                                            t[j][1] = sequence.increment(dbName.get(), schemaName.get(), t[j + 2][1]);
+                                            t.splice(j + 1, 3);
+                                        }
                                     }
                                 }
 
@@ -625,13 +650,19 @@ function parseSQL(sql, connectionIndex) {
                                     break;
                                 }
 
-                                if (t[j][0] === 'LITERAL') {
-                                    if (t[j][1].toUpperCase() === 'DEFAULT') {
-                                        t[j][0] = 'STRING';
-                                    } else if (t[j][1].toUpperCase() === 'MD5') {
-                                        if (t[j + 1][0] === 'LEFT_PAREN' && t[j + 3][0] === 'RIGHT_PAREN') {
-                                            t[j][1] = md5(t[j + 2][1]);
-                                            t.splice(j + 1, 3);
+                                if (j + 2 in t && t[j + 2][0] === 'LITERAL') {
+                                    if (t[j + 2][1].toUpperCase() === 'DEFAULT') {
+                                        t[j + 2][0] = 'STRING';
+                                    } else if (t[j + 2][1].toUpperCase() === 'MD5') {
+                                        if (t[j + 3][0] === 'LEFT_PAREN' && t[j + 5][0] === 'RIGHT_PAREN') {
+                                            t[j + 2][1] = md5(t[j + 4][1]);
+                                            t.splice(j + 3, 3);
+                                        }
+                                    } else if (t[j + 2][0] === 'LITERAL' && t[j + 2][1].toUpperCase() === 'NEXTVAL') {
+                                        if (t[j + 3][0] === 'LEFT_PAREN' && t[j + 5][0] === 'RIGHT_PAREN') {
+                                            t[j + 2][0] = 'NUMBER';
+                                            t[j + 2][1] = sequence.increment(dbName.get(), schemaName.get(), t[j + 4][1]);
+                                            t.splice(j + 3, 3);
                                         }
                                     }
                                 }
@@ -767,13 +798,19 @@ function parseSQL(sql, connectionIndex) {
                                         break;
                                     }
 
-                                    if (t[j][0] === 'LITERAL') {
-                                        if (t[j][1].toUpperCase() === 'DEFAULT') {
-                                            t[j][0] = 'STRING';
-                                        } else if (t[j][1].toUpperCase() === 'MD5') {
-                                            if (t[j + 1][0] === 'LEFT_PAREN' && t[j + 3][0] === 'RIGHT_PAREN') {
-                                                t[j][1] = md5(t[j + 2][1]);
-                                                t.splice(j + 1, 3);
+                                    if (j + 2 in t && t[j + 2][0] === 'LITERAL') {
+                                        if (t[j + 2][1].toUpperCase() === 'DEFAULT') {
+                                            t[j + 2][0] = 'STRING';
+                                        } else if (t[j + 2][1].toUpperCase() === 'MD5') {
+                                            if (t[j + 3][0] === 'LEFT_PAREN' && t[j + 5][0] === 'RIGHT_PAREN') {
+                                                t[j + 2][1] = md5(t[j + 4][1]);
+                                                t.splice(j + 3, 3);
+                                            }
+                                        } else if (t[j + 2][0] === 'LITERAL' && t[j + 2][1].toUpperCase() === 'NEXTVAL') {
+                                            if (t[j + 3][0] === 'LEFT_PAREN' && t[j + 5][0] === 'RIGHT_PAREN') {
+                                                t[j + 2][0] = 'NUMBER';
+                                                t[j + 2][1] = sequence.increment(dbName.get(), schemaName.get(), t[j + 4][1]);
+                                                t.splice(j + 3, 3);
                                             }
                                         }
                                     }
@@ -801,7 +838,7 @@ function parseSQL(sql, connectionIndex) {
 
                         try {
                             userPrivileges = getPermissions('jsdb');
-                            if (!userPrivileges.update || username === config.connections[connectionIndex].username) {
+                            if (!userPrivileges.update || username === config.connections[connectionIndex].Username) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
@@ -1059,7 +1096,7 @@ function parseSQL(sql, connectionIndex) {
 
                         try {
                             userPrivileges = getPermissions('jsdb');
-                            if (!userPrivileges.delete || username === config.connections[connectionIndex].username) {
+                            if (!userPrivileges.delete || username === config.connections[connectionIndex].Username) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {

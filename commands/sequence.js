@@ -140,6 +140,25 @@ function readSequence(dbName, schemaName, seqName) {
 }
 
 /**
+ * @summary Gets the sequence value and increments it
+ *
+ * @param dbName {string} The name of DB
+ * @param schemaName {string} The name of the schema
+ * @param seqName {string} The sequence name
+ *
+ * @returns {string} Returns the sequence value
+ * @throws {Error} If the sequence does not exist, throw an error
+ */
+function incrementSequence(dbName, schemaName, seqName) {
+    if (typeof dbName === 'string' && typeof schemaName === 'string' && typeof seqName === 'string') {
+        let r = readSequence(dbName, schemaName, seqName);
+        updateSequence(dbName, schemaName, seqName, {"start": r.start + r.inc, "inc": r.inc});
+
+        return r.start;
+    }
+}
+
+/**
  * @summary This is the sequence UPDATE function scope
  *
  * @param dbName {string} The name of DB
@@ -204,6 +223,7 @@ exports.create = createSequence;
 exports.read = readSequence;
 exports.update = updateSequence;
 exports.drop = dropSequence;
+exports.increment = incrementSequence;
 
 exports.exists = existsSequence;
 
