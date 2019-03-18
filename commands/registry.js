@@ -46,7 +46,10 @@ function createEntry(entryName, type, value) {
 
         if (entry.length === 0) {
             if (typeof value !== type) {
-                throw new Error('Invalid type');
+                if (!(type === 'integer' && Number.isInteger(value))) {
+                    /// The types are different and the number is not integer
+                    throw new Error('Invalid type');
+                }
             }
 
             if (typeof value === 'string') {
@@ -86,11 +89,11 @@ function readEntry(entryName) {
             throw new Error(`Entry ${entryName} does not exist`);
         }
 
-        if (entry[0].type === 'string') {
-            return entry[0].value;
-        } else {
-            return JSON.parse(entry[0].value);
+        if (entry[0].type !== 'string') {
+            entry[0].value = JSON.parse(entry[0].value)
         }
+
+        return entry[0].value;
     }
 }
 
@@ -120,7 +123,10 @@ function updateEntry(entryName, value) {
         }
 
         if (typeof value !== entry[0].type) {
-            throw new Error('Invalid type');
+            if (!(entry[0].type === 'integer' && Number.isInteger(value))) {
+                /// The types are different and the number is not integer
+                throw new Error('Invalid type');
+            }
         }
 
         if (typeof value === 'string') {
@@ -128,6 +134,7 @@ function updateEntry(entryName, value) {
         } else {
             table.update('jsdb', 'public', 'registry', {'value': JSON.stringify(value)}, {'where': `\`entryName\` == '${entryName}'`});
         }
+
         return `Updated entry ${entryName}`;
     }
 }
@@ -193,7 +200,7 @@ function existsEntry(entryName, throws = true) {
 function readAllRegistry() {
     db.checkJSDBIntegrity();
 
-    /* Load registry configs */
+    // Load registry configs
     config.server.ignAuth = readEntry('jsdb.server.ignAuth');
     config.db.createZip = readEntry('jsdb.db.createZip');
     config.server.startDir = readEntry('jsdb.server.startDir');

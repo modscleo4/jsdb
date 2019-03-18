@@ -61,23 +61,23 @@ exports.Connection = Connection;
 
 const fs = require('fs');
 
-/* This makes the Date() available for all modules and stores the date-time when the server started */
+// This makes the Date() available for all modules and stores the date-time when the server started
 let date = new Date();
 exports.date = date;
 
-/* Config vars for server */
+// Config vars for server
 let server = {
     ignAuth: false,
     startDir: './',
     port: 6637
 };
 
-/* Config vars for DB */
+// Config vars for DB
 let db = {
     createZip: false
 };
 
-/* Config vars for registry manager */
+// Config vars for registry manager
 let registry = {
     instantApplyChanges: false
 };
@@ -86,7 +86,7 @@ exports.server = server;
 exports.db = db;
 exports.registry = registry;
 
-/* Store all sockets connected */
+// Store all sockets connected
 let connections = [];
 exports.connections = connections;
 

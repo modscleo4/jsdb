@@ -69,7 +69,11 @@ function readSequenceFile(dbName, schemaName) {
                 return {};
             }
 
-            return JSON.parse(fs.readFileSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`, 'utf8'));
+            try {
+                return JSON.parse(fs.readFileSync(`${config.server.startDir}dbs/${dbName}/${schemaName}/${f_seqlist}`, 'utf8'));
+            } catch (e) {
+                throw new Error(`Error while parsing ${f_seqlist} for ${dbName}.${schemaName}: ${e.message}`);
+            }
         }
     }
 }

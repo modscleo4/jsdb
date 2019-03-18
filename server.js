@@ -63,24 +63,30 @@ let server = net.createServer(socket => {
                     logger.log(1, `[${socket.remoteAddress}] Authentication error: ${message}`);
                     socket.write(message);
                     socket.destroy();
-                    return;
                 } else {
                     let credentials = JSON.parse(sqlCmd.replace(/credentials: /, ''));
-                    user.auth(credentials.username, credentials.password);
+                    if (typeof credentials.username !== "string" || typeof credentials.password !== "string") {
+                        let message = 'Username and/or password not informed';
+                        logger.log(1, `[${socket.remoteAddress}] Authentication error: ${message}`);
+                        socket.write(message);
+                        socket.destroy();
+                    } else {
+                        user.auth(credentials.username, credentials.password);
 
-                    connection.Username = credentials.username;
-                    config.addConnection(connection);
+                        connection.Username = credentials.username;
+                        config.addConnection(connection);
 
-                    socket.write('AUTHOK');
-                    logger.log(0, `[${socket.remoteAddress}] User authenticated, username: ${credentials.username}`);
-                    return;
+                        socket.write('AUTHOK');
+                        logger.log(0, `[${socket.remoteAddress}] User authenticated, username: ${credentials.username}`);
+                    }
                 }
             } catch (e) {
                 logger.log(1, `[${socket.remoteAddress}] Authentication error: ${e.message}`);
                 socket.write(e.message);
                 socket.destroy();
-                return;
             }
+
+            return;
         }
 
         try {
@@ -113,7 +119,7 @@ let server = net.createServer(socket => {
     })
 });
 
-/* @todo: this should be the public IP of the server */
+// @todo: this should be the public IP of the server
 let address = 'localhost';
 
 registry.readAll();
@@ -140,7 +146,7 @@ if (config.server.startDir === '') {
     config.server.startDir = './';
 }
 
-/* Ensure startDir ends with / */
+// Ensure startDir ends with /
 if (!config.server.startDir.endsWith('/')) {
     config.server.startDir += '/';
 }

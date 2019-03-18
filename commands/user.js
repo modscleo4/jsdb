@@ -109,7 +109,7 @@ function createUser(username, password, privileges, valid = true) {
 function updateUser(username, update) {
     if (typeof username === 'string' && typeof update === 'object') {
 
-        /* grantall::jsdbadmin is not a real user, this is for avoid errors */
+        // grantall::jsdbadmin is not a real user, this is for avoid errors
         if (username === 'grantall::jsdbadmin') {
             throw new Error('Invalid username');
         }
@@ -129,7 +129,7 @@ function updateUser(username, update) {
             throw new Error(`Invalid username: ${username}`);
         }
 
-        /* Do not allow renaming user jsdbadmin */
+        // Do not allow renaming user jsdbadmin
         if (update.hasOwnProperty('username') && username === 'jsdbadmin') {
             throw new Error('User jsdbadmin cannot be renamed');
         }
@@ -163,9 +163,8 @@ function updateUser(username, update) {
  */
 function dropUser(username) {
     if (typeof username === 'string') {
-
-        /* grantall::jsdbadmin is not a real user, this is for avoid errors
-        * Do not allow delete user jsdbadmin */
+        // grantall::jsdbadmin is not a real user, this is for avoid errors
+        // Do not allow delete user jsdbadmin
 
         if (username === 'grantall::jsdbadmin' || username === 'jsdbadmin') {
             throw new Error('Invalid username');

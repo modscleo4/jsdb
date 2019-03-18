@@ -81,16 +81,18 @@ function readSchemaFile(dbName) {
     if (typeof dbName === 'string') {
         let SCHList = [];
 
-        /*
-        * Checking if the database exists
-        * */
+        // Checking if the database exists
         if (db.exists(dbName)) {
             if (!fs.existsSync(`${config.server.startDir}dbs/${dbName}/${f_schlist}`)) {
                 writeSchemaFile(dbName, JSON.stringify([]));
                 return [];
             }
 
-            SCHList = JSON.parse(fs.readFileSync(`${config.server.startDir}dbs/${dbName}/${f_schlist}`, 'utf8'));
+            try {
+                SCHList = JSON.parse(fs.readFileSync(`${config.server.startDir}dbs/${dbName}/${f_schlist}`, 'utf8'));
+            } catch (e) {
+                throw new Error(`Error while parsing ${f_schlist} for ${dbName}: ${e.message}`);
+            }
 
             SCHList.forEach(schName => {
                 if (!fs.existsSync(`${config.server.startDir}dbs/${dbName}/${schName}`)) {

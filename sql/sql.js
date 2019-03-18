@@ -69,7 +69,7 @@ function parseSQL(sql, connectionIndex) {
 
     if (typeof sql === 'string') {
         dbName.set(dbName.get());
-        /* Array of SQL command outputs */
+        // Array of SQL command outputs
         let output = {};
 
         if (!sql.endsWith(';')) {
@@ -112,18 +112,14 @@ function parseSQL(sql, connectionIndex) {
 
                 for (let i = 0; i < t.length; i++) {
                     if (t[0][1].toUpperCase() !== 'SHOW' && t[i][0] === 'DOT') {
-                        /*
-                        * Remove schema.<table> from array to prevent errors
-                        * */
+                        // Remove schema.<table> from array to prevent errors
                         schemaName.set(t[i - 1][1]);
                         t.splice(i - 1, 2);
                         break;
                     }
                 }
 
-                /*
-                * Get user permissions on database
-                * */
+                // Get user permissions on database
                 function getPermissions(dbN = dbName.get()) {
                     let userPrivileges = user.getPrivileges(config.connections[connectionIndex].Username);
                     if (!userPrivileges.hasOwnProperty('*')) {
@@ -188,9 +184,7 @@ function parseSQL(sql, connectionIndex) {
                     let a = 0;
                     let tableName;
 
-                    /*
-                    * Gets the table name
-                    * */
+                    // Gets the table name
                     for (let i = 1; i < t.length; i++) {
                         if (t[i][0] === 'FROM') {
                             a = i - 1;
@@ -199,14 +193,10 @@ function parseSQL(sql, connectionIndex) {
                         }
                     }
 
-                    /*
-                    * Gets desired columns
-                    * */
+                    // Gets desired columns
                     let cols = [];
                     for (let i = 1; i <= a; i++) {
-                        /*
-                        * Checks if SQL is SELECT * ...
-                        * */
+                        // Checks if SQL is SELECT * ...
                         if (t[i][0] === 'STAR') {
                             cols.push('*');
                             break;
@@ -215,17 +205,13 @@ function parseSQL(sql, connectionIndex) {
                         }
                     }
 
-                    /*
-                    * Get options
-                    * */
+                    // Get options
                     let options = {};
                     for (let i = a + 1; i < t.length; i++) {
                         if (t[i][0] === 'WHERE') {
                             options.where = '';
                             for (let k = i + 1; k < t.length; k++) {
-                                /*
-                                * Stop when find something that is not on WHERE params
-                                * */
+                                // Stop when find something that is not on WHERE params
                                 if (t[k][0] !== 'LITERAL' && t[k][0] !== 'OPERATOR' && t[k][0] !== 'CONDITIONAL' && t[k][0] !== 'STRING' && t[k][0] !== 'NUMBER' && t[k][0] !== 'BOOLEAN') {
                                     break;
                                 }
@@ -376,13 +362,9 @@ function parseSQL(sql, connectionIndex) {
                                 tableName = t[i + 1][1];
                             }
 
-                            /*
-                            * Get columns order
-                            * */
+                            // Get columns order
                             if (t[i + 2][0] === 'LEFT_PAREN' || t[i + 2][0] === 'SEPARATOR') {
-                                /*
-                                * t[i + 3][1] is the name of column
-                                * */
+                                // t[i + 3][1] is the name of column
                                 tableStruct[t[i + 3][1]] = {};
 
                                 for (let j = i + 3; j < t.length; j++) {
@@ -498,9 +480,7 @@ function parseSQL(sql, connectionIndex) {
                         let a;
 
                         for (let i = 1; i < t.length; i++) {
-                            /*
-                            * Get columns order
-                            * */
+                            // Get columns order
                             if (t[i + 2][0] === 'LEFT_PAREN' || t[i + 2][0] === 'SEPARATOR') {
                                 for (let j = i + 3; j < t.length; j++) {
                                     if (t[j][0] === 'RIGHT_PAREN' || t[j][0] === 'SEPARATOR') {
@@ -555,9 +535,7 @@ function parseSQL(sql, connectionIndex) {
                             a = i + 1;
                             tableName = t[i + 1][1];
 
-                            /*
-                            * Get columns order
-                            * */
+                            // Get columns order
                             if (t[i + 2][0] === 'LEFT_PAREN') {
                                 columns = [];
                                 for (let j = i + 3; j < t.length; j++) {
@@ -635,15 +613,13 @@ function parseSQL(sql, connectionIndex) {
                     let tableName;
                     let update = {};
 
-                    /*
-                    * Gets the table name
-                    * */
+                    // Gets the table name
                     for (let i = 1; i < t.length; i++) {
                         if (t[i][1].toUpperCase() === 'SET') {
                             a = i + 1;
                             tableName = t[i - 1][1];
 
-                            /* GET update */
+                            // GET update
                             for (let j = 0; j < t.length; j++) {
                                 if (t[j][0] !== 'LITERAL' && t[j][0] !== 'STRING' && t[j][0] !== 'NUMBER' && t[j][0] !== 'BOOLEAN' && t[j][0] !== 'OPERATOR' && t[j][0] !== 'SEPARATOR') {
                                     a = i + 1;
@@ -688,17 +664,13 @@ function parseSQL(sql, connectionIndex) {
                         }
                     }
 
-                    /*
-                    * Get options
-                    * */
+                    // Get options
                     let options = {'where': 'true'};
                     for (let i = a + 1; i < t.length; i++) {
                         if (t[i][0] === 'WHERE') {
                             options.where = '';
                             for (let k = i + 1; k < t.length; k++) {
-                                /*
-                                * Stop when find something that is not on WHERE params
-                                * */
+                                // Stop when find something that is not on WHERE params
                                 if (t[k][0] !== 'LITERAL' && t[k][0] !== 'OPERATOR' && t[k][0] !== 'CONDITIONAL' && t[k][0] !== 'STRING' && t[k][0] !== 'NUMBER' && t[k][0] !== 'BOOLEAN') {
                                     break;
                                 }
@@ -792,7 +764,7 @@ function parseSQL(sql, connectionIndex) {
 
                         for (let i = 2; i < t.length; i++) {
                             if (t[i][1].toUpperCase() === 'SET') {
-                                /* GET update */
+                                // GET update
                                 for (let j = 0; j < t.length; j++) {
                                     if (t[j][0] !== 'LITERAL' && t[j][0] !== 'STRING' && t[j][0] !== 'NUMBER' && t[j][0] !== 'BOOLEAN' && t[j][0] !== 'OPERATOR' && t[j][0] !== 'SEPARATOR') {
                                         break;
@@ -854,7 +826,7 @@ function parseSQL(sql, connectionIndex) {
 
                         for (let i = 2; i < t.length; i++) {
                             if (t[i][1].toUpperCase() === 'SET') {
-                                /* GET update */
+                                // GET update
                                 for (let j = i + 1; j < t.length; j++) {
                                     if (t[j][1].toUpperCase() === 'VALUE' && t[j + 1][1].toUpperCase() === '=') {
                                         if (t[j + 2][0] === 'STRING') {
@@ -889,9 +861,7 @@ function parseSQL(sql, connectionIndex) {
                     let a = 0;
                     let tableName;
 
-                    /*
-                    * Gets the table name
-                    * */
+                    // Gets the table name
                     for (let i = 1; i < t.length; i++) {
                         if (t[i][0] === 'FROM') {
                             a = i - 1;
@@ -900,17 +870,13 @@ function parseSQL(sql, connectionIndex) {
                         }
                     }
 
-                    /*
-                    * Get options
-                    * */
+                    // Get options
                     let options = {'where': 'true'};
                     for (let i = a + 1; i < t.length; i++) {
                         if (t[i][0] === 'WHERE') {
                             options.where = '';
                             for (let k = i + 1; k < t.length; k++) {
-                                /*
-                                * Stop when find something that is not on WHERE params
-                                * */
+                                // Stop when find something that is not on WHERE params
                                 if (t[k][0] !== 'LITERAL' && t[k][0] !== 'OPERATOR' && t[k][0] !== 'CONDITIONAL' && t[k][0] !== 'STRING' && t[k][0] !== 'NUMBER' && t[k][0] !== 'BOOLEAN') {
                                     break;
                                 }
@@ -964,9 +930,7 @@ function parseSQL(sql, connectionIndex) {
                         let a;
                         let ifExists = false;
 
-                        /*
-                        * Gets the DB name
-                        * */
+                        // Gets the DB name
                         for (let i = 1; i < t.length; i++) {
                             if (t[i][1].toUpperCase() === 'DATABASE') {
                                 a = i + 1;
@@ -997,9 +961,7 @@ function parseSQL(sql, connectionIndex) {
                         let a;
                         let ifExists = false;
 
-                        /*
-                        * Gets the schema name
-                        * */
+                        // Gets the schema name
                         for (let i = 1; i < t.length; i++) {
                             if (t[i][1].toUpperCase() === 'SCHEMA') {
                                 a = i + 1;
@@ -1030,9 +992,7 @@ function parseSQL(sql, connectionIndex) {
                         let a;
                         let ifExists = false;
 
-                        /*
-                        * Gets the table name
-                        * */
+                        // Gets the table name
                         for (let i = 1; i < t.length; i++) {
                             if (t[i][1].toUpperCase() === 'SEQUENCE') {
                                 a = i + 1;
@@ -1063,9 +1023,7 @@ function parseSQL(sql, connectionIndex) {
                         let a;
                         let ifExists = false;
 
-                        /*
-                        * Gets the table name
-                        * */
+                        // Gets the table name
                         for (let i = 1; i < t.length; i++) {
                             if (t[i][1].toUpperCase() === 'TABLE') {
                                 a = i + 1;
@@ -1143,9 +1101,7 @@ function parseSQL(sql, connectionIndex) {
                             output.message = e.message;
                         }
                     } else if (t[1][1].toUpperCase() === 'SCHEMAS') {
-                        /*
-                        * Gets the DB name
-                        * */
+                        // Gets the DB name
                         let d = dbName.get();
                         for (let i = 1; i < t.length; i++) {
                             if (t[i][0] === 'FROM') {
@@ -1171,9 +1127,7 @@ function parseSQL(sql, connectionIndex) {
                             dbName.set(d);
                         }
                     } else if (t[1][1].toUpperCase() === 'SEQUENCES') {
-                        /*
-                        * Gets the DB name
-                        * */
+                        // Gets the DB name
                         let d = dbName.get();
                         let s = schemaName.get();
 
@@ -1208,9 +1162,7 @@ function parseSQL(sql, connectionIndex) {
                             schemaName.set(s);
                         }
                     } else if (t[1][1].toUpperCase() === 'TABLES') {
-                        /*
-                        * Gets the DB name
-                        * */
+                        // Gets the DB name
                         let d = dbName.get();
                         let s = schemaName.get();
 
@@ -1298,7 +1250,7 @@ function parseSQL(sql, connectionIndex) {
                         db.restore(dbN);
                     });
 
-                    /* Stop the code execution if a command fails */
+                    // Stop the code execution if a command fails
                     break;
                 }
             }

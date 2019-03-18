@@ -84,7 +84,11 @@ function readDBFile() {
         return readDBFile();
     }
 
-    DBList = JSON.parse(fs.readFileSync(`${config.server.startDir}dbs/${f_dblist}`, 'utf8'));
+    try {
+        DBList = JSON.parse(fs.readFileSync(`${config.server.startDir}dbs/${f_dblist}`, 'utf8'));
+    } catch (e) {
+        throw new Error(`Error while parsing ${f_dblist}: ${e.message}`);
+    }
 
     fs.readdirSync(`${config.server.startDir}dbs/`).forEach(dbName => {
         if (dbName !== f_dblist && !dbName.endsWith('.jsdb')) {
@@ -95,9 +99,7 @@ function readDBFile() {
         }
     });
 
-    /*
-    * Compress/decompress .jsdb files
-    * */
+    // Compress/decompress .jsdb files
     if (config.db.createZip) {
         DBList.forEach(dbName => {
             if (fs.existsSync(`${config.server.startDir}dbs/${dbName}`)) {
@@ -110,9 +112,7 @@ function readDBFile() {
         });
     }
 
-    /*
-    * Creates JSDB admin database
-    * */
+    // Creates JSDB admin database
     if (DBList.indexOf('jsdb') === -1) {
         DBList.push('jsdb');
         if (!fs.existsSync(`${config.server.startDir}dbs/jsdb/`)) {
