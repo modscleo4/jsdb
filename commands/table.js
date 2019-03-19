@@ -66,7 +66,7 @@ function createTable(dbName, schemaName, tableName, tableStruct, metadata = null
                         // Auto increment property specified
                         if (tableStruct[key].type === 'integer') {
                             delete (tableStruct[key].autoIncrement);
-                            tableStruct[key].default = `sequence(${tableName}_${key}_seq)`;
+                            tableStruct[key].default = `nextval(${tableName}_${key}_seq)`;
 
                             // Create the sequence for auto increment
                             sequence.create(dbName, schemaName, `${tableName}_${key}_seq`);
@@ -599,15 +599,22 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
                         });
                     }
 
-                    if (typeof content[i] === 'string' && content[i].toUpperCase() === 'DEFAULT') {
+                    if (typeof content[i] === 'string') {
+                        // Replace content with the default value
+                        if (content[i].toUpperCase() === 'DEFAULT') {
+                            content[i] = TableStruct[key].default;
+                        }
+
                         let a;
 
                         // If true, it's a sequence
-                        if (typeof TableStruct[key].default === 'string' && (a = TableStruct[key].default.search('sequence[(].*[)]')) !== -1) {
-                            let seqName = TableStruct[key].default.slice(a + 'sequence('.length, TableStruct[key].default.length - 1);
+                        if ((a = content[i].search('nextval[(].*[)]')) !== -1) {
+                            content[i] = content[i].trim();
+
+                            // The replace method is too slow (+40 ms)
+                            //let seqName = content[i].default.replace(/nextval[(](.*)[)]/g, '$1');
+                            let seqName = content[i].slice(a + 'nextval('.length, content[i].length - 1);
                             content[i] = sequence.increment(dbName, schemaName, seqName);
-                        } else {
-                            content[i] = TableStruct[key].default;
                         }
                     }
 
@@ -739,6 +746,8 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
                         b++;
                         for (let key in update) {
                             let isDefault = false;
+                            let oldString = null;
+
                             if (update.hasOwnProperty(key)) {
                                 if (!aaa[0].hasOwnProperty(key)) {
                                     throw new Error(`Column ${key} does not exist.`);
@@ -755,16 +764,24 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
                                     update[key] = JSON.parse(update[key]);
                                 }
 
-                                if (typeof update[key] === 'string' && update[key].toUpperCase() === 'DEFAULT') {
-                                    let a;
-                                    // If true, it's a sequence
-                                    if (typeof TableStruct[key].default === 'string' && (a = TableStruct[key].default.search('sequence[(].*[)]')) !== -1) {
-                                        let seqName = TableStruct[key].default.slice(a + 'sequence('.length, TableStruct[key].default.length - 1);
-                                        update[key] = sequence.increment(dbName, schemaName, seqName);
-
-                                        isDefault = true;
-                                    } else {
+                                if (typeof update[key] === 'string') {
+                                    // Replace content with the default value
+                                    if (update[key].toUpperCase() === 'DEFAULT') {
                                         update[key] = TableStruct[key].default;
+                                        isDefault = true;
+                                    }
+
+                                    let a;
+
+                                    // If true, it's a sequence
+                                    if ((a = update[key].search('nextval[(].*[)]')) !== -1) {
+                                        update[key] = update[key].trim();
+                                        oldString = update[key];
+
+                                        // The replace method is too slow (+40 ms)
+                                        //let seqName = update[key].default.replace(/nextval[(](.*)[)]/g, '$1');
+                                        let seqName = update[key].slice(a + 'nextval('.length, update[key].length - 1);
+                                        update[key] = sequence.increment(dbName, schemaName, seqName);
                                     }
                                 } else {
                                     if (typeof update[key] !== TableStruct[key].type) {
@@ -792,6 +809,8 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
 
                                 if (isDefault) {
                                     update[key] = 'DEFAULT';
+                                } else if (oldString !== null) {
+                                    update[key] = oldString;
                                 }
                             }
                         }

@@ -577,8 +577,8 @@ function parseSQL(sql, connectionIndex) {
                                         }
                                     } else if (t[j][1].toUpperCase() === 'NEXTVAL') {
                                         if (t[j + 1][0] === 'LEFT_PAREN' && t[j + 3][0] === 'RIGHT_PAREN') {
-                                            t[j][0] = 'NUMBER';
-                                            t[j][1] = sequence.increment(dbName.get(), schemaName.get(), t[j + 2][1]);
+                                            t[j][0] = 'STRING';
+                                            t[j][1] = `nextval(${t[j + 2][1]})`;
                                             t.splice(j + 1, 3);
                                         }
                                     }
@@ -636,8 +636,8 @@ function parseSQL(sql, connectionIndex) {
                                         }
                                     } else if (t[j + 2][0] === 'LITERAL' && t[j + 2][1].toUpperCase() === 'NEXTVAL') {
                                         if (t[j + 3][0] === 'LEFT_PAREN' && t[j + 5][0] === 'RIGHT_PAREN') {
-                                            t[j + 2][0] = 'NUMBER';
-                                            t[j + 2][1] = sequence.increment(dbName.get(), schemaName.get(), t[j + 4][1]);
+                                            t[j + 2][0] = 'STRING';
+                                            t[j + 2][1] = `nextval(${t[j + 4][1]})`;
                                             t.splice(j + 3, 3);
                                         }
                                     }
@@ -780,8 +780,8 @@ function parseSQL(sql, connectionIndex) {
                                             }
                                         } else if (t[j + 2][0] === 'LITERAL' && t[j + 2][1].toUpperCase() === 'NEXTVAL') {
                                             if (t[j + 3][0] === 'LEFT_PAREN' && t[j + 5][0] === 'RIGHT_PAREN') {
-                                                t[j + 2][0] = 'NUMBER';
-                                                t[j + 2][1] = sequence.increment(dbName.get(), schemaName.get(), t[j + 4][1]);
+                                                t[j + 2][0] = 'STRING';
+                                                t[j + 2][1] = `nextval(${t[j + 4][1]})`;
                                                 t.splice(j + 3, 3);
                                             }
                                         }
