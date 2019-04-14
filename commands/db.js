@@ -323,6 +323,10 @@ function checkJSDBIntegrity() {
         registry.create('jsdb.server.ignAuth', 'boolean', false);
     }
 
+    if (!registry.exists('jsdb.server.listenIP', false)) {
+        registry.create('jsdb.server.listenIP', 'string', '0.0.0.0');
+    }
+
     if (!registry.exists('jsdb.server.port', false)) {
         registry.create('jsdb.server.port', 'number', 6637);
     }

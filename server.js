@@ -119,9 +119,6 @@ let server = net.createServer(socket => {
     })
 });
 
-// @todo: this should be the public IP of the server
-let address = 'localhost';
-
 registry.readAll();
 
 let params = [];
@@ -155,10 +152,10 @@ if (config.server.port <= 0 || config.server.port >= 65535) {
     config.server.port = 6637;
 }
 
-if (address !== '' && config.server.port !== 0 && config.server.startDir !== '') {
-    server.listen(config.server.port, address);
+if (config.server.listenIP !== '' && config.server.port !== 0 && config.server.startDir !== '') {
+    server.listen(config.server.port, config.server.listenIP);
     logger.log(0, `Server started with parameters [${params.join(', ')}]`);
-    console.log(`Running server on ${address}:${config.server.port}, ${config.server.startDir}`);
+    console.log(`Running server on ${config.server.listenIP}:${config.server.port}, ${config.server.startDir}`);
     if (config.server.ignAuth) {
         console.log('Warning: running without authentication!');
         logger.log(1, `Warning: Server started without authentication`);

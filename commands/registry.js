@@ -204,6 +204,7 @@ function readAllRegistry() {
     config.server.ignAuth = readEntry('jsdb.server.ignAuth');
     config.db.createZip = readEntry('jsdb.db.createZip');
     config.server.startDir = readEntry('jsdb.server.startDir');
+    config.server.listenIP = readEntry('jsdb.server.listenIP');
     config.server.port = readEntry('jsdb.server.port');
     config.registry.instantApplyChanges = readEntry('jsdb.registry.instantApplyChanges');
 }

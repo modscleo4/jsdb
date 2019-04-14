@@ -69,6 +69,7 @@ exports.date = date;
 let server = {
     ignAuth: false,
     startDir: './',
+    listenIP: '0.0.0.0',
     port: 6637
 };
 
