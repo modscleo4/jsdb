@@ -127,7 +127,10 @@ for (let i = 0; i < process.argv.length; i++) {
     if (process.argv[i] === '-d' || process.argv[i] === '--dir') {
         config.server.startDir = process.argv[i + 1];
         params.push('d');
-    } else if (process.argv[i] === '-p' || process.argv[i] === '--port') {
+    } else if (process.argv[i] === '-a' || process.argv[i] === '--listenIP') {
+        config.server.listenIP = process.argv[i + 1];
+        params.push('a');
+    }  else if (process.argv[i] === '-p' || process.argv[i] === '--port') {
         config.server.port = parseInt(process.argv[i + 1]);
         params.push('p');
     } else if (process.argv[i] === '-N' || process.argv[i] === '--noAuth') {
