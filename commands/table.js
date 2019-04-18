@@ -62,7 +62,15 @@ function createTable(dbName, schemaName, tableName, tableStruct, metadata = null
 
             for (let key in tableStruct) {
                 if (tableStruct.hasOwnProperty(key)) {
-                    if (tableStruct[key].autoIncrement) {
+                    if (metadata.primaryKey.indexOf(key) !== -1 && !tableStruct[key].notNull) {
+                        throw new Error(`Primary key column cannot accept null values!`);
+                    } else if ('maxLength' in tableStruct[key]) {
+                        tableStruct[key].maxLength = parseInt(tableStruct[key].maxLength);
+
+                        if (tableStruct[key].maxLength <= 0) {
+                            throw new Error(`Invalid maxLength property!`);
+                        }
+                    } else if (tableStruct[key].autoIncrement) {
                         // Auto increment property specified
                         if (tableStruct[key].type === 'integer') {
                             delete (tableStruct[key].autoIncrement);
@@ -561,10 +569,10 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
             for (let c = 0; c < TColumns.length; c++) {
                 let key = TColumns[c];
 
-                // Add null val to content if column does not match key
+                // Add default val to content if column does not match key
                 if (columns !== null) {
                     if (key !== columns[i]) {
-                        content.push(null);
+                        content.push('DEFAULT');
                         columns.push(key);
                         i = columns.length - 1;
                     }
@@ -583,10 +591,12 @@ function insertTableContent(dbName, schemaName, tableName, content, columns = nu
                         content[i] = 'DEFAULT';
                     }
 
-                    if (content[i] === null) {
-                        if (TableStruct[key].notNull) {
-                            throw new Error(`\`${key}\` cannot be null`);
-                        }
+                    if (content[i] === null && TableStruct[key].notNull) {
+                        throw new Error(`\`${key}\` cannot be null`);
+                    }
+
+                    if ('maxLength' in TableStruct[key] && content[i].toString().length > TableStruct[key].maxLength) {
+                        throw new Error(`Exceded the max length for \`${key}\`: ${TableStruct[key].maxLength}`);
                     }
 
                     if (TableStruct[key].unique === true) {
@@ -762,6 +772,14 @@ function updateTableContent(dbName, schemaName, tableName, update, options) {
 
                                 if (TableStruct[key].type === 'object') {
                                     update[key] = JSON.parse(update[key]);
+                                }
+
+                                if (update[key] === null && TableStruct[key].notNull) {
+                                    throw new Error(`\`${key}\` cannot be null`);
+                                }
+
+                                if ('maxLength' in TableStruct[key] && update[key].toString().length > TableStruct[key].maxLength) {
+                                    throw new Error(`Exceded the max length for \`${key}\`: ${TableStruct[key].maxLength}`);
                                 }
 
                                 if (typeof update[key] === 'string') {

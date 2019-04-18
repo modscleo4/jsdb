@@ -368,6 +368,7 @@ function parseSQL(sql, connectionIndex) {
                                 tableStruct[t[i + 3][1]] = {};
 
                                 for (let j = i + 3; j < t.length; j++) {
+                                    let isType = false;
                                     if (t[j][0] === 'RIGHT_PAREN' || t[j][0] === 'SEPARATOR') {
                                         if (t[j][0] === 'RIGHT_PAREN') {
                                             a = -1;
@@ -378,18 +379,24 @@ function parseSQL(sql, connectionIndex) {
 
                                     if (t[j][0] === 'LITERAL' || t[j][0] === 'BOOLEAN') {
                                         if (t[j][1].toUpperCase() === 'NUMBER') {
+                                            isType = true;
                                             tableStruct[t[i + 3][1]].type = 'number';
-                                        } else if (t[j][1].toUpperCase() === 'INTEGER') {
+                                        } else if (t[j][1].toUpperCase() === 'INT' || t[j][1].toUpperCase() === 'INTEGER') {
+                                            isType = true;
                                             tableStruct[t[i + 3][1]].type = 'integer';
                                         } else if (t[j][1].toUpperCase() === 'STRING') {
+                                            isType = true;
                                             tableStruct[t[i + 3][1]].type = 'string';
                                         } else if (t[j][1].toUpperCase() === 'BOOLEAN') {
+                                            isType = true;
                                             tableStruct[t[i + 3][1]].type = 'boolean';
                                         } else if (t[j][1].toUpperCase() === 'OBJECT') {
+                                            isType = true;
                                             tableStruct[t[i + 3][1]].type = 'object';
                                         } else if (t[j][1].toUpperCase() === 'KEY') {
                                             if (t[j - 1][1].toUpperCase() === 'PRIMARY') {
                                                 metadata.primaryKey.push(t[i + 3][1]);
+                                                tableStruct[t[i + 3][1]].notNull = true;
                                                 tableStruct[t[i + 3][1]].unique = true;
                                             }
                                         } else if (t[j][1].toUpperCase() === 'UNIQUE') {
@@ -407,6 +414,10 @@ function parseSQL(sql, connectionIndex) {
                                             tableStruct[t[i + 3][1]].autoIncrement = true;
                                         } else if (t[j][1].toUpperCase() === 'NULL') {
                                             tableStruct[t[i + 3][1]].notNull = (t[j - 1][1].toUpperCase() === 'NOT');
+                                        }
+
+                                        if (isType && t[j + 1][0] === 'LEFT_PAREN') {
+                                            tableStruct[t[i + 3][1]].maxLength = t[j + 2][1];
                                         }
                                     }
                                 }
@@ -644,8 +655,8 @@ function parseSQL(sql, connectionIndex) {
                                 }
 
                                 if (t[j][0] === 'LITERAL' && t[j + 1][1] === '=') {
-                                    if (t[j][0] === 'BOOLEAN' && t[j][1].toUpperCase() === 'NULL') {
-                                        t[j][0] = 'NUlL';
+                                    if (t[j + 2][0] === 'BOOLEAN' && t[j + 2][1].toUpperCase() === 'NULL') {
+                                        t[j + 2][0] = 'NULL';
                                     }
 
                                     if (t[j + 2][0] === 'STRING') {
@@ -655,7 +666,7 @@ function parseSQL(sql, connectionIndex) {
                                     } else if (t[j + 2][0] === 'BOOLEAN') {
                                         update[t[j][1]] = (t[j + 2][1].toUpperCase() === 'TRUE');
                                     } else if (t[j + 2][0] === 'NULL') {
-                                        update.push(null);
+                                        update[t[j][1]] = null;
                                     }
                                 }
                             }
