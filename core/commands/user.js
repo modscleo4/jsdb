@@ -18,7 +18,7 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
-const config = require('../config');
+const config = require('../../config');
 const table = require('./table');
 
 const md5 = require('md5');

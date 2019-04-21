@@ -1,9 +1,8 @@
 # JSDB specific files #
 #######################
-dbs
-logs
-node_modules/
+data/
 docgen.bat
+node_modules/
 package-lock.json
 logo.svg
 

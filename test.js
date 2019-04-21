@@ -5,12 +5,12 @@ const config = require('./config');
 * */
 config.server.ignAuth = true;
 
-const db = require('./commands/db');
-const schema = require('./commands/schema');
-const sequence = require('./commands/sequence');
-const table = require('./commands/table');
-const user = require('./commands/user');
-const registry = require('./commands/registry');
+const db = require('./core/commands/db');
+const schema = require('./core/commands/schema');
+const sequence = require('./core/commands/sequence');
+const table = require('./core/commands/table');
+const user = require('./core/commands/user');
+const registry = require('./core/commands/registry');
 
 const assert = require('assert');
 

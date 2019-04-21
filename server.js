@@ -19,12 +19,12 @@
  */
 
 const config = require('./config');
-const db = require('./commands/db');
-const table = require('./commands/table');
-const user = require('./commands/user');
-const registry = require('./commands/registry');
-const logger = require('./lib/logger');
-const sql = require('./sql/sql');
+const db = require('./core/commands/db');
+const table = require('./core/commands/table');
+const user = require('./core/commands/user');
+const registry = require('./core/commands/registry');
+const logger = require('./core/lib/logger');
+const sql = require('./core/sql/sql');
 
 const net = require('net');
 
@@ -109,14 +109,14 @@ let server = net.createServer(socket => {
             console.error('Address in use, retrying...');
             setTimeout(() => {
                 server.close();
-                server.listen(port, address);
+                server.listen(config.server.port, config.server.listenIP);
             }, 1000);
         } else if (err.code === 'ECONNRESET') {
             console.error('Connection reset. Maybe a client disconnected');
         } else {
             console.error(`${err.code}: ${err.message}`);
         }
-    })
+    });
 });
 
 registry.readAll();
@@ -130,7 +130,7 @@ for (let i = 0; i < process.argv.length; i++) {
     } else if (process.argv[i] === '-a' || process.argv[i] === '--listenIP') {
         config.server.listenIP = process.argv[i + 1];
         params.push('a');
-    }  else if (process.argv[i] === '-p' || process.argv[i] === '--port') {
+    } else if (process.argv[i] === '-p' || process.argv[i] === '--port') {
         config.server.port = parseInt(process.argv[i + 1]);
         params.push('p');
     } else if (process.argv[i] === '-N' || process.argv[i] === '--noAuth') {
@@ -149,6 +149,11 @@ if (config.server.startDir === '') {
 // Ensure startDir ends with /
 if (!config.server.startDir.endsWith('/')) {
     config.server.startDir += '/';
+}
+
+// Ensure startDir ends with data/ (data dir is where the databases and log files should be)
+if (!config.server.startDir.endsWith('data/')) {
+    config.server.startDir += 'data/';
 }
 
 if (config.server.port <= 0 || config.server.port >= 65535) {

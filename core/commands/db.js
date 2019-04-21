@@ -18,7 +18,7 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
-const config = require('../config');
+const config = require('../../config');
 const schema = require('./schema');
 const table = require('./table');
 const registry = require('./registry');
@@ -332,7 +332,7 @@ function checkJSDBIntegrity() {
     }
 
     if (!registry.exists('jsdb.server.startDir', false)) {
-        registry.create('jsdb.server.startDir', 'string', './');
+        registry.create('jsdb.server.startDir', 'string', './data/');
     }
 
     if (!registry.exists('jsdb.db.createZip', false)) {

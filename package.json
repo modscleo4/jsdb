@@ -17,9 +17,9 @@
     "test": "mocha"
   },
   "directories": {
-    "commands": "./commands",
-    "sql": "./sql",
-    "lib": "./lib"
+    "commands": "core/commands",
+    "sql": "core/sql",
+    "lib": "core/lib"
   },
   "dependencies": {
     "adm-zip": "^0.4.13",
