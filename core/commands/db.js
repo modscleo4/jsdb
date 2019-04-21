@@ -142,6 +142,11 @@ function readDBFile() {
  */
 function writeDBFile(content) {
     if (typeof content === 'string') {
+        // Check if the working directory exists
+        if (!fs.existsSync(`${config.server.startDir}`)) {
+            fs.mkdirSync(`${config.server.startDir}`);
+        }
+
         if (!fs.existsSync(`${config.server.startDir}dbs/`)) {
             fs.mkdirSync(`${config.server.startDir}dbs/`);
         }

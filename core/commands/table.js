@@ -62,7 +62,7 @@ function createTable(dbName, schemaName, tableName, tableStruct, metadata = null
 
             for (let key in tableStruct) {
                 if (tableStruct.hasOwnProperty(key)) {
-                    if (metadata.primaryKey.indexOf(key) !== -1 && !tableStruct[key].notNull) {
+                    if (metadata != null && 'primaryKey' in metadata && metadata.primaryKey.indexOf(key) !== -1 && !tableStruct[key].notNull) {
                         throw new Error(`Primary key column cannot accept null values!`);
                     } else if ('maxLength' in tableStruct[key]) {
                         tableStruct[key].maxLength = parseInt(tableStruct[key].maxLength);
