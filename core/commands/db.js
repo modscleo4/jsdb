@@ -269,4 +269,8 @@ exports.checkJSDBIntegrity = function checkJSDBIntegrity() {
     if (!Registry.exists('jsdb.registry.instantApplyChanges')) {
         Registry.create('jsdb.registry.instantApplyChanges', 'boolean', false);
     }
+
+    if (!Registry.exists('jsdb.log.generateLogs')) {
+        Registry.create('jsdb.log.generateLogs', 'boolean', true);
+    }
 };

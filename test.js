@@ -207,11 +207,11 @@ describe('Table', function () {
     describe('#create()', function () {
         it('Should return a Table instance', function () {
             assert.deepEqual(Table.create(new Schema(new DB('a'), 'public'), 'a', {
-                'id': {
-                    'type': 'integer',
-                    'unique': true,
-                    'autoIncrement': true,
-                    'notNull': true
+                id: {
+                    type: 'integer',
+                    unique: true,
+                    autoIncrement: true,
+                    notNull: true
                 }
             }), new Table(new Schema(new DB('a'), 'public'), 'a'));
         });

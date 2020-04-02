@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Dhiego Cassiano Fogaça Barbosa
+ * Copyright 2020 Dhiego Cassiano Fogaça Barbosa
 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,10 +44,10 @@ module.exports = (function (sqlString) {
 
                     case 'DATABASE':
                     case 'SCHEMA':
-                    case 'TABLE':
                     case 'SEQUENCE':
+                    case 'TABLE':
                     case 'USER':
-                    case 'KEY':
+                    case 'ENTRY':
                     case 'REGISTRY':
 
                     case 'USE':
@@ -138,7 +138,7 @@ module.exports = (function (sqlString) {
 
                     case 'TRUE':
                     case 'FALSE':
-                        ret.push({type: 'boolean', value: word.toUpperCase()});
+                        ret.push({type: 'boolean', value: word.toLowerCase()});
                         break;
 
                     case '\'':

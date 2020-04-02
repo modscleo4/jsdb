@@ -45,6 +45,11 @@ module.exports = {
         registry: {
             instantApplyChanges: false,
         },
+
+        // Config vars for log system
+        log: {
+            generateLogs: true,
+        }
     },
 };
 

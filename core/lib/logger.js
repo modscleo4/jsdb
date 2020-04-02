@@ -43,28 +43,45 @@ exports.ERROR = 2;
  * @param str {string} What to log
  */
 exports.log = function log(status, str) {
-    if (typeof status === 'number' && typeof str === 'string') {
-        const d = new Date();
-        const h = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString();
-        if (!fs.existsSync(`${config.server.startDir}logs/`)) {
-            fs.mkdirSync(`${config.server.startDir}logs/`);
-        }
-
-        if (!str.endsWith('\n')) {
-            str += '\n';
-        }
-
-        str = `${h}: ${str}`;
-
-        if (status === exports.OK) {
-            str = `(-) ${str}`;
-        } else if (status === exports.WARNING) {
-            str = `(!) ${str}`;
-        } else if (status === exports.ERROR) {
-            str = `(*) ${str}`;
-        }
-
-        const file = `${config.server.startDir}logs/${date.getFullYear()}-${(date.getMonth() + 1).pad()}-${date.getDate().pad()}_${date.getHours().pad()}_${date.getMinutes().pad()}_${date.getSeconds().pad()}.log`;
-        fs.appendFileSync(file, str);
+    if (typeof status !== 'number') {
+        throw new TypeError(`status is not number.`);
     }
+
+    if (typeof str !== 'string') {
+        throw new TypeError(`str is not string.`);
+    }
+
+    if (!config.log.generateLogs) {
+        return;
+    }
+
+    const d = new Date();
+    const h = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString();
+    if (!fs.existsSync(`${config.server.startDir}logs/`)) {
+        fs.mkdirSync(`${config.server.startDir}logs/`);
+    }
+    if (!str.endsWith('\n')) {
+        str += '\n';
+    }
+    str = `${h}: ${str}`;
+
+    switch (status) {
+        case exports.OK:
+            str = `(-) ${str}`;
+            break;
+
+        case exports.WARNING:
+            str = `(!) ${str}`;
+            break;
+
+        case exports.ERROR:
+            str = `(*) ${str}`;
+            break;
+
+        default:
+            throw new RangeError(`status out of range (1-3)`);
+    }
+
+    const file = `${config.server.startDir}logs/${date.getFullYear()}-${(date.getMonth() + 1).pad()}-${date.getDate().pad()}_${date.getHours().pad()}_${date.getMinutes().pad()}_${date.getSeconds().pad()}.log`;
+    fs.appendFileSync(file, str);
 };

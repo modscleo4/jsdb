@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Dhiego Cassiano Fogaça Barbosa
+ * Copyright 2020 Dhiego Cassiano Fogaça Barbosa
 
  * Licensed under the Apache License, Version 2.0 (the 'License');
  * you may not use this file except in compliance with the License.
@@ -93,8 +93,8 @@ module.exports = class User {
         }
 
         let users = new DB('jsdb').table('users').select(['password', 'valid', 'privileges'], {
-            'where': `\`username\` == '${name}'`,
-            'orderby': [{'column': 'username', 'mode': 'ASC'}]
+            where: `\`username\` == '${name}'`,
+            orderBy: [{column: 'username', mode: 'ASC'}]
         });
 
         if (users.length === 0 || !users[0].valid) {
@@ -123,7 +123,7 @@ module.exports = class User {
             return true;
         }
 
-        const user = new DB('jsdb').table('users').select(['id', 'valid'], {'where': `\`username\` == '${name}'`});
+        const user = new DB('jsdb').table('users').select(['id', 'valid'], {where: `\`username\` == '${name}'`});
 
         if (user.length === 0) {
             return false;
@@ -140,8 +140,8 @@ module.exports = class User {
         }
 
         let users = new DB('jsdb').table('users').select(['valid', 'privileges'], {
-            'where': `\`username\` == '${this.name}'`,
-            'orderby': [{'column': 'username', 'mode': 'ASC'}]
+            where: `\`username\` == '${this.name}'`,
+            orderBy: [{column: 'username', mode: 'ASC'}]
         });
 
         if (users.length === 0 || !users[0].valid) {
@@ -158,8 +158,8 @@ module.exports = class User {
         }
 
         let users = new DB('jsdb').table('users').select(['password', 'privileges'], {
-            'where': `\`username\` == '${this.name}'`,
-            'orderby': [{'column': 'username', 'mode': 'ASC'}]
+            where: `\`username\` == '${this.name}'`,
+            orderBy: [{column: 'username', mode: 'ASC'}]
         });
 
         if (users.length === 0) {
@@ -187,7 +187,7 @@ module.exports = class User {
             update.privileges = JSON.stringify(update.privileges);
         }
 
-        new DB('jsdb').table('users').update(update, {'where': `\`username\` == '${this.name}'`});
+        new DB('jsdb').table('users').update(update, {where: `\`username\` == '${this.name}'`});
 
         return true;
     }
@@ -199,7 +199,7 @@ module.exports = class User {
             throw new Error(`Invalid username: ${this.name}`);
         }
 
-        new DB('jsdb').table('users').delete({'where': `\`username\` == '${this.name}'`});
+        new DB('jsdb').table('users').delete({where: `\`username\` == '${this.name}'`});
 
         return true;
     }

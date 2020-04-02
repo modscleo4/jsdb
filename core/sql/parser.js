@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Dhiego Cassiano Fogaça Barbosa
+ * Copyright 2020 Dhiego Cassiano Fogaça Barbosa
 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,7 +117,7 @@ module.exports = (function (sqlString) {
                             throw new Error(`Invalid command: ${sqlString}`);
                         }
 
-                        ret.groupby = [];
+                        ret.groupBy = [];
 
                         let comma = true;
 
@@ -134,7 +134,7 @@ module.exports = (function (sqlString) {
                             if (!comma) {
                                 throw new Error(`Invalid command: ${sqlString}`);
                             } else {
-                                ret.groupby.push({column: tokens[index].value});
+                                ret.groupBy.push({column: tokens[index].value});
                                 comma = false;
                             }
                         }
@@ -145,7 +145,7 @@ module.exports = (function (sqlString) {
                             throw new Error(`Invalid command: ${sqlString}`);
                         }
 
-                        ret.orderby = [];
+                        ret.orderBy = [];
 
                         let comma = true;
 
@@ -169,7 +169,7 @@ module.exports = (function (sqlString) {
                             if (!comma) {
                                 throw new Error(`Invalid command: ${sqlString}`);
                             } else {
-                                ret.orderby.push(col);
+                                ret.orderBy.push(col);
                                 comma = false;
                             }
                         }

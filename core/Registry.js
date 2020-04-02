@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Dhiego Cassiano Fogaça Barbosa
+ * Copyright 2020 Dhiego Cassiano Fogaça Barbosa
 
  * Licensed under the Apache License, Version 2.0 (the 'License');
  * you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ module.exports = class Registry {
     }
 
     read() {
-        const entry = this.table.select(['value', 'type'], {'where': `\`entryName\` == '${this.name}'`});
+        const entry = this.table.select(['value', 'type'], {where: `\`entryName\` == '${this.name}'`,});
 
         if (entry.length === 0) {
             throw new Error(`Entry ${this.name} does not exist.`);
@@ -139,7 +139,7 @@ module.exports = class Registry {
     }
 
     update(value) {
-        const entry = this.table.select(['type', 'value'], {'where': `\`entryName\` == '${this.name}'`});
+        const entry = this.table.select(['type', 'value'], {where: `\`entryName\` == '${this.name}'`});
 
         if (entry.length === 0) {
             throw new Error(`Entry ${this.name} does not exist.`);
@@ -155,7 +155,7 @@ module.exports = class Registry {
             value = JSON.stringify(value);
         }
 
-        this.table.update({value}, {'where': `\`entryName\` == '${this.name}'`});
+        this.table.update({value}, {where: `\`entryName\` == '${this.name}'`});
 
         return entry[0].type === 'string' ? entry[0].value : JSON.parse(entry[0].value);
     }
@@ -169,7 +169,7 @@ module.exports = class Registry {
             throw new Error('JSDB entries cannot be deleted.');
         }
 
-        this.table.delete({'where': `\`entryName\` == '${this.name}'`});
+        this.table.delete({where: `\`entryName\` == '${this.name}'`});
 
         return true;
     }

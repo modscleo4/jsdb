@@ -43,15 +43,13 @@ const {
     performance
 } = require('perf_hooks');
 
-module.exports = (function (sql, connectionIndex) {
+module.exports = ((sql, connectionIndex) => {
     const dbs = [];
 
     const dbName = {
-        get: function () {
-            return connections[connectionIndex].DBName;
-        },
+        get: () => connections[connectionIndex].DBName,
 
-        set: function (dbS) {
+        set: dbS => {
             if (DB.exists(dbS)) {
                 // Do not include the DB more than once
                 if (dbs.indexOf(dbS) === -1) {
@@ -66,11 +64,9 @@ module.exports = (function (sql, connectionIndex) {
     };
 
     const schemaName = {
-        get: function () {
-            return connections[connectionIndex].SchemaName;
-        },
+        get: () => connections[connectionIndex].SchemaName,
 
-        set: function (schemaS) {
+        set: schemaS => {
             if (Schema.exists(new DB(dbName.get()), schemaS)) {
                 connections[connectionIndex].SchemaName = schemaS;
                 return `Changed schema to ${schemaS}.`;
@@ -244,15 +240,15 @@ module.exports = (function (sql, connectionIndex) {
                                 options.where += t[k][1];
                             }
                         } else if (t[i][0] === 'ORDER' && t[i + 1][0] === 'BY') {
-                            options.orderby = [];
+                            options.orderBy = [];
                             let count = 0;
                             for (let j = i + 2; j < t.length; j++) {
                                 if (t[j][0] === 'LITERAL') {
-                                    options.orderby[count] = {};
-                                    options.orderby[count].column = t[j][1];
+                                    options.orderBy[count] = {};
+                                    options.orderBy[count].column = t[j][1];
 
                                     if (t[j + 1] !== undefined && t[j + 1][0] === 'DIRECTION') {
-                                        options.orderby[count].mode = t[j + 1][1];
+                                        options.orderBy[count].mode = t[j + 1][1];
                                     }
                                 } else if (t[j][0] === 'SEPARATOR') {
                                     count++;

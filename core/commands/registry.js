@@ -37,4 +37,5 @@ exports.readAll = function readAll() {
     config.server.listenIP = new Registry('jsdb.server.listenIP').read();
     config.server.port = new Registry('jsdb.server.port').read();
     config.registry.instantApplyChanges = new Registry('jsdb.registry.instantApplyChanges').read();
+    config.log.generateLogs = new Registry('jsdb.log.generateLogs').read();
 };

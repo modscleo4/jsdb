@@ -22,7 +22,7 @@
 
 const {connections, config} = require('./config');
 const Connection = require('./core/connection/Connection');
-const db = require('./core/commands/db');
+const {readFile} = require('./core/commands/db');
 const registry = require('./core/commands/registry');
 const logger = require('./core/lib/logger');
 const sql = require('./core/sql/sql');
@@ -40,7 +40,7 @@ let server = net.createServer(socket => {
     const connection = new Connection(socket);
     logger.log(logger.OK, `User connected, IP: ${socket.remoteAddress}`);
 
-    db.readFile();
+    readFile();
 
     socket.on('end', () => {
         logger.log(logger.OK, `[${socket.remoteAddress}] User disconnected`);
