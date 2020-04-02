@@ -13,18 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @file This is the script that parses the SQL
+ * @file This is the script that runs the SQL
  *
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
-const config = require('../../config');
+'use strict';
+
+const {config, connections} = require('../../config');
 const db = require('../commands/db');
 const schema = require('../commands/schema');
 const sequence = require('../commands/sequence');
 const table = require('../commands/table');
 const user = require('../commands/user');
 const registry = require('../commands/registry');
+const jscsv = require('../lib/jscsv');
+const parser = require('./parser');
+
+const DB = require('../DB');
+const Schema = require('../Schema');
+const Sequence = require('../Sequence');
+const Table = require('../Table');
+const Registry = require('../Registry');
+const User = require('../User');
 
 const sql_parser = require('sql-parser/lib/sql_parser');
 const md5 = require('md5');
@@ -32,36 +43,36 @@ const {
     performance
 } = require('perf_hooks');
 
-function parseSQL(sql, connectionIndex) {
-    let dbs = [];
+module.exports = (function (sql, connectionIndex) {
+    const dbs = [];
 
-    let dbName = {
+    const dbName = {
         get: function () {
-            return config.connections[connectionIndex].DBName;
+            return connections[connectionIndex].DBName;
         },
 
         set: function (dbS) {
-            if (db.exists(dbS)) {
+            if (DB.exists(dbS)) {
                 // Do not include the DB more than once
                 if (dbs.indexOf(dbS) === -1) {
                     dbs.push(dbS);
                     db.backup(dbS);
                 }
 
-                config.connections[connectionIndex].DBName = dbS;
+                connections[connectionIndex].DBName = dbS;
                 return `Using database ${dbS}.`;
             }
         }
     };
 
-    let schemaName = {
+    const schemaName = {
         get: function () {
-            return config.connections[connectionIndex].schemaName;
+            return connections[connectionIndex].SchemaName;
         },
 
         set: function (schemaS) {
-            if (schema.exists(dbName.get(), schemaS)) {
-                config.connections[connectionIndex].SchemaName = schemaS;
+            if (Schema.exists(new DB(dbName.get()), schemaS)) {
+                connections[connectionIndex].SchemaName = schemaS;
                 return `Changed schema to ${schemaS}.`;
             }
         }
@@ -120,12 +131,11 @@ function parseSQL(sql, connectionIndex) {
                 }
 
                 // Get user permissions on database
-                function getPermissions(dbN = dbName.get()) {
-                    let userPrivileges = user.getPrivileges(config.connections[connectionIndex].Username);
+                const getPermissions = (dbN = dbName.get()) => {
+                    let userPrivileges = new User(connections[connectionIndex].Username).privileges();
                     if (!userPrivileges.hasOwnProperty('*')) {
                         if (userPrivileges.hasOwnProperty(dbN)) {
-                            let dbPerm = userPrivileges[dbN];
-                            dbPerm = parseInt(dbPerm).toString(2);
+                            const dbPerm = parseInt(userPrivileges[dbN]).toString(2);
 
                             userPrivileges = {
                                 create: (dbPerm[0] === '1'),
@@ -144,8 +154,7 @@ function parseSQL(sql, connectionIndex) {
                             }
                         }
                     } else {
-                        let dbPerm = userPrivileges['*'];
-                        dbPerm = parseInt(dbPerm).toString(2);
+                        const dbPerm = parseInt(userPrivileges['*']).toString(2);
 
                         userPrivileges = {
                             create: (dbPerm[0] === '1'),
@@ -157,7 +166,7 @@ function parseSQL(sql, connectionIndex) {
                     }
 
                     return userPrivileges;
-                }
+                };
 
                 let userPrivileges = getPermissions();
 
@@ -183,10 +192,14 @@ function parseSQL(sql, connectionIndex) {
                 } else if (t[0][1].toUpperCase() === 'SELECT') {
                     let a = 0;
                     let tableName;
+                    let csv = false;
 
                     // Gets the table name
                     for (let i = 1; i < t.length; i++) {
-                        if (t[i][0] === 'FROM') {
+                        if (t[i][1].toUpperCase() === 'CSV') {
+                            csv = true;
+                            t.splice(i, 1);
+                        } else if (t[i][0] === 'FROM') {
                             a = i - 1;
                             tableName = t[i + 1][1];
                             break;
@@ -248,18 +261,18 @@ function parseSQL(sql, connectionIndex) {
                                 }
                             }
                         } else if (t[i][0] === 'LIMIT') {
-                            options.limoffset = {};
+                            options.limitOffset = {};
                             for (let j = i + 1; j < t.length; j++) {
                                 if (t[j][0] === 'NUMBER') {
-                                    options.limoffset.limit = parseInt(t[j][1]);
-                                    options.limoffset.offset = 0;
+                                    options.limitOffset.limit = parseInt(t[j][1]);
+                                    options.limitOffset.offset = 0;
                                 } else if (t[j][0] === 'SEPARATOR') {
-                                    options.limoffset.limit = parseInt(t[j + 1][1]);
-                                    options.limoffset.offset = parseInt(t[j - 1][1]);
+                                    options.limitOffset.limit = parseInt(t[j + 1][1]);
+                                    options.limitOffset.offset = parseInt(t[j - 1][1]);
                                     break;
                                 } else if (t[j][0] === 'OFFSET') {
-                                    options.limoffset.limit = parseInt(t[j - 1][1]);
-                                    options.limoffset.offset = parseInt(t[j + 1][1]);
+                                    options.limitOffset.limit = parseInt(t[j - 1][1]);
+                                    options.limitOffset.offset = parseInt(t[j + 1][1]);
                                     break;
                                 }
                             }
@@ -271,7 +284,11 @@ function parseSQL(sql, connectionIndex) {
                             output.code = 1;
                             output.message = 'Not enough permissions';
                         } else {
-                            output.data = table.select(dbName.get(), schemaName.get(), tableName, cols, options);
+                            if (csv) {
+                                output.data = jscsv.dataToCSV(new DB(dbName.get()).schema(schemaName.get()).table(tableName).select(cols, options));
+                            } else {
+                                output.data = new DB(dbName.get()).schema(schemaName.get()).table(tableName).select(cols, options);
+                            }
                         }
                     } catch (e) {
                         output.code = 1;
@@ -287,7 +304,7 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = registry.read(entryName);
+                                output.data = new Registry(entryName).read();
                             }
                         } catch (e) {
                             output.code = 1;
@@ -302,7 +319,7 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = sequence.read(dbName.get(), schemaName.get(), seqName).start;
+                                output.data = new DB(dbName.get()).schema(schemaName.get()).sequence(seqName).read().start;
                             }
                         } catch (e) {
                             output.code = 1;
@@ -319,7 +336,8 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = db.create(t[2][1]);
+                                DB.create(t[2][1]);
+                                output.data = `Created Database ${t[2][1]}.`;
                             }
                         } catch (e) {
                             output.code = 1;
@@ -331,7 +349,8 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = schema.create(dbName.get(), t[2][1]);
+                                Schema.create(new DB(dbName.get()), t[2][1]);
+                                output.data = `Created Schema ${dbName.get()}.${t[2][1]}.`;
                             }
                         } catch (e) {
                             output.code = 1;
@@ -343,7 +362,8 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = sequence.create(dbName.get(), schemaName.get(), t[2][1]);
+                                Sequence.create(new Schema(new DB(dbName.get()), schemaName.get()), t[2][1]);
+                                output.data = `Created Sequence ${dbName.get()}.${schemaName.get()}.${t[2][1]};`;
                             }
                         } catch (e) {
                             output.code = 1;
@@ -433,7 +453,8 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = table.create(dbName.get(), schemaName.get(), tableName, tableStruct, metadata);
+                                Table.create(new Schema(new DB(dbName.get()), schemaName.get()), tableName, tableStruct, metadata);
+                                output.data = `Created Table ${dbName.get()}.${schemaName.get()}.${tableName}.`;
                             }
                         } catch (e) {
                             output.code = 1;
@@ -478,7 +499,8 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = user.create(username, password, privileges, valid);
+                                User.create(username, password, privileges, valid);
+                                output.data = `Created User ${username}.`;
                             }
                         } catch (e) {
                             output.code = 1;
@@ -486,7 +508,7 @@ function parseSQL(sql, connectionIndex) {
                         }
                     } else if (t[1][1].toUpperCase() === 'ENTRY') {
                         let entryName = t[2][1];
-                        let type;
+                        let type = 'string';
                         let value = null;
                         let a;
 
@@ -525,7 +547,8 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = registry.create(entryName, type, value);
+                                Registry.create(entryName, type, value);
+                                output.data = `Created Registry Entry ${entryName}.`;
                             }
                         } catch (e) {
                             output.code = 1;
@@ -613,7 +636,8 @@ function parseSQL(sql, connectionIndex) {
                             output.code = 1;
                             output.message = 'Not enough permissions';
                         } else {
-                            output.data = table.insert(dbName.get(), schemaName.get(), tableName, content, columns);
+                            output.data = new DB(dbName.get()).schema(schemaName.get()).table(tableName).insert(content, columns);
+                            output.data = `Inserted ${output.data} rows.`;
                         }
                     } catch (e) {
                         output.code = 1;
@@ -706,18 +730,18 @@ function parseSQL(sql, connectionIndex) {
                                 options.where += t[k][1];
                             }
                         } else if (t[i][0] === 'LIMIT') {
-                            options.limoffset = {};
+                            options.limitOffset = {};
                             for (let j = i + 1; j < t.length; j++) {
                                 if (t[j][0] === 'NUMBER') {
-                                    options.limoffset.limit = parseInt(t[j][1]);
-                                    options.limoffset.offset = 0;
+                                    options.limitOffset.limit = parseInt(t[j][1]);
+                                    options.limitOffset.offset = 0;
                                 } else if (t[j][0] === 'SEPARATOR') {
-                                    options.limoffset.limit = parseInt(t[j + 1][1]);
-                                    options.limoffset.offset = parseInt(t[j - 1][1]);
+                                    options.limitOffset.limit = parseInt(t[j + 1][1]);
+                                    options.limitOffset.offset = parseInt(t[j - 1][1]);
                                     break;
                                 } else if (t[j][0] === 'OFFSET') {
-                                    options.limoffset.limit = parseInt(t[j - 1][1]);
-                                    options.limoffset.offset = parseInt(t[j + 1][1]);
+                                    options.limitOffset.limit = parseInt(t[j - 1][1]);
+                                    options.limitOffset.offset = parseInt(t[j + 1][1]);
                                     break;
                                 }
                             }
@@ -729,7 +753,8 @@ function parseSQL(sql, connectionIndex) {
                             output.code = 1;
                             output.message = 'Not enough permissions';
                         } else {
-                            output.data = table.update(dbName.get(), schemaName.get(), tableName, update, options);
+                            output.data = new DB(dbName.get()).schema(schemaName.get()).table(tableName).update(update, options);
+                            output.data = `Updated ${output.data} rows.`;
                         }
                     } catch (e) {
                         output.code = 1;
@@ -758,12 +783,13 @@ function parseSQL(sql, connectionIndex) {
                                 output.message = 'Not enough permissions';
                             } else {
                                 if (!update.hasOwnProperty('inc')) {
-                                    update.inc = sequence.read(dbName.get(), schemaName.get(), seqName).inc;
+                                    update.inc = new DB(dbName.get()).schema(schemaName.get()).sequence(seqName).read().inc;
                                 } else if (!update.hasOwnProperty('start')) {
-                                    update.start = sequence.read(dbName.get(), schemaName.get(), seqName).start;
+                                    update.start = new DB(dbName.get()).schema(schemaName.get()).sequence(seqName).read().start;
                                 }
 
-                                output.data = sequence.update(dbName.get(), schemaName.get(), seqName, update);
+                                new DB(dbName.get()).schema(schemaName.get()).sequence(seqName).update(update);
+                                output.data = `Updated Sequence ${dbName.get()}.${schemaName.get()}.${seqName}`;
                             }
                         } catch (e) {
                             output.code = 1;
@@ -821,11 +847,12 @@ function parseSQL(sql, connectionIndex) {
 
                         try {
                             userPrivileges = getPermissions('jsdb');
-                            if (!userPrivileges.update || username === config.connections[connectionIndex].Username) {
+                            if (!userPrivileges.update || username === connections[connectionIndex].Username) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = user.update(username, update);
+                                new User(username).update(update);
+                                output.data = `Updated User ${username}`;
                             }
                         } catch (e) {
                             output.code = 1;
@@ -861,7 +888,8 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = registry.update(entryName, value);
+                                new Registry(entryName).update(value);
+                                output.data = `Updated Entry ${entryName}.`;
                             }
                         } catch (e) {
                             output.code = 1;
@@ -907,18 +935,18 @@ function parseSQL(sql, connectionIndex) {
                                 options.where += t[k][1];
                             }
                         } else if (t[i][0] === 'LIMIT') {
-                            options.limoffset = {};
+                            options.limitOffset = {};
                             for (let j = i + 1; j < t.length; j++) {
                                 if (t[j][0] === 'NUMBER') {
-                                    options.limoffset.limit = parseInt(t[j][1]);
-                                    options.limoffset.offset = 0;
+                                    options.limitOffset.limit = parseInt(t[j][1]);
+                                    options.limitOffset.offset = 0;
                                 } else if (t[j][0] === 'SEPARATOR') {
-                                    options.limoffset.limit = parseInt(t[j + 1][1]);
-                                    options.limoffset.offset = parseInt(t[j - 1][1]);
+                                    options.limitOffset.limit = parseInt(t[j + 1][1]);
+                                    options.limitOffset.offset = parseInt(t[j - 1][1]);
                                     break;
                                 } else if (t[j][0] === 'OFFSET') {
-                                    options.limoffset.limit = parseInt(t[j - 1][1]);
-                                    options.limoffset.offset = parseInt(t[j + 1][1]);
+                                    options.limitOffset.limit = parseInt(t[j - 1][1]);
+                                    options.limitOffset.offset = parseInt(t[j + 1][1]);
                                     break;
                                 }
                             }
@@ -930,7 +958,8 @@ function parseSQL(sql, connectionIndex) {
                             output.code = 1;
                             output.message = 'Not enough permissions';
                         } else {
-                            output.data = table.delete(dbName.get(), schemaName.get(), tableName, options);
+                            output.data = new DB(dbName.get()).schema(schemaName.get()).table(tableName).delete(options);
+                            output.data = `Deleted ${output.data} rows;`;
                         }
                     } catch (e) {
                         output.code = 1;
@@ -962,7 +991,12 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = db.drop(dbName.get(), ifExists);
+                                if (ifExists && !DB.exists(dbName.get())) {
+                                    output.data = `Warning: Database ${dbName.get()} does not exist.`;
+                                } else {
+                                    new DB(dbName.get()).drop();
+                                    output.data = `Dropped Database ${dbName.get()}.`;
+                                }
                             }
                         } catch (e) {
                             output.code = 1;
@@ -992,7 +1026,12 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = schema.drop(dbName.get(), schemaName.get(), ifExists);
+                                if (ifExists && !Schema.exists(new DB(dbName.get()), schemaName.get())) {
+                                    output.data = `Warning: Schema ${dbName.get()}.${schemaName.get()} does not exist.`;
+                                } else {
+                                    new DB(dbName.get()).schema(schemaName.get()).drop();
+                                    output.data = `Dropped Schema ${dbName.get()}.${schemaName.get()}.`;
+                                }
                             }
                         } catch (e) {
                             output.code = 1;
@@ -1023,7 +1062,12 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = sequence.drop(dbName.get(), schemaName.get(), seqName, ifExists);
+                                if (ifExists && !Sequence.exists(new Schema(new DB(dbName.get()), schemaName.get()), seqName)) {
+                                    output.data = `Warning: Sequence ${dbName.get()}.${schemaName.get()}.${seqName} does not exist.`;
+                                } else {
+                                    new DB(dbName.get()).schema(schemaName.get()).sequence(seqName).drop();
+                                    output.data = `Dropped Sequence ${dbName.get()}.${schemaName.get()}.${seqName}.`;
+                                }
                             }
                         } catch (e) {
                             output.code = 1;
@@ -1054,7 +1098,12 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = table.drop(dbName.get(), schemaName.get(), tableName, ifExists);
+                                if (ifExists && !Sequence.exists(new Schema(new DB(dbName.get()), schemaName.get()), tableName)) {
+                                    output.data = `Warning: Table ${dbName.get()}.${schemaName.get()}.${tableName} does not exist.`;
+                                } else {
+                                    new DB(dbName.get()).schema(schemaName.get()).table(tableName).drop();
+                                    output.data = `Dropped Table ${dbName.get()}.${schemaName.get()}.${tableName}.`;
+                                }
                             }
                         } catch (e) {
                             output.code = 1;
@@ -1062,14 +1111,35 @@ function parseSQL(sql, connectionIndex) {
                         }
                     } else if (t[1][1].toUpperCase() === 'USER') {
                         let username = t[2][1];
+                        let a = 1;
+                        let ifExists = false;
+
+                        for (let i = 1; i < t.length; i++) {
+                            if (t[i][1].toUpperCase() === 'USER') {
+                                a = i + 1;
+                                username = t[i + 1][1];
+                            }
+
+                            if (t[i][1].toUpperCase() === 'IF' && t[i + 1][1].toUpperCase() === 'EXISTS') {
+                                a = i + 2;
+                                username = t[i + 2][1];
+                                ifExists = true;
+                                break;
+                            }
+                        }
 
                         try {
                             userPrivileges = getPermissions('jsdb');
-                            if (!userPrivileges.delete || username === config.connections[connectionIndex].Username) {
+                            if (!userPrivileges.delete || username === connections[connectionIndex].Username) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = user.drop(username);
+                                if (ifExists && !Registry.exists(username)) {
+                                    output.data = `Warning: User ${username} does not exist.`;
+                                } else {
+                                    new Registry(entryName).drop();
+                                    output.data = `Dropped User ${username}.`;
+                                }
                             }
                         } catch (e) {
                             output.code = 1;
@@ -1077,6 +1147,22 @@ function parseSQL(sql, connectionIndex) {
                         }
                     } else if (t[1][1].toUpperCase() === 'ENTRY') {
                         let entryName = t[2][1];
+                        let a = 1;
+                        let ifExists = false;
+
+                        for (let i = 1; i < t.length; i++) {
+                            if (t[i][1].toUpperCase() === 'ENTRY') {
+                                a = i + 1;
+                                entryName = t[i + 1][1];
+                            }
+
+                            if (t[i][1].toUpperCase() === 'IF' && t[i + 1][1].toUpperCase() === 'EXISTS') {
+                                a = i + 2;
+                                entryName = t[i + 2][1];
+                                ifExists = true;
+                                break;
+                            }
+                        }
 
                         try {
                             userPrivileges = getPermissions('jsdb');
@@ -1084,7 +1170,12 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = registry.delete(entryName);
+                                if (ifExists && !Registry.exists(entryName)) {
+                                    output.data = `Warning: Registry Entry ${entryName} does not exist.`;
+                                } else {
+                                    new Registry(entryName).drop();
+                                    output.data = `Dropped Registry Entry ${entryName}.`;
+                                }
                             }
                         } catch (e) {
                             output.code = 1;
@@ -1214,7 +1305,7 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = table.select('jsdb', 'public', 'users', ['id', 'username', 'valid', 'privileges'], {});
+                                output.data = new DB('jsdb').table('users').select(['id', 'username', 'valid', 'privileges'], {});
                                 output.data.forEach(r => {
                                     r.valid = (r.valid) ? 'Yes' : 'No';
                                     for (let key in r.privileges) {
@@ -1235,7 +1326,7 @@ function parseSQL(sql, connectionIndex) {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = table.select('jsdb', 'public', 'registry', ['entryName', 'type', 'value'], {});
+                                output.data = new DB('jsdb').table('registry').select(['entryName', 'type', 'value'], {});
                                 output.data.forEach(r => {
                                     if (r.type !== 'string') {
                                         r.value = JSON.parse(r.value);
@@ -1273,6 +1364,4 @@ function parseSQL(sql, connectionIndex) {
 
         return output;
     }
-}
-
-module.exports = parseSQL;
+});

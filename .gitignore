@@ -5,6 +5,7 @@ docgen.bat
 node_modules/
 package-lock.json
 logo.svg
+script db test.sql
 
 # OS generated files #
 ######################

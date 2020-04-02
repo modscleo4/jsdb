@@ -18,7 +18,9 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
-const config = require('../../config');
+'use strict';
+
+const {date, config} = require('../../config');
 
 const fs = require('fs');
 
@@ -30,16 +32,20 @@ Number.prototype.pad = function (size) {
     return s;
 };
 
+exports.OK = 0;
+exports.WARNING = 1;
+exports.ERROR = 2;
+
 /**
  * @summary Logs to file
  *
  * @param status {number} The status code (0 - Info, 1 - Warning, 2 - Error)
  * @param str {string} What to log
  */
-function log(status, str) {
+exports.log = function log(status, str) {
     if (typeof status === 'number' && typeof str === 'string') {
-        let d = new Date();
-        let h = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString();
+        const d = new Date();
+        const h = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString();
         if (!fs.existsSync(`${config.server.startDir}logs/`)) {
             fs.mkdirSync(`${config.server.startDir}logs/`);
         }
@@ -50,18 +56,15 @@ function log(status, str) {
 
         str = `${h}: ${str}`;
 
-        if (status === 0) {
+        if (status === exports.OK) {
             str = `(-) ${str}`;
-        } else if (status === 1) {
+        } else if (status === exports.WARNING) {
             str = `(!) ${str}`;
-        } else if (status === 2) {
+        } else if (status === exports.ERROR) {
             str = `(*) ${str}`;
         }
 
-        let date = config.date;
-        let file = `${config.server.startDir}logs/${date.getFullYear()}-${(date.getMonth() + 1).pad()}-${date.getDate().pad()}_${date.getHours().pad()}_${date.getMinutes().pad()}_${date.getSeconds().pad()}.log`;
+        const file = `${config.server.startDir}logs/${date.getFullYear()}-${(date.getMonth() + 1).pad()}-${date.getDate().pad()}_${date.getHours().pad()}_${date.getMinutes().pad()}_${date.getSeconds().pad()}.log`;
         fs.appendFileSync(file, str);
     }
-}
-
-exports.log = log;
+};

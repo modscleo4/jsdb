@@ -18,245 +18,166 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
-const config = require('../../config');
-const schema = require('./schema');
-const table = require('./table');
-const registry = require('./registry');
+'use strict';
+
+const {config} = require('../../config');
+const utils = require('../lib/utils');
 
 const fs = require('fs');
 const admzip = require('adm-zip');
 
 const f_dblist = 'dblist.json';
-exports.f_dblist = f_dblist;
 
-/**
- * @summary Create a DB
- *
- * @param dbName {string} The name of DB
- *
- * @returns {string} If everything runs ok, returns 'Created DB ${dbName}.'
- * @throws {Error} If the DB already exists, throw an error
- */
-function createDB(dbName) {
-    if (typeof dbName === 'string') {
-        let DBList = readDBFile();
-        if (DBList.indexOf(dbName) !== -1) {
-            schema.create(dbName, 'public');
+const DB = require('../DB');
+const Schema = require('../Schema');
+const Table = require('../Table');
+const Registry = require('../Registry');
 
-            throw new Error(`DB ${dbName} already exists.`);
-        } else {
-            DBList.push(dbName);
-            writeDBFile(JSON.stringify(DBList));
-            createDBFolder(dbName);
-
-            schema.create(dbName, 'public');
-
-            return `Created DB ${dbName}.`;
-        }
+exports.writeFile = function writeFile(list) {
+    if (!Array.isArray(list)) {
+        throw new TypeError(`list is not Array.`);
     }
-}
 
-/**
- * @summary Create the folder for the DB
- *
- * @param dbName {string} The name of DB
- */
-function createDBFolder(dbName) {
-    if (typeof dbName === 'string') {
-        if (!fs.existsSync(`${config.server.startDir}dbs/`)) {
-            fs.mkdirSync(`${config.server.startDir}dbs/`);
-        }
-
-        fs.mkdirSync(`${config.server.startDir}dbs/${dbName}`);
+    // Check if the working directory exists
+    if (!fs.existsSync(`${config.server.startDir}`)) {
+        fs.mkdirSync(`${config.server.startDir}`);
     }
-}
 
-/**
- * @summary Reads the DB list file
- *
- * @returns {Object} Returns a indexed Object containing all the DBs
- */
-function readDBFile() {
-    let DBList = [];
+    if (!fs.existsSync(`${config.server.startDir}dbs/`)) {
+        fs.mkdirSync(`${config.server.startDir}dbs/`);
+    }
+
+    fs.writeFileSync(`${config.server.startDir}dbs/${f_dblist}`, JSON.stringify(list));
+};
+
+exports.readFile = function readFile() {
+    let List = [];
 
     if (!fs.existsSync(`${config.server.startDir}dbs/${f_dblist}`)) {
-        writeDBFile(JSON.stringify([]));
-        return readDBFile();
+        exports.writeFile([]);
+        return readFile();
     }
 
     try {
-        DBList = JSON.parse(fs.readFileSync(`${config.server.startDir}dbs/${f_dblist}`, 'utf8'));
+        List = JSON.parse(fs.readFileSync(`${config.server.startDir}dbs/${f_dblist}`, 'utf8'));
     } catch (e) {
         throw new Error(`Error while parsing ${f_dblist}: ${e.message}`);
     }
 
-    fs.readdirSync(`${config.server.startDir}dbs/`).forEach(dbName => {
-        if (dbName !== f_dblist && !dbName.endsWith('.jsdb')) {
-            if (DBList.indexOf(dbName) === -1) {
-                DBList.push(dbName);
-                writeDBFile(JSON.stringify(DBList));
+    fs.readdirSync(`${config.server.startDir}dbs/`).forEach(name => {
+        if (name !== f_dblist && !name.endsWith('.jsdb')) {
+            if (!List.includes(name)) {
+                List.push(name);
+                exports.writeFile(List);
             }
         }
     });
 
     // Compress/decompress .jsdb files
     if (config.db.createZip) {
-        DBList.forEach(dbName => {
-            if (fs.existsSync(`${config.server.startDir}dbs/${dbName}`)) {
-                backupDB(dbName);
+        List.forEach(name => {
+            if (fs.existsSync(`${config.server.startDir}dbs/${name}`)) {
+                backup(name);
 
-                config.rmdirRSync(`${config.server.startDir}dbs/${dbName}/`);
+                utils.rmdirRSync(`${config.server.startDir}dbs/${name}/`);
             }
 
-            restoreDB(dbName);
+            restore(name);
         });
     }
 
     // Creates JSDB admin database
-    if (DBList.indexOf('jsdb') === -1) {
-        DBList.push('jsdb');
+    if (!List.includes('jsdb')) {
+        List.push('jsdb');
         if (!fs.existsSync(`${config.server.startDir}dbs/jsdb/`)) {
-            createDBFolder('jsdb');
+            exports.createFolder('jsdb');
         }
 
-        writeDBFile(JSON.stringify(DBList));
-        if (schema.readFile('jsdb').indexOf('public') === -1) {
-            schema.create('jsdb', 'public');
+        exports.writeFile(JSON.stringify(List));
+        if (!Schema.exists(new DB('jsdb'), 'public')) {
+            Schema.create(new DB('jsdb'), 'public');
         }
     }
 
-    DBList.forEach(dbName => {
-        if (!fs.existsSync(`${config.server.startDir}dbs/${dbName}`) && !fs.existsSync(`${config.server.startDir}dbs/${dbName}.jsdb`)) {
-            DBList.splice(DBList.indexOf(dbName), 1);
-            writeDBFile(JSON.stringify(DBList));
+    List.forEach(name => {
+        if (!fs.existsSync(`${config.server.startDir}dbs/${name}`) && !fs.existsSync(`${config.server.startDir}dbs/${name}.jsdb`)) {
+            List.splice(List.indexOf(name), 1);
+            exports.writeFile(List);
         }
     });
 
-    return DBList;
-}
+    return List;
+};
 
-/**
- * @summary Writes the DB list file
- *
- * @param content {string} A JSON string of the indexed Object containing all the DBs
- */
-function writeDBFile(content) {
-    if (typeof content === 'string') {
-        // Check if the working directory exists
-        if (!fs.existsSync(`${config.server.startDir}`)) {
-            fs.mkdirSync(`${config.server.startDir}`);
-        }
-
-        if (!fs.existsSync(`${config.server.startDir}dbs/`)) {
-            fs.mkdirSync(`${config.server.startDir}dbs/`);
-        }
-
-        fs.writeFileSync(`${config.server.startDir}dbs/${f_dblist}`, content);
+exports.createFolder = function createFolder(name) {
+    if (typeof name !== 'string') {
+        throw new TypeError(`name is not string.`);
     }
-}
 
-/**
- * @summary Drops a DB
- *
- * @param dbName {string} The name of DB
- * @param ifExists {boolean} If true, doesn't throw an error when the DB does not exist
- *
- * @returns {string} If everything runs without errors, return 'Dropped database ${dbName}.'
- * @throws {Error} If the DB does not exist and ifExists is false, throw an error
- */
-function dropDB(dbName, ifExists = false) {
-    if (typeof dbName === 'string' && typeof ifExists === 'boolean') {
-        if (dbName === 'jsdb') {
-            throw new Error('JSDB database cannot be dropped');
-        }
-
-        if ((ifExists && readDBFile().indexOf(dbName) !== -1) || (!ifExists && existsDB(dbName))) {
-            let DBList = readDBFile();
-            let i = DBList.indexOf(dbName);
-            DBList.splice(i, 1);
-            writeDBFile(JSON.stringify(DBList));
-            config.rmdirRSync(`${config.server.startDir}dbs/${dbName}/`);
-
-            return `Dropped database ${dbName}.`;
-        } else {
-            return `Database ${dbName} does not exist.`;
-        }
+    if (!fs.existsSync(`${config.server.startDir}dbs/`)) {
+        fs.mkdirSync(`${config.server.startDir}dbs/`);
     }
-}
 
-/**
- * @summary Check if the DB exists
- *
- * @param dbName {string} The name of DB
- * @param throws {boolean} If true, throw an error if the DB does not exist
- *
- * @returns {boolean} Return true if the DB exists
- * @throws {Error} If the DB does not exist, throw an error
- */
-function existsDB(dbName, throws = true) {
-    if (typeof dbName === 'string' && typeof throws === 'boolean') {
-        let DBList = readDBFile();
-        if (DBList.indexOf(dbName) !== -1) {
-            return true;
-        } else {
-            if (throws) {
-                throw new Error(`Database ${dbName} does not exist.`);
-            } else {
-                return false;
-            }
-        }
+    fs.mkdirSync(`${config.server.startDir}dbs/${name}`);
+};
+
+exports.deleteFolder = function deleteFolder(name) {
+    if (typeof name !== 'string') {
+        throw new TypeError(`name is not string.`);
     }
-}
 
-/**
- * @summary Backup a database
- *
- * @param dbName {String} The DB name
- *
- * @throws {Error} If the DB does not exist, throw an error
- */
-function backupDB(dbName) {
-    if (typeof dbName === 'string') {
-        if (existsDB(dbName)) {
-            let zip = new admzip();
-            zip.addLocalFolder(`${config.server.startDir}dbs/${dbName}`);
-            zip.writeZip(`${config.server.startDir}dbs/${dbName}.jsdb`);
-        }
+    if (!fs.existsSync(`${config.server.startDir}dbs/`)) {
+        fs.mkdirSync(`${config.server.startDir}dbs/`);
     }
-}
 
-/**
- * @summary Restore a backup
- *
- * @param dbName {String} The DB name
- *
- * @throws {Error} If the backup file does not exits, throw an error
- */
-function restoreDB(dbName) {
-    if (typeof dbName === 'string') {
-        if (fs.existsSync(`${config.server.startDir}dbs/${dbName}.jsdb`)) {
-            config.rmdirRSync(`${config.server.startDir}dbs/${dbName}`);
+    utils.rmdirRSync(`${config.server.startDir}dbs/${name}/`);
+};
 
-            let zip = new admzip(`${config.server.startDir}dbs/${dbName}.jsdb`);
-            zip.extractAllTo(`${config.server.startDir}dbs/${dbName}`, true);
-        } else {
-            throw new Error(`Backup file for ${dbName} does not exist`);
-        }
+exports.backup = function backup(name) {
+    if (typeof name !== 'string') {
+        throw new TypeError(`name is not string.`);
     }
-}
+
+    if (!DB.exists(name)) {
+        throw new Error(`Database ${name} does not exist.`);
+    }
+
+    let zip = new admzip();
+    zip.addLocalFolder(`${config.server.startDir}dbs/${name}`);
+    zip.writeZip(`${config.server.startDir}dbs/${name}.jsdb`);
+};
+
+exports.restore = function restore(name) {
+    if (typeof name !== 'string') {
+        throw new TypeError(`name is not string.`);
+    }
+
+    if (!DB.exists(name)) {
+        throw new Error(`Database ${name} does not exist.`);
+    }
+
+    if (fs.existsSync(`${config.server.startDir}dbs/${name}.jsdb`)) {
+        utils.rmdirRSync(`${config.server.startDir}dbs/${name}`);
+
+        let zip = new admzip(`${config.server.startDir}dbs/${name}.jsdb`);
+        zip.extractAllTo(`${config.server.startDir}dbs/${name}`, true);
+    } else {
+        throw new Error(`Backup file for ${name} does not exist`);
+    }
+};
 
 /**
  * @summary Checks the JSDB database integrity
  */
-function checkJSDBIntegrity() {
-    readDBFile();
+exports.checkJSDBIntegrity = function checkJSDBIntegrity() {
+    exports.readFile();
 
-    if (!schema.exists('jsdb', 'public', false)) {
-        schema.create('jsdb', 'public');
+    if (!Schema.exists(new DB('jsdb'), 'public')) {
+        Schema.create(new DB('jsdb'), 'public');
     }
 
-    if (!table.exists('jsdb', 'public', 'users', false)) {
-        table.create('jsdb', 'public', 'users',
+    if (!Table.exists(new Schema(new DB('jsdb'), 'public'), 'users')) {
+        Table.create(new Schema(new DB('jsdb'), 'public'), 'users',
             {
                 'id': {
                     'type': 'integer',
@@ -297,8 +218,8 @@ function checkJSDBIntegrity() {
         );
     }
 
-    if (!table.exists('jsdb', 'public', 'registry', false)) {
-        table.create('jsdb', 'public', 'registry',
+    if (!Table.exists(new Schema(new DB('jsdb'), 'public'), 'registry')) {
+        Table.create(new Schema(new DB('jsdb'), 'public'), 'registry',
             {
                 'entryName': {
                     'type': 'string',
@@ -316,6 +237,7 @@ function checkJSDBIntegrity() {
                     'notNull': true
                 },
             },
+
             {
                 'primaryKey': [
                     'entryName'
@@ -324,42 +246,27 @@ function checkJSDBIntegrity() {
         );
     }
 
-    if (!registry.exists('jsdb.server.ignAuth', false)) {
-        registry.create('jsdb.server.ignAuth', 'boolean', false);
+    if (!Registry.exists('jsdb.server.ignAuth')) {
+        Registry.create('jsdb.server.ignAuth', 'boolean', false);
     }
 
-    if (!registry.exists('jsdb.server.listenIP', false)) {
-        registry.create('jsdb.server.listenIP', 'string', '0.0.0.0');
+    if (!Registry.exists('jsdb.server.listenIP')) {
+        Registry.create('jsdb.server.listenIP', 'string', '0.0.0.0');
     }
 
-    if (!registry.exists('jsdb.server.port', false)) {
-        registry.create('jsdb.server.port', 'number', 6637);
+    if (!Registry.exists('jsdb.server.port')) {
+        Registry.create('jsdb.server.port', 'number', 6637);
     }
 
-    if (!registry.exists('jsdb.server.startDir', false)) {
-        registry.create('jsdb.server.startDir', 'string', './data/');
+    if (!Registry.exists('jsdb.server.startDir')) {
+        Registry.create('jsdb.server.startDir', 'string', './data/');
     }
 
-    if (!registry.exists('jsdb.db.createZip', false)) {
-        registry.create('jsdb.db.createZip', 'boolean', false);
+    if (!Registry.exists('jsdb.db.createZip')) {
+        Registry.create('jsdb.db.createZip', 'boolean', false);
     }
 
-    if (!registry.exists('jsdb.registry.instantApplyChanges', false)) {
-        registry.create('jsdb.registry.instantApplyChanges', 'boolean', false);
+    if (!Registry.exists('jsdb.registry.instantApplyChanges')) {
+        Registry.create('jsdb.registry.instantApplyChanges', 'boolean', false);
     }
-}
-
-exports.create = createDB;
-exports.createFolder = createDBFolder;
-
-exports.readFile = readDBFile;
-exports.writeFile = writeDBFile;
-
-exports.drop = dropDB;
-
-exports.exists = existsDB;
-
-exports.backup = backupDB;
-exports.restore = restoreDB;
-
-exports.checkJSDBIntegrity = checkJSDBIntegrity;
+};

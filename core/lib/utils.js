@@ -13,9 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @file Contains functions to interact with users
+ * @file This script contains Utils for all modules
  *
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
 'use strict';
+
+const fs = require('fs');
+
+exports.rmdirRSync = function rmdirRSync(path) {
+    if (fs.existsSync(path)) {
+        fs.readdirSync(path).forEach((file) => {
+            let curPath = `${path}/${file}`;
+            if (fs.lstatSync(curPath).isDirectory()) {
+                rmdirRSync(curPath);
+            } else {
+                fs.unlinkSync(curPath);
+            }
+        });
+        fs.rmdirSync(path);
+    }
+};

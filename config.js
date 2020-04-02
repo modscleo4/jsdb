@@ -18,97 +18,40 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
-class Connection {
-    constructor() {
-        this.dbName = 'jsdb';
-        this.schemaName = 'public';
-        this.username = null;
-    }
+'use strict';
 
-    get Socket() {
-        return this.socket;
-    }
+module.exports = {
+    // This makes the Date() available for all modules and stores the date-time when the server started
+    date: new Date(),
 
-    set Socket(value) {
-        this.socket = value;
-    }
+    // Store all sockets connected
+    connections: [],
 
-    get DBName() {
-        return this.dbName;
-    }
+    config: {
+        // Config vars for server
+        server: {
+            ignAuth: false,
+            startDir: './data/',
+            listenIP: '0.0.0.0',
+            port: 6637,
+        },
 
-    set DBName(value) {
-        this.dbName = value;
-    }
+        // Config vars for DB
+        db: {
+            createZip: false,
+        },
 
-    get SchemaName() {
-        return this.schemaName;
-    }
-
-    set SchemaName(value) {
-        this.schemaName = value;
-    }
-
-    get Username() {
-        return this.username;
-    }
-
-    set Username(value) {
-        this.username = value;
-    }
-}
-exports.Connection = Connection;
-
-const fs = require('fs');
-
-// This makes the Date() available for all modules and stores the date-time when the server started
-let date = new Date();
-exports.date = date;
-
-// Config vars for server
-let server = {
-    ignAuth: false,
-    startDir: './data/',
-    listenIP: '0.0.0.0',
-    port: 6637
+        // Config vars for registry manager
+        registry: {
+            instantApplyChanges: false,
+        },
+    },
 };
 
-// Config vars for DB
-let db = {
-    createZip: false
+module.exports.connections.add = function (connection) {
+    module.exports.connections.push(connection);
 };
 
-// Config vars for registry manager
-let registry = {
-    instantApplyChanges: false
-};
-
-exports.server = server;
-exports.db = db;
-exports.registry = registry;
-
-// Store all sockets connected
-let connections = [];
-exports.connections = connections;
-
-exports.addConnection = function addConnection(connection) {
-    connections.push(connection);
-};
-
-exports.removeConnection = function removeConnection(connection) {
-    connections.splice(connections.indexOf(connection), 1);
-};
-
-exports.rmdirRSync = function rmdirRSync(path) {
-    if (fs.existsSync(path)) {
-        fs.readdirSync(path).forEach((file) => {
-            let curPath = `${path}/${file}`;
-            if (fs.lstatSync(curPath).isDirectory()) {
-                rmdirRSync(curPath);
-            } else {
-                fs.unlinkSync(curPath);
-            }
-        });
-        fs.rmdirSync(path);
-    }
+module.exports.connections.remove = function (connection) {
+    module.exports.connections.splice(module.exports.connections.indexOf(connection), 1);
 };

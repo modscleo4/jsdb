@@ -18,30 +18,37 @@
  * @author Dhiego Cassiano Fogaça Barbosa <modscleo4@outlook.com>
  */
 
-const config = require('./config');
+'use strict';
+
+const {connections, config} = require('./config');
+const Connection = require('./core/connection/Connection');
 const db = require('./core/commands/db');
-const table = require('./core/commands/table');
-const user = require('./core/commands/user');
 const registry = require('./core/commands/registry');
 const logger = require('./core/lib/logger');
 const sql = require('./core/sql/sql');
 
 const net = require('net');
 
+const DB = require('./core/DB');
+const Schema = require('./core/Schema');
+const Table = require('./core/Table');
+const User = require('./core/User');
+
+//console.log(require('./core/sql/parser')('SELECT name, MAX(id) FROM users WHERE TRUE GROUP BY name ORDER BY name DESC, password LIMIT 1, 1'));
+
 let server = net.createServer(socket => {
-    let connection = new config.Connection();
-    connection.Socket = socket;
-    logger.log(0, `User connected, IP: ${socket.remoteAddress}`);
+    const connection = new Connection(socket);
+    logger.log(logger.OK, `User connected, IP: ${socket.remoteAddress}`);
 
     db.readFile();
 
     socket.on('end', () => {
-        logger.log(0, `[${socket.remoteAddress}] User disconnected`);
-        config.removeConnection(connection);
+        logger.log(logger.OK, `[${socket.remoteAddress}] User disconnected`);
+        connections.remove(connection);
     });
 
     socket.on('data', data => {
-        let sqlCmd = data.toLocaleString().trim();
+        const sqlCmd = data.toLocaleString().trim();
 
         if (sqlCmd === 'PING') {
             socket.write('PONG');
@@ -50,38 +57,40 @@ let server = net.createServer(socket => {
 
         if (config.server.ignAuth && sqlCmd.includes('credentials: ')) {
             connection.Username = 'grantall::jsdbadmin';
-            config.addConnection(connection);
+            connections.add(connection);
             socket.write('AUTHOK');
-            logger.log(1, `[${socket.remoteAddress}] User authenticated (NOAUTH)`);
+            logger.log(logger.WARNING, `[${socket.remoteAddress}] User authenticated (NOAUTH)`);
             return;
         }
 
         if (connection.Username === null && !config.server.ignAuth) {
             try {
                 if (!sqlCmd.includes('credentials: ')) {
-                    let message = 'Username and password not informed';
-                    logger.log(1, `[${socket.remoteAddress}] Authentication error: ${message}`);
+                    const message = 'Username and password not informed';
+                    logger.log(logger.WARNING, `[${socket.remoteAddress}] Authentication error: ${message}`);
                     socket.write(message);
                     socket.destroy();
                 } else {
-                    let credentials = JSON.parse(sqlCmd.replace(/credentials: /, ''));
+                    const credentials = JSON.parse(sqlCmd.replace(/credentials: /, ''));
                     if (typeof credentials.username !== "string" || typeof credentials.password !== "string") {
-                        let message = 'Username and/or password not informed';
-                        logger.log(1, `[${socket.remoteAddress}] Authentication error: ${message}`);
+                        const message = 'Username and/or password not informed';
+                        logger.log(logger.WARNING, `[${socket.remoteAddress}] Authentication error: ${message}`);
                         socket.write(message);
                         socket.destroy();
                     } else {
-                        user.auth(credentials.username, credentials.password);
+                        if (!User.auth(credentials.username, credentials.password)) {
+                            throw new Error(`AUTHERR: Wrong password.`);
+                        }
 
                         connection.Username = credentials.username;
-                        config.addConnection(connection);
+                        connections.add(connection);
 
                         socket.write('AUTHOK');
-                        logger.log(0, `[${socket.remoteAddress}] User authenticated, username: ${credentials.username}`);
+                        logger.log(logger.OK, `[${socket.remoteAddress}] User authenticated, username: ${credentials.username}`);
                     }
                 }
             } catch (e) {
-                logger.log(1, `[${socket.remoteAddress}] Authentication error: ${e.message}`);
+                logger.log(logger.WARNING, `[${socket.remoteAddress}] Authentication error: ${e.message}`);
                 socket.write(e.message);
                 socket.destroy();
             }
@@ -90,8 +99,8 @@ let server = net.createServer(socket => {
         }
 
         try {
-            logger.log(0, `[${connection.Username}@${socket.remoteAddress}] SQL: ${sqlCmd}`);
-            let r = sql(sqlCmd, config.connections.indexOf(connection));
+            logger.log(logger.OK, `[${connection.Username}@${socket.remoteAddress}] SQL: ${sqlCmd}`);
+            let r = sql(sqlCmd, connections.indexOf(connection));
 
             if (typeof r === 'object') {
                 r = JSON.stringify(r);
@@ -100,21 +109,27 @@ let server = net.createServer(socket => {
             socket.write(r);
         } catch (err) {
             socket.write(JSON.stringify({'code': 1, 'message': err.message}));
-            logger.log(2, `[${connection.Username}@${socket.remoteAddress}] ${err.message}`);
+            logger.log(logger.ERROR, `[${connection.Username}@${socket.remoteAddress}] ${err.message}`);
         }
     });
 
     socket.on('error', err => {
-        if (err.code === 'EADDRINUSE') {
-            console.error('Address in use, retrying...');
-            setTimeout(() => {
-                server.close();
-                server.listen(config.server.port, config.server.listenIP);
-            }, 1000);
-        } else if (err.code === 'ECONNRESET') {
-            console.error('Connection reset. Maybe a client disconnected');
-        } else {
-            console.error(`${err.code}: ${err.message}`);
+        switch (err.code) {
+            case 'EADDRINUSE':
+                console.error('Address in use, retrying...');
+                setTimeout(() => {
+                    server.close();
+                    server.listen(config.server.port, config.server.listenIP);
+                }, 1000);
+                break;
+
+            case 'ECONNRESET':
+                console.error('Connection reset. Maybe a client disconnected');
+                break;
+
+            default:
+                console.error(`${err.code}: ${err.message}`);
+                break;
         }
     });
 });
@@ -162,15 +177,15 @@ if (config.server.port <= 0 || config.server.port >= 65535) {
 
 if (config.server.listenIP !== '' && config.server.port !== 0 && config.server.startDir !== '') {
     server.listen(config.server.port, config.server.listenIP);
-    logger.log(0, `Server started with parameters [${params.join(', ')}]`);
+    logger.log(logger.OK, `Server started with parameters [${params.join(', ')}]`);
     console.log(`Running server on ${config.server.listenIP}:${config.server.port}, ${config.server.startDir}`);
     if (config.server.ignAuth) {
         console.log('Warning: running without authentication!');
-        logger.log(1, `Warning: Server started without authentication`);
+        logger.log(logger.WARNING, `Warning: Server started without authentication`);
     }
 
     if (!config.server.ignAuth) {
-        if (table.select('jsdb', 'public', 'users', ['*'], {'where': '\`username\` == \'jsdbadmin\''}).length === 0) {
+        if (new DB('jsdb').table('users').select(['*'], {'where': '\`username\` == \'jsdbadmin\''}).length === 0) {
             let stdin = process.openStdin();
 
             process.stdout.write('Insert jsdbadmin password: ');
@@ -180,7 +195,7 @@ if (config.server.listenIP !== '' && config.server.port !== 0 && config.server.s
                 if (d.length > 8) {
                     stdin.removeAllListeners('data');
 
-                    user.create('jsdbadmin', d, {'*': parseInt('1111', 2)});
+                    User.create('jsdbadmin', d, {'*': parseInt('1111', 2)});
                     console.log('User created.');
                 } else {
                     console.log('jsdbadmin password must be greater than 8 characters!');
