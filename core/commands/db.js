@@ -33,6 +33,11 @@ const Schema = require('../Schema');
 const Table = require('../Table');
 const Registry = require('../Registry');
 
+/**
+ * Writes the DB list file
+ *
+ * @param {Array} list A indexed Object containing all the DBs
+ */
 exports.writeFile = function writeFile(list) {
     if (!Array.isArray(list)) {
         throw new TypeError(`list is not Array.`);
@@ -50,6 +55,11 @@ exports.writeFile = function writeFile(list) {
     fs.writeFileSync(`${config.server.startDir}dbs/${f_dblist}`, JSON.stringify(list));
 };
 
+/**
+ * Reads the DB list file
+ *
+ * @return {Array} Returns a indexed Object containing all the DBs
+ */
 exports.readFile = function readFile() {
     let List = [];
 
@@ -93,7 +103,7 @@ exports.readFile = function readFile() {
             exports.createFolder('jsdb');
         }
 
-        exports.writeFile(JSON.stringify(List));
+        exports.writeFile(List);
         if (!Schema.exists(new DB('jsdb'), 'public')) {
             Schema.create(new DB('jsdb'), 'public');
         }
@@ -109,6 +119,11 @@ exports.readFile = function readFile() {
     return List;
 };
 
+/**
+ * @summary Create the folder for the DB
+ *
+ * @param {string} name The name of DB
+ */
 exports.createFolder = function createFolder(name) {
     if (typeof name !== 'string') {
         throw new TypeError(`name is not string.`);
@@ -121,6 +136,11 @@ exports.createFolder = function createFolder(name) {
     fs.mkdirSync(`${config.server.startDir}dbs/${name}`);
 };
 
+/**
+ * Delete the DB folder
+ *
+ * @param {string} name The name of the DB
+ */
 exports.deleteFolder = function deleteFolder(name) {
     if (typeof name !== 'string') {
         throw new TypeError(`name is not string.`);
@@ -133,6 +153,11 @@ exports.deleteFolder = function deleteFolder(name) {
     utils.rmdirRSync(`${config.server.startDir}dbs/${name}/`);
 };
 
+/**
+ * Backup a database
+ *
+ * @param {string} name The name of the DB
+ */
 exports.backup = function backup(name) {
     if (typeof name !== 'string') {
         throw new TypeError(`name is not string.`);
@@ -147,6 +172,11 @@ exports.backup = function backup(name) {
     zip.writeZip(`${config.server.startDir}dbs/${name}.jsdb`);
 };
 
+/**
+ * Restore a backup
+ *
+ * @param {string} name The name of the DB
+ */
 exports.restore = function restore(name) {
     if (typeof name !== 'string') {
         throw new TypeError(`name is not string.`);
@@ -176,72 +206,81 @@ exports.checkJSDBIntegrity = function checkJSDBIntegrity() {
         Schema.create(new DB('jsdb'), 'public');
     }
 
-    if (!Table.exists(new Schema(new DB('jsdb'), 'public'), 'users')) {
-        Table.create(new Schema(new DB('jsdb'), 'public'), 'users',
-            {
-                'id': {
-                    'type': 'integer',
-                    'unique': true,
-                    'autoIncrement': true,
-                    'notNull': true
-                },
+    if (!Table.exists(new DB('jsdb').schema('public'), 'default')) {
+        Table.create(new DB('jsdb').schema('public'), 'default',
+                     {},
 
-                'username': {
-                    'type': 'string',
-                    'unique': true,
-                    'notNull': true
-                },
+                     {
+                         primaryKey: []
+                     });
+    }
 
-                'password': {
-                    'type': 'string',
-                    'notNull': true
-                },
+    if (!Table.exists(new DB('jsdb').schema('public'), 'users')) {
+        Table.create(new DB('jsdb').schema('public'), 'users',
+                     {
+                         id: {
+                             type: 'integer',
+                             unique: true,
+                             autoIncrement: true,
+                             notNull: true
+                         },
 
-                'valid': {
-                    'type': 'boolean',
-                    'default': true,
-                    'notNull': true
-                },
+                         username: {
+                             type: 'string',
+                             unique: true,
+                             notNull: true
+                         },
 
-                'privileges': {
-                    'type': 'object',
-                    'default': {},
-                    'notNull': false
-                },
-            },
+                         password: {
+                             type: 'string',
+                             notNull: true
+                         },
 
-            {
-                'primaryKey': [
-                    'id'
-                ]
-            }
+                         valid: {
+                             type: 'boolean',
+                             default: true,
+                             notNull: true
+                         },
+
+                         privileges: {
+                             type: 'object',
+                             default: {},
+                             notNull: false
+                         },
+                     },
+
+                     {
+                         'primaryKey': [
+                             'id'
+                         ]
+                     }
         );
     }
 
-    if (!Table.exists(new Schema(new DB('jsdb'), 'public'), 'registry')) {
-        Table.create(new Schema(new DB('jsdb'), 'public'), 'registry',
+    if (!Table.exists(new DB('jsdb').schema('public'), 'registry')) {
+        Table.create(new DB('jsdb').schema('public'), 'registry',
+                     {
+                         entryName: {
+                             type: 'string',
+                             unique: true,
+                             notNull: true
+                         },
+
+                         type: {
+                             type: 'string',
+                             notNull: true
+                         },
+
+                         value: {
+                             type: 'string',
+                             notNull: true
+                         },
+                     },
+
             {
-                'entryName': {
-                    'type': 'string',
-                    'unique': true,
-                    'notNull': true
-                },
-
-                'type': {
-                    'type': 'string',
-                    'notNull': true
-                },
-
-                'value': {
-                    'type': 'string',
-                    'notNull': true
-                },
-            },
-
-            {
-                'primaryKey': [
-                    'entryName'
-                ]
+                         primaryKey: [
+                             'entryName'
+                         ]
             }
         );
     }

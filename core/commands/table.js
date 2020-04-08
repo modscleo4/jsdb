@@ -269,7 +269,7 @@ exports.readContent = function readContent(db, schema, table) {
  * @param db {string} The name of DB
  * @param schema {string} The name of the schema
  * @param table {string} The table name
- * @param content {object} Indexed Array containing the data in the table
+ * @param content {Array} Indexed Array containing the data in the table
  * @param override {boolean} If true, overrides the existing table data
  *
  * @returns {number} Returns the number of lines written

@@ -28,6 +28,9 @@ const Schema = require('./Schema');
 const Table = require('./Table');
 
 module.exports = class User {
+    #table;
+    #name;
+
     /**
      *
      * @param {string} name
@@ -46,7 +49,7 @@ module.exports = class User {
      * @returns {Table}
      */
     get table() {
-        return this._table;
+        return this.#table;
     }
 
     /**
@@ -58,7 +61,7 @@ module.exports = class User {
             throw new TypeError(`table is not Table.`);
         }
 
-        this._table = table;
+        this.#table = table;
     }
 
     /**
@@ -66,7 +69,7 @@ module.exports = class User {
      * @returns {string}
      */
     get name() {
-        return this._name;
+        return this.#name;
     }
 
     /**
@@ -78,7 +81,7 @@ module.exports = class User {
             throw new TypeError(`name is not string.`);
         }
 
-        this._name = name;
+        this.#name = name;
     }
 
     /**
@@ -102,36 +105,6 @@ module.exports = class User {
         }
 
         return users[0].password === md5(password);
-    }
-
-    static create(name, password, privileges, valid = true) {
-        if (name === 'grantall::jsdbadmin') {
-            throw new Error('Invalid username');
-        }
-
-        if (User.exists(name)) {
-            throw new Error(`User ${name} already exists`);
-        }
-
-        new DB('jsdb').table('users').insert(['DEFAULT', name, md5(`${password}`), valid, JSON.stringify(privileges)]);
-
-        return new User(name);
-    }
-
-    static exists(name) {
-        if (config.server.ignAuth && name === 'grantall::jsdbadmin') {
-            return true;
-        }
-
-        const user = new DB('jsdb').table('users').select(['id', 'valid'], {where: `\`username\` == '${name}'`});
-
-        if (user.length === 0) {
-            return false;
-        } else if (!user[0].valid) {
-            throw new Error(`User ${name} is disabled`);
-        }
-
-        return true;
     }
 
     privileges() {
@@ -188,6 +161,36 @@ module.exports = class User {
         }
 
         new DB('jsdb').table('users').update(update, {where: `\`username\` == '${this.name}'`});
+
+        return true;
+    }
+
+    static create(name, password, privileges, valid = true) {
+        if (name === 'grantall::jsdbadmin') {
+            throw new Error('Invalid username');
+        }
+
+        if (User.exists(name)) {
+            throw new Error(`User ${name} already exists`);
+        }
+
+        new DB('jsdb').table('users').insert(['DEFAULT', name, md5(`${password}`), valid, JSON.stringify(privileges)]);
+
+        return new User(name);
+    }
+
+    static exists(name) {
+        if (config.server.ignAuth && name === 'grantall::jsdbadmin') {
+            return true;
+        }
+
+        const user = new DB('jsdb').table('users').select(['id', 'valid'], {where: `\`username\` == '${name}'`});
+
+        if (user.length === 0) {
+            return false;
+        } else if (!user[0].valid) {
+            throw new Error(`User ${name} is disabled`);
+        }
 
         return true;
     }

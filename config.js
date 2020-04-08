@@ -49,6 +49,7 @@ module.exports = {
         // Config vars for log system
         log: {
             generateLogs: true,
+            minLevel: 0,
         }
     },
 };

@@ -25,7 +25,8 @@ const commands = require('./commands/sequence');
 const Schema = require('./Schema');
 
 module.exports = class Sequence {
-    static default = {start: 1, inc: 1};
+    #name;
+    #schema;
 
     /**
      *
@@ -54,7 +55,7 @@ module.exports = class Sequence {
      * @returns {Schema}
      */
     get schema() {
-        return this._schema;
+        return this.#schema;
     }
 
     /**
@@ -66,7 +67,7 @@ module.exports = class Sequence {
             throw new TypeError(`schema is not Schema.`);
         }
 
-        this._schema = schema;
+        this.#schema = schema;
     }
 
     /**
@@ -74,7 +75,7 @@ module.exports = class Sequence {
      * @returns {string}
      */
     get name() {
-        return this._name;
+        return this.#name;
     }
 
     /**
@@ -86,7 +87,7 @@ module.exports = class Sequence {
             throw new TypeError(`name is not string.`);
         }
 
-        this._name = name;
+        this.#name = name;
     }
 
     get start() {
@@ -180,10 +181,11 @@ module.exports = class Sequence {
         }
 
         let list = commands.readFile(this.schema.db.name, this.schema.name);
+        const ret = list[this.name].start;
         list[this.name] = {start, inc};
         commands.writeFile(this.schema.db.name, this.schema.name, list);
 
-        return start - inc;
+        return ret;
     }
 
     /**

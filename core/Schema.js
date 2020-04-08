@@ -27,6 +27,9 @@ const DB = require('./DB');
 //const Table = require('./Table');
 
 module.exports = class Schema {
+    #name;
+    #db;
+
     /**
      *
      * @param {DB} db
@@ -46,7 +49,7 @@ module.exports = class Schema {
      * @returns {DB}
      */
     get db() {
-        return this._db;
+        return this.#db;
     }
 
     /**
@@ -58,7 +61,7 @@ module.exports = class Schema {
             throw new TypeError(`db is not DB.`);
         }
 
-        this._db = db;
+        this.#db = db;
     }
 
     /**
@@ -66,7 +69,7 @@ module.exports = class Schema {
      * @returns {string}
      */
     get name() {
-        return this._name;
+        return this.#name;
     }
 
     /**
@@ -78,7 +81,51 @@ module.exports = class Schema {
             throw new TypeError(`name is not string.`);
         }
 
-        this._name = name;
+        this.#name = name;
+    }
+
+    /**
+     *
+     * @param {string} table
+     */
+    table(table) {
+        if (typeof table !== 'string') {
+            throw new TypeError(`table is not string.`);
+        }
+
+        return new (require('./Table'))(this, table);
+    }
+
+    /**
+     *
+     * @param {string} sequence
+     */
+    sequence(sequence) {
+        if (typeof sequence !== 'string') {
+            throw new TypeError(`sequence is not string.`);
+        }
+
+        return new (require('./Sequence'))(this, sequence);
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    drop() {
+        if (this.db.name === 'jsdb' && this.name === 'public') {
+            throw new Error('JSDB database public schema cannot be dropped.');
+        }
+
+        if (!Schema.exists(this.db, this.name)) {
+            throw new Error(`Schema ${this.db.name}.${this.name} does not exist.`);
+        }
+
+        let List = commands.readFile(this.db.name);
+        List.splice(List.indexOf(this.name), 1);
+        commands.writeFile(this.db.name, List);
+        commands.deleteFolder(this.db.name, this.name);
+
+        return true;
     }
 
     /**
@@ -125,51 +172,5 @@ module.exports = class Schema {
 
         const list = commands.readFile(db.name);
         return list.includes(name);
-    }
-
-    /**
-     * @returns {boolean}
-     */
-    drop() {
-        if (this.db.name === 'jsdb' && this.name === 'public') {
-            throw new Error('JSDB database public schema cannot be dropped.');
-        }
-
-        if (!Schema.exists(this.db, this.name)) {
-            throw new Error(`Schema ${this.db.name}.${this.name} does not exist.`);
-        }
-
-        let List = commands.readFile(this.db.name);
-        List.splice(List.indexOf(this.name), 1);
-        commands.writeFile(this.db.name, List);
-        commands.deleteFolder(this.db.name, this.name);
-
-        return true;
-    }
-
-    /**
-     *
-     * @param {string} table
-     * @returns {Table}
-     */
-    table(table) {
-        if (typeof table !== 'string') {
-            throw new TypeError(`table is not string.`);
-        }
-
-        return new (require('./Table'))(this, table);
-    }
-
-    /**
-     *
-     * @param {string} sequence
-     * @returns {Sequence}
-     */
-    sequence(sequence) {
-        if (typeof sequence !== 'string') {
-            throw new TypeError(`sequence is not string.`);
-        }
-
-        return new (require('./Sequence'))(this, sequence);
     }
 };

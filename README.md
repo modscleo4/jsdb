@@ -31,18 +31,21 @@ $ npm install -g @modscleo4/jsdb
 ## Run
 After installed, you can run JSDB just typing
 ```
-$ jsdb (-d) <dir> (-a) <address> (-p) <port> (-N) (-Z)
+$ jsdb [-h] [-d dir] [-a address] [-p port] [-N] [-Z] [-L] [-R]
 ```
 
-Where args are:
+Where the possible arguments are:
 
-| Short | Extended    | Description                |
-| ----- | ----------- | -------------------------- |
-| -d    | --dir       | Which dir to work on       |
-| -a    | --listenIP  | Which IP to listen on      |
-| -p    | --port      | What port to listen        |
-| -N    | --noAuth    | Run without authentication |
-| -Z    | --createZip | Enable backup system       |
+| Command             | Description                      |
+| ------------------- | -------------------------------- |
+| -h, --help          | Displays this table              |
+| -d, --dir           | Where JSDB should store the data |
+| -a, --listenIP      | Which IP to listen on            |
+| -p, --port          | What port to listen              |
+| -N, --noAuth        | Disable authentication           |
+| -Z, --createZip     | Enable backup system             |
+| -L, --generateLogs  | Enable Log system                |
+| -R, --regAutoReload | Enable Registry auto reload      |
 
 ## Issues and suggestions
 Use the <a href="https://github.com/modscleo4/jsdb/issues">Issues page</a> to send bug reports and suggestions for new features

@@ -25,6 +25,9 @@ const Schema = require('./Schema');
 const Table = require('./Table');
 
 module.exports = class Registry {
+    #name;
+    #table;
+
     /**
      *
      * @param {string} name
@@ -43,7 +46,7 @@ module.exports = class Registry {
      * @returns {Table}
      */
     get table() {
-        return this._table;
+        return this.#table;
     }
 
     /**
@@ -55,7 +58,7 @@ module.exports = class Registry {
             throw new TypeError(`table is not Table.`);
         }
 
-        this._table = table;
+        this.#table = table;
     }
 
     /**
@@ -63,7 +66,7 @@ module.exports = class Registry {
      * @returns {string}
      */
     get name() {
-        return this._name;
+        return this.#name;
     }
 
     /**
@@ -75,53 +78,7 @@ module.exports = class Registry {
             throw new TypeError(`name is not string.`);
         }
 
-        this._name = name;
-    }
-
-    /**
-     *
-     * @param {string} name
-     * @param {string} type
-     * @param {*} value
-     * @returns {Registry}
-     */
-    static create(name, type, value) {
-        if (typeof name !== 'string') {
-            throw new TypeError(`name is not string.`);
-        }
-
-        if (typeof type !== 'string') {
-            throw new TypeError(`type is not string.`);
-        }
-
-        if (typeof value !== type) {
-            throw new TypeError(`value is not ${type}.`);
-        }
-
-        if (this.exists(name)) {
-            throw new Error(`Registry entry ${name} already exists.`);
-        }
-
-        if (typeof value !== 'string') {
-            value = JSON.stringify(value);
-        }
-
-        new DB('jsdb').table('registry').insert([name, type, value], ['entryName', 'type', 'value']);
-
-        return new Registry(name);
-    }
-
-    /**
-     *
-     * @param {string} name
-     * @returns {boolean}
-     */
-    static exists(name) {
-        if (typeof name !== 'string') {
-            throw new TypeError(`name is not string.`);
-        }
-
-        return new DB('jsdb').table('registry').select(['*'], {where: `\`entryName\` == '${name}'`}).length > 0;
+        this.#name = name;
     }
 
     read() {
@@ -172,5 +129,51 @@ module.exports = class Registry {
         this.table.delete({where: `\`entryName\` == '${this.name}'`});
 
         return true;
+    }
+
+    /**
+     *
+     * @param {string} name
+     * @param {string} type
+     * @param {*} value
+     * @returns {Registry}
+     */
+    static create(name, type, value) {
+        if (typeof name !== 'string') {
+            throw new TypeError(`name is not string.`);
+        }
+
+        if (typeof type !== 'string') {
+            throw new TypeError(`type is not string.`);
+        }
+
+        if (typeof value !== type) {
+            throw new TypeError(`value is not ${type}.`);
+        }
+
+        if (this.exists(name)) {
+            throw new Error(`Registry entry ${name} already exists.`);
+        }
+
+        if (typeof value !== 'string') {
+            value = JSON.stringify(value);
+        }
+
+        new DB('jsdb').table('registry').insert([name, type, value], ['entryName', 'type', 'value']);
+
+        return new Registry(name);
+    }
+
+    /**
+     *
+     * @param {string} name
+     * @returns {boolean}
+     */
+    static exists(name) {
+        if (typeof name !== 'string') {
+            throw new TypeError(`name is not string.`);
+        }
+
+        return new DB('jsdb').table('registry').select(['*'], {where: `\`entryName\` == '${name}'`}).length > 0;
     }
 };

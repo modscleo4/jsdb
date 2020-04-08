@@ -12,20 +12,29 @@
   },
   "homepage": "https://github.com/modscleo4/jsdb#readme",
   "license": "Apache-2.0",
-  "bin": "./bin/jsdb",
+  "bin": {
+    "jsdb": "bin/jsdb"
+  },
   "scripts": {
     "test": "mocha"
   },
   "directories": {
-    "commands": "core/commands",
-    "sql": "core/sql",
-    "lib": "core/lib"
+    "bin": "bin/",
+    "lib": "core/",
+    "doc": "docs/"
   },
+  "files": [
+    "config.js",
+    "server.js",
+    "bin/",
+    "core/"
+  ],
   "dependencies": {
     "adm-zip": "^0.4.13",
     "md5": "^2.2.1",
     "perf_hooks": "0.0.1",
-    "sql-parser": "^0.5.0"
+    "sql-parser": "^0.5.0",
+    "minimist": "^0.0.8"
   },
   "devDependencies": {
     "mocha": "^5.2.0"

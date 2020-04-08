@@ -32,7 +32,7 @@ exports.dataToCSV = function dataToCSV(data) {
         }
     }
 
-    csv += cols.join(',');
+    csv += cols.join(';');
     csv += '\n';
 
     for (let i = 0; i < data.length; i++) {
@@ -45,11 +45,15 @@ exports.dataToCSV = function dataToCSV(data) {
                     dd = JSON.stringify(dd);
                 }
 
+                if (typeof dd === 'string' && dd.search(/;/) !== -1) {
+                    dd = dd.replace(/;/g, '\;');
+                }
+
                 d.push(dd);
             }
         }
 
-        csv += d.join(',');
+        csv += d.join(';');
         csv += '\n';
     }
 
@@ -58,6 +62,19 @@ exports.dataToCSV = function dataToCSV(data) {
 
 exports.CSVToData = function CSVToData(csv) {
     let data = [];
+    csv = csv.split('\n');
+    const cols = csv[0].split(';');
+
+    for (let i = 1; i < csv.length; i++) {
+        const csvRow = csv[i].split(/[^\\]?;/);
+        let row = {};
+
+        for (let j = 0; j < cols.length; j++) {
+            row[cols[j]] = csvRow[j].replace(/\\;/g, ';');
+        }
+
+        data.push(row);
+    }
 
     return data;
 };

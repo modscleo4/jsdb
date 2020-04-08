@@ -24,17 +24,10 @@ const DB = require('./DB');
 const Schema = require('./Schema');
 const Sequence = require('./Sequence');
 
-/**
- *
- * @param {Array} array
- * @param {function} fn
- * @return {Array}
- */
-function groupBy(array, fn) {
-    return array.reduce((prev, curr, i, arr, k = fn(curr)) => ((prev[k] || (prev[k] = [])).push(curr), prev), {});
-}
-
 module.exports = class Table {
+    #name;
+    #schema;
+
     /**
      *
      * @param {Schema} schema
@@ -62,7 +55,7 @@ module.exports = class Table {
      * @returns {Schema}
      */
     get schema() {
-        return this._schema;
+        return this.#schema;
     }
 
     /**
@@ -74,7 +67,7 @@ module.exports = class Table {
             throw new TypeError(`schema is not Schema.`);
         }
 
-        this._schema = schema;
+        this.#schema = schema;
     }
 
     /**
@@ -82,7 +75,7 @@ module.exports = class Table {
      * @returns {string}
      */
     get name() {
-        return this._name;
+        return this.#name;
     }
 
     /**
@@ -94,18 +87,18 @@ module.exports = class Table {
             throw new TypeError(`name is not string.`);
         }
 
-        this._name = name;
+        this.#name = name;
     }
 
     /**
      *
      * @param {Schema} schema
      * @param {string} name
-     * @param {object} tableStructure
-     * @param {object} tableMetadata
+     * @param {object} columns
+     * @param {object} metadata
      * @returns {Table}
      */
-    static create(schema, name, tableStructure, tableMetadata = null) {
+    static create(schema, name, columns, metadata = {primaryKey: []}) {
         if (!(schema instanceof Schema)) {
             throw new TypeError(`schema is not Schema.`);
         }
@@ -123,32 +116,72 @@ module.exports = class Table {
         commands.writeFile(schema.db.name, schema.name, list);
         commands.createFolder(schema.db.name, schema.name, name);
 
-        if (tableMetadata !== null) {
-            tableStructure.__metadata = tableMetadata;
-        }
-
-        for (let key in tableStructure) {
-            if (tableMetadata !== null && 'primaryKey' in tableMetadata && tableMetadata.primaryKey.includes(key) && !tableStructure[key].notNull) {
+        for (let key in columns) {
+            if (metadata !== null && 'primaryKey' in metadata && metadata.primaryKey.includes(key) && !columns[key].notNull) {
                 throw new Error(`Primary key column cannot accept null values!`);
-            } else if ('maxLength' in tableStructure[key]) {
-                tableStructure[key].maxLength = parseInt(tableStructure[key].maxLength);
+            }
 
-                if (tableStructure[key].maxLength <= 0) {
+            if ('minLength' in columns[key]) {
+                columns[key].minLength = parseInt(columns[key].minLength);
+
+                if (columns[key].minLength <= 0) {
+                    throw new Error(`Invalid minLength property for column ${key}.`);
+                }
+            }
+
+            if ('maxLength' in columns[key]) {
+                columns[key].maxLength = parseInt(columns[key].maxLength);
+
+                if (columns[key].maxLength <= 0 || 'minLength' in columns[key] && columns[key].maxLength < columns[key].minLength) {
                     throw new Error(`Invalid maxLength property for column ${key}.`);
                 }
-            } else if (tableStructure[key].autoIncrement) {
-                if (tableStructure[key].type === 'integer') {
-                    delete (tableStructure[key].autoIncrement);
-                    tableStructure[key].default = `nextval(${name}_${key}_seq)`;
+            }
 
-                    Sequence.create(schema, `${name}_${key}_seq`, Sequence.default);
-                } else {
-                    throw new Error("Only columns of type integer can have the autoincrement property");
+            if ('minValue' in columns[key]) {
+                if (columns[key].type !== 'integer' && columns[key].type !== 'number') {
+                    throw new Error('Only columns of type number/integer can have the minimum value property.');
                 }
+            }
+
+            if ('maxValue' in columns[key]) {
+                if (columns[key].type !== 'integer' && columns[key].type !== 'number') {
+                    throw new Error('Only columns of type number/integer can have the maximum value property.');
+                }
+            }
+
+            if ('enum' in columns[key]) {
+                if (columns[key].type !== 'integer') {
+                    throw new Error('Only columns of type integer can have the autoincrement property.');
+                }
+
+                if (!Array.isArray(columns[key].enum)) {
+                    throw new Error('Invalid enum property.');
+                }
+
+                if ('minValue' in columns[key] || 'maxValue' in columns[key]) {
+                    throw new Error('Invalid minValue / maxValue properties.');
+                }
+
+                columns[key].minValue = 0;
+                columns[key].maxValue = columns[key].enum.length - 1;
+            }
+
+            if ('autoIncrement' in columns[key]) {
+                if (columns[key].type !== 'integer') {
+                    throw new Error('Only columns of type integer can have the autoincrement property.');
+                }
+
+                delete (columns[key].autoIncrement);
+                columns[key].default = `nextval(${name}_${key}_seq)`;
+
+                Sequence.create(schema, `${name}_${key}_seq`);
             }
         }
 
-        commands.writeStructure(schema.db.name, schema.name, name, tableStructure);
+        commands.writeStructure(schema.db.name, schema.name, name, {
+            columns: columns,
+            __metadata: metadata
+        });
         commands.writeContent(schema.db.name, schema.name, name, null);
 
         return new Table(schema, name);
@@ -184,14 +217,7 @@ module.exports = class Table {
         }
 
         let TableStruct = commands.readStructure(this.schema.db.name, this.schema.name, this.name);
-        let TColumns = Object.keys(TableStruct);
-
-        // Remove __metadata from Columns list
-        for (let c = 0; c < TColumns.length; c++) {
-            if (TColumns[c] === `__metadata`) {
-                TColumns.splice(c, 1);
-            }
-        }
+        let TColumns = Object.keys(TableStruct.columns);
 
         let ContentW = [];
 
@@ -242,101 +268,99 @@ module.exports = class Table {
                 columns[i] = '.ignore';
             }
 
-            // Ignore tablename.metadata Object to avoid errors
-            if (key !== `__metadata`) {
-                if (TableStruct[key].type === 'object' && content[i].toUpperCase() !== 'DEFAULT') {
-                    content[i] = JSON.parse(content[i]);
-                }
+            if (TableStruct.columns[key].type === 'object' || TableStruct.columns[key].type === 'array' && content[i].toUpperCase() !== 'DEFAULT') {
+                content[i] = JSON.parse(content[i]);
+            }
 
-                // Key is not provided
-                if (typeof content[i] === 'undefined') {
-                    content[i] = 'DEFAULT';
-                }
+            // Key is not provided
+            if (typeof content[i] === 'undefined') {
+                content[i] = 'DEFAULT';
+            }
 
-                if (content[i] === null && TableStruct[key].notNull) {
-                    throw new Error(`\`${key}\` cannot be null`);
-                }
+            if (content[i] === null && TableStruct.columns[key].notNull) {
+                throw new Error(`\`${key}\` cannot be null`);
+            }
 
-                if ('maxLength' in TableStruct[key] && content[i].toString().length > TableStruct[key].maxLength) {
-                    throw new Error(`Exceded the max length for \`${key}\`: ${TableStruct[key].maxLength}`);
-                }
+            if ('maxLength' in TableStruct.columns[key] && content[i].toString().length > TableStruct.columns[key].maxLength) {
+                throw new Error(`Exceded the max length for \`${key}\`: ${TableStruct.columns[key].maxLength}`);
+            }
 
-                if (TableStruct[key].unique === true) {
-                    let TableContent = commands.readContent(this.schema.db.name, this.schema.name, this.name);
-                    TableContent.forEach(c => {
-                        if (c[i] !== null && c[i] === content[i]) {
-                            // Check for unique values (and ignore the null ones)
-                            throw new Error(`Value already exists: ${c[i]}`);
-                        }
-                    });
-                }
-
-                if (typeof content[i] === 'string') {
-                    // Replace content with the default value
-                    if (content[i].toUpperCase() === 'DEFAULT') {
-                        content[i] = TableStruct[key].default;
+            if (TableStruct.columns[key].unique) {
+                let TableContent = commands.readContent(this.schema.db.name, this.schema.name, this.name);
+                TableContent.forEach(c => {
+                    if (c[i] !== null && c[i] === content[i]) {
+                        // Check for unique values (and ignore the null ones)
+                        throw new Error(`Value already exists: ${c[i]}`);
                     }
+                });
+            }
 
-                    let a;
+            if (typeof content[i] === 'string') {
+                // Replace content with the default value
+                if (content[i].toUpperCase() === 'DEFAULT') {
+                    content[i] = TableStruct.columns[key].default;
+                }
 
-                    // If true, it's a sequence
-                    if ((a = content[i].search('nextval[(].*[)]')) !== -1) {
-                        content[i] = content[i].trim();
+                let a;
 
-                        // The replace method is too slow (+40 ms)
-                        //let seqName = content[i].default.replace(/nextval[(](.*)[)]/g, '$1');
-                        let seqName = content[i].slice(a + 'nextval('.length, content[i].length - 1);
-                        content[i] = new Sequence(this.schema, seqName).increment();
+                // If true, it's a sequence
+                if ((a = content[i].search('nextval[(].*[)]')) !== -1) {
+                    content[i] = content[i].trim();
+
+                    // The replace method is too slow (+40 ms)
+                    //const seqName = content[i].default.replace(/nextval[(](.*)[)]/g, '$1');
+                    const seqName = content[i].slice(a + 'nextval('.length, content[i].length - 1);
+                    content[i] = new Sequence(this.schema, seqName).increment();
+                }
+            }
+
+            if (typeof content[i] !== TableStruct.columns[key].type) {
+                if (!(TableStruct.columns[key].type === 'integer' && Number.isInteger(content[i]))
+                    && !(TableStruct.columns[key].type === 'array' && Array.isArray(content[i]))) {
+                    // The types are different and the number is not integer/array
+                    throw new Error(`Invalid type for column \`${key}\`: ${content[i]}(${typeof content[i]})`);
+                }
+            }
+
+            if (typeof content[i] !== 'undefined') {
+                ContentW[c] = content[i];
+                delete (content[i]);
+            }
+
+            if (columns === null) {
+                i++;
+            } else {
+                i = 0;
+
+                let f = true;
+                for (let j = 0; j < columns.length; j++) {
+                    if (columns[j] !== '.ignore') {
+                        f = false;
+                        break;
                     }
                 }
 
-                if (typeof content[i] !== TableStruct[key].type) {
-                    if (!(TableStruct[key].type === 'integer' && Number.isInteger(content[i]))) {
-                        // The types are different and the number is not integer
-                        throw new Error(`Invalid type for column \`${key}\`: ${content[i]}(${typeof content[i]})`);
-                    }
-                }
-
-                if (typeof content[i] !== 'undefined') {
-                    ContentW[c] = content[i];
-                    delete (content[i]);
-                }
-
-                if (columns === null) {
+                if (f) {
+                    columns = null;
                     i++;
                 } else {
-                    i = 0;
-
-                    let f = true;
-                    for (let j = 0; j < columns.length; j++) {
-                        if (columns[j] !== '.ignore') {
-                            f = false;
-                            break;
-                        }
-                    }
-
-                    if (f) {
-                        columns = null;
-                        i++;
-                    } else {
-                        for (let ca = 0; ca < TColumns.length; ca++) {
-                            for (let aux = 0; aux < columns.length; aux++) {
-                                if (columns[aux] !== '.ignore' && TColumns.indexOf(columns[aux]) === -1) {
-                                    throw new Error(`Invalid column: ${columns[aux]}`);
-                                }
-
-                                // Get the next index
-                                if (TColumns[ca] === columns[aux]) {
-                                    i = aux;
-                                    F = true;
-                                    break;
-                                }
+                    for (let ca = 0; ca < TColumns.length; ca++) {
+                        for (let aux = 0; aux < columns.length; aux++) {
+                            if (columns[aux] !== '.ignore' && !TColumns.includes(columns[aux])) {
+                                throw new Error(`Invalid column: ${columns[aux]}`);
                             }
 
-                            if (F) {
-                                F = false;
+                            // Get the next index
+                            if (TColumns[ca] === columns[aux]) {
+                                i = aux;
+                                F = true;
                                 break;
                             }
+                        }
+
+                        if (F) {
+                            F = false;
+                            break;
                         }
                     }
                 }
@@ -379,12 +403,9 @@ module.exports = class Table {
         for (let i = 0; i < TableContent.length; i++) {
             let j = 0;
             aaa[i] = {};
-            for (let key in TableStruct) {
-                if (TableStruct.hasOwnProperty(key)) {
-                    if (key !== `__metadata`) {
-                        aaa[i][key] = TableContent[i][j];
-                    }
-                    j++;
+            for (let key in TableStruct.columns) {
+                if (TableStruct.columns.hasOwnProperty(key)) {
+                    aaa[i][key] = TableContent[i][j++];
                 }
             }
         }
@@ -394,12 +415,9 @@ module.exports = class Table {
             for (let i = 0; i < TableContent.length; i++) {
                 let j = 0;
                 r[i] = {};
-                for (let key in TableStruct) {
-                    if (TableStruct.hasOwnProperty(key)) {
-                        if (key !== `__metadata`) {
-                            r[i][key] = TableContent[i][j];
-                        }
-                        j++;
+                for (let key in TableStruct.columns) {
+                    if (TableStruct.columns.hasOwnProperty(key)) {
+                        r[i][key] = TableContent[i][j++];
                     }
                 }
             }
@@ -407,17 +425,15 @@ module.exports = class Table {
             for (let i = 0; i < TableContent.length; i++) {
                 r[i] = {};
                 columns.forEach(column => {
-                    if (!TableStruct.hasOwnProperty(column)) {
+                    if (!TableStruct.columns.hasOwnProperty(column)) {
                         throw new Error(`Table ${this.schema.db.name}.${this.schema.name}.${this.name} does not have column ${column}`);
                     }
 
                     let j = 0;
-                    for (let key in TableStruct) {
-                        if (TableStruct.hasOwnProperty(key)) {
-                            if (key !== `__metadata`) {
-                                if (key === column) {
-                                    r[i][key] = TableContent[i][j];
-                                }
+                    for (let key in TableStruct.columns) {
+                        if (TableStruct.columns.hasOwnProperty(key)) {
+                            if (key === column) {
+                                r[i][key] = TableContent[i][j];
                             }
                             j++;
                         }
@@ -432,8 +448,7 @@ module.exports = class Table {
                 for (let key in aaa[i]) {
                     if (aaa[i].hasOwnProperty(key)) {
                         if (e.search(new RegExp(`\`${key}\``, 'g')) !== -1) {
-                            // Replace column with values
-                            if (TableStruct[key].type === 'string') {
+                            if (TableStruct.columns[key].type === 'string') {
                                 e = e.replace(new RegExp(`\`${key}\``, 'g'), `'${aaa[i][key].toString()}'`);
                             } else {
                                 e = e.replace(new RegExp(`\`${key}\``, 'g'), aaa[i][key].toString());
@@ -443,8 +458,6 @@ module.exports = class Table {
                 }
 
                 if (!eval(e)) {
-                    // The where clause is false, remove from returning table
-
                     aaa.splice(i, 1);
                     r.splice(i, 1);
                     i = -1;
@@ -454,46 +467,40 @@ module.exports = class Table {
 
         if (options.orderBy) {
             const getC = orderBy => {
-                if (!orderBy[0].hasOwnProperty('column')) {
-                    // No column specified
-
-                    if (!TableStruct[`__metadata`].hasOwnProperty('primaryKey')) {
-                        // There is no primary key on the table
-
-                        // Gets the first column of the table
-                        let key;
-                        for (key in TableStruct) {
-                            if (key !== `__metadata`) {
-                                break;
-                            }
-                        }
-
-                        return TableStruct[key];
-                    } else {
-                        return TableStruct[`__metadata`].primaryKey[0];
-                    }
-                } else {
-                    if (!TableStruct.hasOwnProperty(orderBy[0].column)) {
+                if (orderBy[0].hasOwnProperty('column')) {
+                    if (!TableStruct.columns.hasOwnProperty(orderBy[0].column)) {
                         throw new Error(`Column ${orderBy[0].column} does not exist`);
                     }
+
                     return orderBy[0].column;
+                } else {
+                    if (TableStruct.__metadata.hasOwnProperty('primaryKey')) {
+                        return TableStruct.__metadata.primaryKey[0];
+                    } else {
+                        let key;
+                        for (key in TableStruct.columns) {
+                            break;
+                        }
+
+                        return TableStruct.columns[key];
+                    }
                 }
             };
 
             const getM = orderBy => {
-                if (typeof orderBy[0].mode === 'undefined') {
-                    return 'ASC';
-                } else {
+                if (orderBy[0].mode) {
                     return orderBy[0].mode;
+                } else {
+                    return 'ASC';
                 }
             };
 
             // Check if the column 0 exists
             getC(options.orderBy);
 
-            const sorting = orderBy => function (a, b) {
-                let c = getC(orderBy); // Column
-                let m = getM(orderBy); // Mode
+            const sorting = orderBy => (a, b) => {
+                const c = getC(orderBy); // Column
+                const m = getM(orderBy); // Mode
 
                 if (m.toUpperCase() === 'DESC') {
                     if (a[c] < b[c]) {
@@ -524,7 +531,7 @@ module.exports = class Table {
         }
 
         if (options.groupBy) {
-
+            //r = r.reduce((acc, curr, i, arr, k = options.groupBy.map(val => `\`${val.column}\`:${JSON.stringify(curr[val.column])};`)) => ((acc[k] || (acc[k] = [])).push(curr), acc), {});
         }
 
         return r;
@@ -554,13 +561,10 @@ module.exports = class Table {
         for (let i = 0; i < TableContent.length; i++) {
             let j = 0;
             aaa[i] = {};
-            for (let key in TableStruct) {
-                if (TableStruct.hasOwnProperty(key)) {
-                    if (key !== `__metadata`) {
-                        TableIndexes[j] = key;
-                        aaa[i][key] = TableContent[i][j];
-                    }
-                    j++;
+            for (let key in TableStruct.columns) {
+                if (TableStruct.columns.hasOwnProperty(key)) {
+                    TableIndexes[j] = key;
+                    aaa[i][key] = TableContent[i][j++];
                 }
             }
         }
@@ -573,7 +577,7 @@ module.exports = class Table {
                 for (let key in aaa[i]) {
                     if (aaa[i].hasOwnProperty(key)) {
                         if (e.search(new RegExp(`\`${key}\``, 'g')) !== -1) {
-                            if (TableStruct[key].type === 'string') {
+                            if (TableStruct.columns[key].type === 'string') {
                                 e = e.replace(new RegExp(`\`${key}\``, 'g'), `'${aaa[i][key].toString()}'`);
                             } else {
                                 e = e.replace(new RegExp(`\`${key}\``, 'g'), aaa[i][key].toString());
@@ -600,22 +604,22 @@ module.exports = class Table {
                                 }
                             }
 
-                            if (TableStruct[key].type === 'object') {
+                            if (TableStruct.columns[key].type === 'object' || TableStruct.columns[key].type === 'array') {
                                 update[key] = JSON.parse(update[key]);
                             }
 
-                            if (update[key] === null && TableStruct[key].notNull) {
+                            if (update[key] === null && TableStruct.columns[key].notNull) {
                                 throw new Error(`\`${key}\` cannot be null`);
                             }
 
-                            if ('maxLength' in TableStruct[key] && update[key].toString().length > TableStruct[key].maxLength) {
-                                throw new Error(`Exceded the max length for \`${key}\`: ${TableStruct[key].maxLength}`);
+                            if ('maxLength' in TableStruct.columns[key] && update[key].toString().length > TableStruct.columns[key].maxLength) {
+                                throw new Error(`Exceded the max length for \`${key}\`: ${TableStruct.columns[key].maxLength}`);
                             }
 
                             if (typeof update[key] === 'string') {
                                 // Replace content with the default value
                                 if (update[key].toUpperCase() === 'DEFAULT') {
-                                    update[key] = TableStruct[key].default;
+                                    update[key] = TableStruct.columns[key].default;
                                     isDefault = true;
                                 }
 
@@ -632,15 +636,16 @@ module.exports = class Table {
                                     update[key] = new Sequence(this.schema, seqName).increment();
                                 }
                             } else {
-                                if (typeof update[key] !== TableStruct[key].type) {
-                                    if (!(TableStruct[key].type === 'integer' && Number.isInteger(update[key]))) {
+                                if (typeof update[key] !== TableStruct.columns[key].type) {
+                                    if (!(TableStruct.columns[key].type === 'integer' && Number.isInteger(update[key]))
+                                        && !(TableStruct.columns[key].type === 'array' && Array.isArray(update[key]))) {
                                         // The types are different and the number is not integer
                                         throw new Error(`Invalid type for column \`${key}\`: ${update[key]}(${typeof update[key]})`);
                                     }
                                 }
                             }
 
-                            if (TableStruct[key].unique === true) {
+                            if (TableStruct.columns[key].unique === true) {
                                 TableContent.forEach(c => {
                                     if (c[j] !== null && c[j] === update[key]) {
                                         // Check for unique values (and ignore the null ones)
@@ -701,12 +706,9 @@ module.exports = class Table {
         for (let i = 0; i < TableContent.length; i++) {
             let j = 0;
             aaa[i] = {};
-            for (let key in TableStruct) {
-                if (TableStruct.hasOwnProperty(key)) {
-                    if (key !== `__metadata`) {
-                        aaa[i][key] = TableContent[i][j];
-                    }
-                    j++;
+            for (let key in TableStruct.columns) {
+                if (TableStruct.columns.hasOwnProperty(key)) {
+                    aaa[i][key] = TableContent[i][j++];
                 }
             }
         }
@@ -719,7 +721,7 @@ module.exports = class Table {
                 for (let key in aaa[i]) {
                     if (aaa[i].hasOwnProperty(key)) {
                         if (e.search(new RegExp(`\`${key}\``, 'g')) !== -1) {
-                            if (TableStruct[key].type === 'string') {
+                            if (TableStruct.columns[key].type === 'string') {
                                 e = e.replace(new RegExp(`\`${key}\``, 'g'), `'${aaa[i][key].toString()}'`);
                             } else {
                                 e = e.replace(new RegExp(`\`${key}\``, 'g'), aaa[i][key].toString());
@@ -755,8 +757,12 @@ module.exports = class Table {
         return b;
     }
 
+    /**
+     *
+     * @returns {boolean}
+     */
     drop() {
-        if (this.schema.db.name === 'jsdb' && this.schema.name === 'public' && (this.name === 'users' || this.name === 'registry')) {
+        if (this.schema.db.name === 'jsdb' && this.schema.name === 'public' && (this.name === 'users' || this.name === 'registry' || this.name === 'default')) {
             throw new Error('JSDB database tables cannot be dropped');
         }
 

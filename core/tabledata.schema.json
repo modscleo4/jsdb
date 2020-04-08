@@ -1,0 +1,19 @@
+{
+  "$id": "https://modscleo4.github.io/jsdb/core/tabledata",
+  "title": "JSON schema for the Table Data (tabledata.json) file",
+  "type": "array",
+  "definitions": {},
+  "properties": {
+  },
+  "patternProperties": {},
+  "items": {
+    "type": "array",
+    "items": {
+    }
+  },
+  "required": [
+  ],
+  "minItems": 0,
+  "default": [
+  ]
+}

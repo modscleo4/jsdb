@@ -44,37 +44,40 @@ const {
 } = require('perf_hooks');
 
 module.exports = ((sql, connectionIndex) => {
-    const dbs = [];
+        const dbs = [];
 
-    const dbName = {
-        get: () => connections[connectionIndex].DBName,
+        const dbName = {
+            get: () => connections[connectionIndex].DBName,
 
-        set: dbS => {
-            if (DB.exists(dbS)) {
-                // Do not include the DB more than once
-                if (dbs.indexOf(dbS) === -1) {
-                    dbs.push(dbS);
-                    db.backup(dbS);
+            set: dbS => {
+                if (DB.exists(dbS)) {
+                    // Do not include the DB more than once
+                    if (!dbs.includes(dbS)) {
+                        dbs.push(dbS);
+                        db.backup(dbS);
+                    }
+
+                    connections[connectionIndex].DBName = dbS;
+                    return `Using database ${dbS}.`;
                 }
-
-                connections[connectionIndex].DBName = dbS;
-                return `Using database ${dbS}.`;
             }
-        }
-    };
+        };
 
-    const schemaName = {
-        get: () => connections[connectionIndex].SchemaName,
+        const schemaName = {
+            get: () => connections[connectionIndex].SchemaName,
 
-        set: schemaS => {
-            if (Schema.exists(new DB(dbName.get()), schemaS)) {
-                connections[connectionIndex].SchemaName = schemaS;
-                return `Changed schema to ${schemaS}.`;
+            set: schemaS => {
+                if (Schema.exists(new DB(dbName.get()), schemaS)) {
+                    connections[connectionIndex].SchemaName = schemaS;
+                    return `Changed schema to ${schemaS}.`;
+                }
             }
-        }
-    };
+        };
 
-    if (typeof sql === 'string') {
+        if (typeof sql !== 'string') {
+            throw new TypeError(`sql is not string.`);
+        }
+
         dbName.set(dbName.get());
         // Array of SQL command outputs
         let output = {};
@@ -189,6 +192,7 @@ module.exports = ((sql, connectionIndex) => {
                     let a = 0;
                     let tableName;
                     let csv = false;
+                    let isFunctions = false;
 
                     // Gets the table name
                     for (let i = 1; i < t.length; i++) {
@@ -256,6 +260,19 @@ module.exports = ((sql, connectionIndex) => {
                                     break;
                                 }
                             }
+                        } else if (t[i][0] === 'GROUP' && t[i + 1][0] === 'BY') {
+                            options.groupBy = [];
+                            let count = 0;
+                            for (let j = i + 2; j < t.length; j++) {
+                                if (t[j][0] === 'LITERAL') {
+                                    options.groupBy[count] = {};
+                                    options.groupBy[count].column = t[j][1];
+                                } else if (t[j][0] === 'SEPARATOR') {
+                                    count++;
+                                } else {
+                                    break;
+                                }
+                            }
                         } else if (t[i][0] === 'LIMIT') {
                             options.limitOffset = {};
                             for (let j = i + 1; j < t.length; j++) {
@@ -280,10 +297,13 @@ module.exports = ((sql, connectionIndex) => {
                             output.code = 1;
                             output.message = 'Not enough permissions';
                         } else {
+                            if (dbName.get() === 'jsdb' && schemaName.get() === 'public' && !tableName && isFunctions) {
+                                tableName = 'default';
+                            }
+
+                            output.data = new DB(dbName.get()).schema(schemaName.get()).table(tableName).select(cols, options);
                             if (csv) {
-                                output.data = jscsv.dataToCSV(new DB(dbName.get()).schema(schemaName.get()).table(tableName).select(cols, options));
-                            } else {
-                                output.data = new DB(dbName.get()).schema(schemaName.get()).table(tableName).select(cols, options);
+                                output.data = jscsv.dataToCSV(output.data);
                             }
                         }
                     } catch (e) {
@@ -358,7 +378,7 @@ module.exports = ((sql, connectionIndex) => {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                Sequence.create(new Schema(new DB(dbName.get()), schemaName.get()), t[2][1]);
+                                Sequence.create(new DB(dbName.get()).schema(schemaName.get()), t[2][1]);
                                 output.data = `Created Sequence ${dbName.get()}.${schemaName.get()}.${t[2][1]};`;
                             }
                         } catch (e) {
@@ -368,9 +388,10 @@ module.exports = ((sql, connectionIndex) => {
                     } else if (t[1][1].toUpperCase() === 'TABLE') {
                         let tableName;
                         let a;
-                        let tableStruct = {};
-                        let metadata = {};
-                        metadata.primaryKey = [];
+                        let columns = {};
+                        let metadata = {
+                            primaryKey: []
+                        };
 
                         for (let i = 1; i < t.length; i++) {
                             if (t[i][1].toUpperCase() === 'TABLE') {
@@ -380,8 +401,12 @@ module.exports = ((sql, connectionIndex) => {
 
                             // Get columns order
                             if (t[i + 2][0] === 'LEFT_PAREN' || t[i + 2][0] === 'SEPARATOR') {
+                                if (t[i + 3][1] === ')') {
+                                    break;
+                                }
+
                                 // t[i + 3][1] is the name of column
-                                tableStruct[t[i + 3][1]] = {};
+                                columns[t[i + 3][1]] = {};
 
                                 for (let j = i + 3; j < t.length; j++) {
                                     let isType = false;
@@ -396,44 +421,44 @@ module.exports = ((sql, connectionIndex) => {
                                     if (t[j][0] === 'LITERAL' || t[j][0] === 'BOOLEAN') {
                                         if (t[j][1].toUpperCase() === 'NUMBER') {
                                             isType = true;
-                                            tableStruct[t[i + 3][1]].type = 'number';
+                                            columns[t[i + 3][1]].type = 'number';
                                         } else if (t[j][1].toUpperCase() === 'INT' || t[j][1].toUpperCase() === 'INTEGER') {
                                             isType = true;
-                                            tableStruct[t[i + 3][1]].type = 'integer';
+                                            columns[t[i + 3][1]].type = 'integer';
                                         } else if (t[j][1].toUpperCase() === 'STRING') {
                                             isType = true;
-                                            tableStruct[t[i + 3][1]].type = 'string';
+                                            columns[t[i + 3][1]].type = 'string';
                                         } else if (t[j][1].toUpperCase() === 'BOOLEAN') {
                                             isType = true;
-                                            tableStruct[t[i + 3][1]].type = 'boolean';
+                                            columns[t[i + 3][1]].type = 'boolean';
                                         } else if (t[j][1].toUpperCase() === 'OBJECT') {
                                             isType = true;
-                                            tableStruct[t[i + 3][1]].type = 'object';
+                                            columns[t[i + 3][1]].type = 'object';
                                         } else if (t[j][1].toUpperCase() === 'KEY') {
                                             if (t[j - 1][1].toUpperCase() === 'PRIMARY') {
                                                 metadata.primaryKey.push(t[i + 3][1]);
-                                                tableStruct[t[i + 3][1]].notNull = true;
-                                                tableStruct[t[i + 3][1]].unique = true;
+                                                columns[t[i + 3][1]].notNull = true;
+                                                columns[t[i + 3][1]].unique = true;
                                             }
                                         } else if (t[j][1].toUpperCase() === 'UNIQUE') {
-                                            tableStruct[t[i + 3][1]].unique = true;
+                                            columns[t[i + 3][1]].unique = true;
                                         } else if (t[j][1].toUpperCase() === 'DEFAULT') {
                                             if (t[j + 1][0] === 'STRING') {
-                                                tableStruct[t[i + 3][1]].default = t[j + 1][1];
+                                                columns[t[i + 3][1]].default = t[j + 1][1];
                                             } else if (t[j + 1][0] === 'NUMBER') {
-                                                tableStruct[t[i + 3][1]].default = parseFloat(t[j + 1][1]);
+                                                columns[t[i + 3][1]].default = parseFloat(t[j + 1][1]);
                                             } else if (t[j + 1][0] === 'BOOLEAN') {
-                                                tableStruct[t[i + 3][1]].default = (t[j + 1][1].toUpperCase() === 'TRUE');
+                                                columns[t[i + 3][1]].default = (t[j + 1][1].toUpperCase() === 'TRUE');
                                             }
 
                                         } else if (t[j][1].toUpperCase() === 'AUTO' && t[j + 1][1].toUpperCase() === 'INCREMENT') {
-                                            tableStruct[t[i + 3][1]].autoIncrement = true;
+                                            columns[t[i + 3][1]].autoIncrement = true;
                                         } else if (t[j][1].toUpperCase() === 'NULL') {
-                                            tableStruct[t[i + 3][1]].notNull = (t[j - 1][1].toUpperCase() === 'NOT');
+                                            columns[t[i + 3][1]].notNull = (t[j - 1][1].toUpperCase() === 'NOT');
                                         }
 
                                         if (isType && t[j + 1][0] === 'LEFT_PAREN') {
-                                            tableStruct[t[i + 3][1]].maxLength = t[j + 2][1];
+                                            columns[t[i + 3][1]].maxLength = t[j + 2][1];
                                         }
                                     }
                                 }
@@ -449,7 +474,7 @@ module.exports = ((sql, connectionIndex) => {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                Table.create(new Schema(new DB(dbName.get()), schemaName.get()), tableName, tableStruct, metadata);
+                                Table.create(new DB(dbName.get()).schema(schemaName.get()), tableName, columns, metadata);
                                 output.data = `Created Table ${dbName.get()}.${schemaName.get()}.${tableName}.`;
                             }
                         } catch (e) {
@@ -628,7 +653,7 @@ module.exports = ((sql, connectionIndex) => {
                     }
 
                     try {
-                        if (!userPrivileges.update || (dbName.get() === 'jsdb' && schemaName.get() === 'public' && (tableName === 'users' || tableName === 'registry'))) {
+                        if (!userPrivileges.update || (dbName.get() === 'jsdb' && schemaName.get() === 'public' && (tableName === 'users' || tableName === 'registry' || tableName === 'default'))) {
                             output.code = 1;
                             output.message = 'Not enough permissions';
                         } else {
@@ -745,7 +770,7 @@ module.exports = ((sql, connectionIndex) => {
                     }
 
                     try {
-                        if (!userPrivileges.update || (dbName.get() === 'jsdb' && schemaName.get() === 'public' && (tableName === 'users' || tableName === 'registry'))) {
+                        if (!userPrivileges.update || (dbName.get() === 'jsdb' && schemaName.get() === 'public' && (tableName === 'users' || tableName === 'registry' || tableName === 'default'))) {
                             output.code = 1;
                             output.message = 'Not enough permissions';
                         } else {
@@ -768,7 +793,7 @@ module.exports = ((sql, connectionIndex) => {
 
                             if (t[j][1].toUpperCase() === 'INCREMENT' && t[j + 1][1].toUpperCase() === 'BY') {
                                 update.inc = parseInt(t[j + 2][1]);
-                            } else if (t[j][1].toUpperCase() === 'START' && t[j + 1][1].toUpperCase() === 'WITH') {
+                            } else if (t[j][1].toUpperCase() === 'RESTART' && t[j + 1][1].toUpperCase() === 'WITH') {
                                 update.start = parseInt(t[j + 2][1]);
                             }
                         }
@@ -778,10 +803,12 @@ module.exports = ((sql, connectionIndex) => {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
+                                if (!update.hasOwnProperty('start')) {
+                                    update.start = new DB(dbName.get()).schema(schemaName.get()).sequence(seqName).start;
+                                }
+
                                 if (!update.hasOwnProperty('inc')) {
-                                    update.inc = new DB(dbName.get()).schema(schemaName.get()).sequence(seqName).read().inc;
-                                } else if (!update.hasOwnProperty('start')) {
-                                    update.start = new DB(dbName.get()).schema(schemaName.get()).sequence(seqName).read().start;
+                                    update.inc = new DB(dbName.get()).schema(schemaName.get()).sequence(seqName).inc;
                                 }
 
                                 new DB(dbName.get()).schema(schemaName.get()).sequence(seqName).update(update);
@@ -878,7 +905,7 @@ module.exports = ((sql, connectionIndex) => {
                         try {
                             userPrivileges = getPermissions('jsdb');
                             if (config.registry.instantApplyChanges) {
-                                registry.readAll();
+                                registry.readAllEntries();
                             }
                             if (!userPrivileges.update) {
                                 output.code = 1;
@@ -1058,7 +1085,7 @@ module.exports = ((sql, connectionIndex) => {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                if (ifExists && !Sequence.exists(new Schema(new DB(dbName.get()), schemaName.get()), seqName)) {
+                                if (ifExists && !Sequence.exists(new DB(dbName.get()).schema(schemaName.get()), seqName)) {
                                     output.data = `Warning: Sequence ${dbName.get()}.${schemaName.get()}.${seqName} does not exist.`;
                                 } else {
                                     new DB(dbName.get()).schema(schemaName.get()).sequence(seqName).drop();
@@ -1094,7 +1121,7 @@ module.exports = ((sql, connectionIndex) => {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                if (ifExists && !Sequence.exists(new Schema(new DB(dbName.get()), schemaName.get()), tableName)) {
+                                if (ifExists && !Sequence.exists(new DB(dbName.get()).schema(schemaName.get()), tableName)) {
                                     output.data = `Warning: Table ${dbName.get()}.${schemaName.get()}.${tableName} does not exist.`;
                                 } else {
                                     new DB(dbName.get()).schema(schemaName.get()).table(tableName).drop();
@@ -1130,10 +1157,10 @@ module.exports = ((sql, connectionIndex) => {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                if (ifExists && !Registry.exists(username)) {
+                                if (ifExists && !User.exists(username)) {
                                     output.data = `Warning: User ${username} does not exist.`;
                                 } else {
-                                    new Registry(entryName).drop();
+                                    new User(username).drop();
                                     output.data = `Dropped User ${username}.`;
                                 }
                             }
@@ -1337,6 +1364,28 @@ module.exports = ((sql, connectionIndex) => {
                         output.code = 2;
                         output.message = `Unrecognized command: ${output.sql}`;
                     }
+                } else if (t[0][1].toUpperCase() === 'DESCRIBE') {
+                    if (t[1][1].toUpperCase() === 'TABLE') {
+                        let tableName = t[2][1];
+
+                        try {
+                            userPrivileges = getPermissions(dbName.get());
+                            if (!userPrivileges.read) {
+                                output.code = 1;
+                                output.message = 'Not enough permissions';
+                            } else {
+                                output.data = table.readStructure(dbName.get(), schemaName.get(), tableName);
+                                output.data.__metadata.primaryKey.forEach(pk => output.data.columns[pk].primaryKey = true);
+                                output.data = output.data.columns;
+                            }
+                        } catch (e) {
+                            output.code = 1;
+                            output.message = e.message;
+                        }
+                    } else {
+                        output.code = 2;
+                        output.message = `Unrecognized command: ${output.sql}`;
+                    }
                 } else {
                     output.code = 2;
                     output.message = `Unrecognized command: ${output.sql}`;
@@ -1359,5 +1408,6 @@ module.exports = ((sql, connectionIndex) => {
         }
 
         return output;
+
     }
-});
+);

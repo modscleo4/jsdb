@@ -21,6 +21,11 @@
 'use strict';
 
 module.exports = class Connection {
+    #socket;
+    #dbName;
+    #schemaName;
+    #username;
+
     constructor(socket = null) {
         this.Socket = socket;
         this.DBName = 'jsdb';
@@ -29,34 +34,34 @@ module.exports = class Connection {
     }
 
     get Socket() {
-        return this._socket;
+        return this.#socket;
     }
 
     set Socket(socket) {
-        this._socket = socket;
+        this.#socket = socket;
     }
 
     get DBName() {
-        return this._dbName;
+        return this.#dbName;
     }
 
     set DBName(dbName) {
-        this._dbName = dbName;
+        this.#dbName = dbName;
     }
 
     get SchemaName() {
-        return this._schemaName;
+        return this.#schemaName;
     }
 
     set SchemaName(schemaName) {
-        this._schemaName = schemaName;
+        this.#schemaName = schemaName;
     }
 
     get Username() {
-        return this._username;
+        return this.#username;
     }
 
     set Username(username) {
-        this._username = username;
+        this.#username = username;
     }
 };

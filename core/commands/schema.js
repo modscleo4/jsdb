@@ -87,15 +87,15 @@ exports.readFile = function readFile(db) {
     SCHList.forEach(schName => {
         if (!fs.existsSync(`${config.server.startDir}dbs/${db}/${schName}`)) {
             SCHList.splice(SCHList.indexOf(schName), 1);
-            exports.writeFile(db, JSON.stringify(SCHList));
+            exports.writeFile(db, SCHList);
         }
     });
 
     fs.readdirSync(`${config.server.startDir}dbs/${db}/`).forEach(schName => {
         if (schName !== f_schlist) {
-            if (SCHList.indexOf(schName) === -1) {
+            if (!SCHList.includes(schName)) {
                 SCHList.push(schName);
-                exports.writeFile(db, JSON.stringify(SCHList));
+                exports.writeFile(db, SCHList);
             }
         }
     });

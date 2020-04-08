@@ -22,10 +22,9 @@
 
 const commands = require('./commands/db');
 
-//const Schema = require('./Schema');
-//const Table = require('./Table');
-
 module.exports = class DB {
+    #name;
+
     /**
      *
      * @param {string} name
@@ -43,7 +42,7 @@ module.exports = class DB {
      * @returns {string}
      */
     get name() {
-        return this._name;
+        return this.#name;
     }
 
     /**
@@ -55,7 +54,52 @@ module.exports = class DB {
             throw new TypeError(`name is not string.`);
         }
 
-        this._name = name;
+        this.#name = name;
+    }
+
+    /**
+     *
+     * @param {string} schema
+     */
+    schema(schema) {
+        if (typeof schema !== 'string') {
+            throw new TypeError(`schema is not string.`);
+        }
+
+        return new (require('./Schema'))(this, schema);
+    }
+
+    /**
+     *
+     * @param {string} table
+     */
+    table(table) {
+        if (typeof table !== 'string') {
+            throw new TypeError(`table is not string.`);
+        }
+
+        return this.schema('public').table(table);
+    }
+
+    /**
+     *
+     * @returns {boolean}
+     */
+    drop() {
+        if (this.name === 'jsdb') {
+            throw new Error('JSDB database cannot be dropped.');
+        }
+
+        if (!DB.exists(this.name)) {
+            throw new Error(`Database ${this.name} does not exist.`);
+        }
+
+        let List = commands.readFile();
+        List.splice(List.indexOf(this.name), 1);
+        commands.writeFile(List);
+        commands.deleteFolder(this.name);
+
+        return true;
     }
 
     /**
@@ -94,52 +138,5 @@ module.exports = class DB {
 
         const list = commands.readFile();
         return list.includes(name);
-    }
-
-    /**
-     *
-     * @returns {boolean}
-     */
-    drop() {
-        if (this.name === 'jsdb') {
-            throw new Error('JSDB database cannot be dropped.');
-        }
-
-        if (!DB.exists(this.name)) {
-            throw new Error(`Database ${this.name} does not exist.`);
-        }
-
-        let List = commands.readFile();
-        List.splice(List.indexOf(this.name), 1);
-        commands.writeFile(List);
-        commands.deleteFolder(this.name);
-
-        return true;
-    }
-
-    /**
-     *
-     * @param {string} schema
-     * @returns {Schema}
-     */
-    schema(schema) {
-        if (typeof schema !== 'string') {
-            throw new TypeError(`schema is not string.`);
-        }
-
-        return new (require('./Schema'))(this, schema);
-    }
-
-    /**
-     *
-     * @param {string} table
-     * @returns {Table}
-     */
-    table(table) {
-        if (typeof table !== 'string') {
-            throw new TypeError(`table is not string.`);
-        }
-
-        return new (require('./Table'))(this.schema('public'), table);
     }
 };

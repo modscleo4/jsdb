@@ -1,8 +1,8 @@
 const {config} = require('./config');
 
 /*
-* Ignore authentication for test purposes
-* */
+ * Ignore authentication for test purposes
+ */
 config.server.ignAuth = true;
 
 const {checkJSDBIntegrity} = require('./core/commands/db');
@@ -74,7 +74,7 @@ describe('Schema', function () {
 
     describe('#create()', function () {
         it('Should return a Schema instance', function () {
-            assert.deepEqual(Schema.create(new DB('a'), 'a'), new Schema(new DB('a'), 'a'));
+            assert.deepEqual(Schema.create(new DB('a'), 'a'), new DB('a').schema('a'));
         });
     });
 
@@ -86,7 +86,7 @@ describe('Schema', function () {
 
     describe('#dropShema()', function () {
         it('Should return true', function () {
-            assert.strictEqual(new Schema(new DB('a'), 'a').drop(), true);
+            assert.strictEqual(new DB('a').schema('a').drop(), true);
         });
     });
 
@@ -99,7 +99,7 @@ describe('Schema', function () {
     describe('#drop()', function () {
         it('Should throw \'Schema a.a does not exist.\'', function () {
             assert.throws(() => {
-                new Schema(new DB('a'), 'a').drop()
+                new DB('a').schema('a').drop()
             });
         });
     });
@@ -116,27 +116,27 @@ describe('Sequence', function () {
 
     describe('#create()', function () {
         it('Should return a Sequence Instance', function () {
-            assert.deepEqual(Sequence.create(new Schema(new DB('jsdb'), 'public'), 'a_seq'), new Sequence(new Schema(new DB('jsdb'), 'public'), 'a_seq'));
+            assert.deepEqual(Sequence.create(new DB('a').schema('public'), 'a_seq'), new DB('a').schema('public').sequence('a_seq'));
         });
     });
 
     describe('#create()', function () {
         it('Should throw \'Sequence jsdb.public.a_seq already exists.\'', function () {
             assert.throws(() => {
-                Sequence.create(new Schema(new DB('jsdb'), 'public'), 'a_seq')
+                Sequence.create(new DB('a').schema('public'), 'a_seq')
             });
         });
     });
 
     describe('#exists()', function () {
         it('Should return true', function () {
-            assert.strictEqual(Sequence.exists(new Schema(new DB('jsdb'), 'public'), 'a_seq'), true);
+            assert.strictEqual(Sequence.exists(new DB('a').schema('public'), 'a_seq'), true);
         });
     });
 
     describe('#read()', function () {
         it('Should return the sequence in a named array', function () {
-            assert.deepEqual(new Sequence(new Schema(new DB('jsdb'), 'public'), 'a_seq').read(), {
+            assert.deepEqual(new DB('a').schema('public').sequence('a_seq').read(), {
                 start: 1,
                 inc: 1,
             });
@@ -145,16 +145,16 @@ describe('Sequence', function () {
 
     describe('#update()', function () {
         it('Should return 1', function () {
-            assert.strictEqual(new Sequence(new Schema(new DB('jsdb'), 'public'), 'a_seq').update({
-                start: 2,
-                inc: 1
-            }), 1);
+            assert.strictEqual(new DB('a').schema('public').sequence('a_seq').update({
+                                                                                         start: 2,
+                                                                                         inc: 1
+                                                                                     }), 1);
         });
     });
 
     describe('#read()', function () {
         it('Should return the sequence in a named array', function () {
-            assert.deepEqual(new Sequence(new Schema(new DB('jsdb'), 'public'), 'a_seq').read(), {
+            assert.deepEqual(new DB('a').schema('public').sequence('a_seq').read(), {
                 start: 2,
                 inc: 1
             });
@@ -163,14 +163,14 @@ describe('Sequence', function () {
 
     describe('#drop()', function () {
         it('Should return true', function () {
-            assert.strictEqual(new Sequence(new Schema(new DB('jsdb'), 'public'), 'a_seq').drop(), true);
+            assert.strictEqual(new DB('a').schema('public').sequence('a_seq').drop(), true);
         });
     });
 
     describe('#drop()', function () {
         it('Should throw \'Sequence jsdb.public.a_seq does not exist.\'', function () {
             assert.throws(() => {
-                new Sequence(new Schema(new DB('jsdb'), 'public'), 'a_seq').drop()
+                new DB('a').schema('public').sequence('a_seq').drop()
             });
         });
     });
@@ -178,7 +178,7 @@ describe('Sequence', function () {
     describe('#read()', function () {
         it('Should throw \'Sequence jsdb.public.a_seq does not exist.\'', function () {
             assert.throws(() => {
-                new Sequence(new Schema(new DB('jsdb'), 'public'), 'a_seq').read()
+                new DB('a').schema('public').sequence('a_seq').read()
             });
         });
     });
@@ -186,10 +186,10 @@ describe('Sequence', function () {
     describe('#update()', function () {
         it('Should throw \'Sequence jsdb.public.a_seq does not exist.\'', function () {
             assert.throws(() => {
-                new Sequence(new Schema(new DB('jsdb'), 'public'), 'a_seq').update({
-                    start: 2,
-                    inc: 1,
-                })
+                new DB('a').schema('public').sequence('a_seq').update({
+                                                                          start: 2,
+                                                                          inc: 1,
+                                                                      })
             });
         });
     });
@@ -206,47 +206,47 @@ describe('Table', function () {
 
     describe('#create()', function () {
         it('Should return a Table instance', function () {
-            assert.deepEqual(Table.create(new Schema(new DB('a'), 'public'), 'a', {
+            assert.deepEqual(Table.create(new DB('a').schema('public'), 'a', {
                 id: {
                     type: 'integer',
                     unique: true,
                     autoIncrement: true,
                     notNull: true
                 }
-            }), new Table(new Schema(new DB('a'), 'public'), 'a'));
+            }), new DB('a').schema('public').table('a'));
         });
     });
 
     describe('#create()', function () {
         it('Should throw \'Table a.public.a already exists.\'', function () {
             assert.throws(() => {
-                Table.create(new Schema(new DB('a'), 'public'), 'a', {'id': {'type': 'integer'}});
+                Table.create(new DB('a').schema('public'), 'a', {id: {type: 'integer'}});
             });
         });
     });
 
     describe('#exists()', function () {
         it('Should return true', function () {
-            assert.strictEqual(Table.exists(new Schema(new DB('a'), 'public'), 'a'), true);
+            assert.strictEqual(Table.exists(new DB('a').schema('public'), 'a'), true);
         });
     });
 
     describe('#insert()', function () {
         it('Should return 1', function () {
-            assert.strictEqual(new Table(new Schema(new DB('a'), 'public'), 'a').insert(['DEFAULT']), 1);
+            assert.strictEqual(new DB('a').schema('public').table('a').insert(['DEFAULT']), 1);
         });
     });
 
     describe('#insert()', function () {
         it('Should return 1', function () {
-            assert.strictEqual(new Table(new Schema(new DB('a'), 'public'), 'a').insert(['DEFAULT']), 1);
+            assert.strictEqual(new DB('a').schema('public').table('a').insert(['DEFAULT']), 1);
         });
     });
 
     describe('#insert()', function () {
         it('Should throw \'Value already exists: 1\'', function () {
             assert.throws(() => {
-                new Table(new Schema(new DB('a'), 'public'), 'a').insert([1])
+                new DB('a').schema('public').table('a').insert([1])
             });
         });
     });
@@ -254,7 +254,7 @@ describe('Table', function () {
     describe('#insert()', function () {
         it('Should throw \'`id` cannot be null\'', function () {
             assert.throws(() => {
-                new Table(new Schema(new DB('a'), 'public'), 'a').insert([null])
+                new DB('a').schema('public').table('a').insert([null])
             });
         });
     });
@@ -262,7 +262,7 @@ describe('Table', function () {
     describe('#insert()', function () {
         it('Should throw \'Invalid type for column `id`: a(string)\'', function () {
             assert.throws(() => {
-                new Table(new Schema(new DB('a'), 'public'), 'a').insert(['a'])
+                new DB('a').schema('public').table('a').insert(['a'])
             });
         });
     });
@@ -270,26 +270,26 @@ describe('Table', function () {
     describe('#insert()', function () {
         it('Should throw \'Invalid column: a\'', function () {
             assert.throws(() => {
-                new Table(new Schema(new DB('a'), 'public'), 'a').insert(['DEFAULT'], ['a'])
+                new DB('a').schema('public').table('a').insert(['DEFAULT'], ['a'])
             });
         });
     });
 
     describe('#select()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.deepEqual(new Table(new Schema(new DB('a'), 'public'), 'a').select(['*'], {}), [{'id': 1}, {'id': 2}]);
+            assert.deepEqual(new DB('a').schema('public').table('a').select(['*'], {}), [{id: 1}, {id: 2}]);
         });
     });
 
     describe('#select()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.deepEqual(new Table(new Schema(new DB('a'), 'public'), 'a').select(['*'], {'where': '`id` == 1'}), [{'id': 1}]);
+            assert.deepEqual(new DB('a').schema('public').table('a').select(['*'], {where: '`id` == 1'}), [{id: 1}]);
         });
     });
 
     describe('#select()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.deepEqual(new Table(new Schema(new DB('a'), 'public'), 'a').select(['*'], {
+            assert.deepEqual(new DB('a').schema('public').table('a').select(['*'], {
                 orderBy: [{
                     column: 'id',
                     mode: 'DESC'
@@ -300,44 +300,44 @@ describe('Table', function () {
 
     describe('#update()', function () {
         it('Should return 2', function () {
-            assert.strictEqual(new Table(new Schema(new DB('a'), 'public'), 'a').update({'id': 'DEFAULT'}, {'where': 'true'}), 2);
+            assert.strictEqual(new DB('a').schema('public').table('a').update({id: 'DEFAULT'}, {where: 'true'}), 2);
         });
     });
 
     describe('#select()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.deepEqual(new Table(new Schema(new DB('a'), 'public'), 'a').select(['*'], {}), [{'id': 3}, {'id': 4}]);
+            assert.deepEqual(new DB('a').schema('public').table('a').select(['*'], {}), [{id: 3}, {id: 4}]);
         });
     });
 
     describe('#delete()', function () {
         it('Should return 2', function () {
-            assert.strictEqual(new Table(new Schema(new DB('a'), 'public'), 'a').delete({'where': '`id` > 2'}), 2);
+            assert.strictEqual(new DB('a').schema('public').table('a').delete({where: '`id` > 2'}), 2);
         });
     });
 
     describe('#select()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.deepEqual(new Table(new Schema(new DB('a'), 'public'), 'a').select(['*'], {}), []);
+            assert.deepEqual(new DB('a').schema('public').table('a').select(['*'], {}), []);
         });
     });
 
     describe('#drop()', function () {
         it('Should return true', function () {
-            assert.strictEqual(new Table(new Schema(new DB('a'), 'public'), 'a').drop(), true);
+            assert.strictEqual(new DB('a').schema('public').table('a').drop(), true);
         });
     });
 
     describe('#exists()', function () {
         it('Should return false', function () {
-            assert.strictEqual(Table.exists(new Schema(new DB('a'), 'public'), 'a'), false);
+            assert.strictEqual(Table.exists(new DB('a').schema('public'), 'a'), false);
         });
     });
 
     describe('#drop()', function () {
         it('Should throw \'Table a.public.a does not exist.\'', function () {
             assert.throws(() => {
-                new Table(new Schema(new DB('a'), 'public'), 'a').drop()
+                new DB('a').schema('public').table('a').drop()
             });
         });
     });
@@ -346,7 +346,7 @@ describe('Table', function () {
     describe('#insert()', function () {
         it('Should throw \'Table a.public.a does not exist.\'', function () {
             assert.throws(() => {
-                new Table(new Schema(new DB('a'), 'public'), 'a').insert(['DEFAULT'])
+                new DB('a').schema('public').table('a').insert(['DEFAULT'])
             });
         });
     });
@@ -354,7 +354,7 @@ describe('Table', function () {
     describe('#select()', function () {
         it('Should throw \'Table a.public.a does not exist.\'', function () {
             assert.throws(() => {
-                new Table(new Schema(new DB('a'), 'public'), 'a').select(['*'], {})
+                new DB('a').schema('public').table('a').select(['*'], {})
             });
         });
     });
@@ -362,7 +362,7 @@ describe('Table', function () {
     describe('#update()', function () {
         it('Should throw \'Table a.public.a does not exist.\'', function () {
             assert.throws(() => {
-                new Table(new Schema(new DB('a'), 'public'), 'a').update({'id': 'DEFAULT'}, {'where': 'true'})
+                new DB('a').schema('public').table('a').update({id: 'DEFAULT'}, {where: 'true'})
             });
         });
     });
@@ -370,7 +370,7 @@ describe('Table', function () {
     describe('#delete()', function () {
         it('Should throw \'Table a.public.a does not exist.\'', function () {
             assert.throws(() => {
-                new Table(new Schema(new DB('a'), 'public'), 'a').delete({'where': 'true'})
+                new DB('a').schema('public').table('a').delete({where: 'true'})
             });
         });
     });
@@ -385,19 +385,19 @@ describe('User', function () {
 
     before(function () {
         checkJSDBIntegrity();
-        prev = new Sequence(new Schema(new DB('jsdb'), 'public'), 'users_id_seq').read();
+        prev = new DB('jsdb').schema('public').sequence('users_id_seq').read();
     });
 
     describe('#create()', function () {
         it('Should return an User instance', function () {
-            assert.deepEqual(User.create('internaluser:test', 'jsdbadmin', {'test': 15}), new User('internaluser:test'))
+            assert.deepEqual(User.create('internaluser:test', 'jsdbadmin', {test: 15}), new User('internaluser:test'))
         });
     });
 
     describe('#create()', function () {
         it('Should throw \'User internaluser:test already exists.\'', function () {
             assert.throws(() => {
-                User.create('internaluser:test', 'jsdbadmin', {'test': 15})
+                User.create('internaluser:test', 'jsdbadmin', {test: 15})
             })
         });
     });
@@ -416,13 +416,13 @@ describe('User', function () {
 
     describe('#getPrivileges()', function () {
         it('Should return the user privileges', function () {
-            assert.deepEqual(new User('internaluser:test').privileges(), {'test': 15})
+            assert.deepEqual(new User('internaluser:test').privileges(), {test: 15})
         });
     });
 
     describe('#update()', function () {
         it('Should return true', function () {
-            assert.strictEqual(new User('internaluser:test').update({'username': 'internaluser:test2'}), true);
+            assert.strictEqual(new User('internaluser:test').update({username: 'internaluser:test2'}), true);
         });
     });
 
@@ -449,7 +449,7 @@ describe('User', function () {
     });
 
     after(function () {
-        new Sequence(new Schema(new DB('jsdb'), 'public'), 'users_id_seq').update(prev);
+        new DB('jsdb').schema('public').sequence('users_id_seq').update(prev);
     });
 });
 

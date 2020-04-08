@@ -1,2 +1,91 @@
 #!/usr/bin/env node
-require("../server.js");
+
+'use strict';
+
+const {config} = require('../config');
+const {readAllEntries} = require('../core/commands/registry');
+const minimist = require('minimist');
+
+readAllEntries();
+
+/**
+ *
+ * @type {{help, dir, listenIP, port, noAuth, createZip, generateLogs, regAutoReload}}
+ */
+const args = minimist(process.argv.slice(2), {
+    alias: {
+        h: 'help',
+        d: 'dir',
+        a: 'listenIP',
+        p: 'port',
+        N: 'noAuth',
+        Z: 'createZip',
+        L: 'generateLogs',
+        R: 'regAutoReload',
+    },
+
+    string: [
+        'dir', 'listenIP',
+    ],
+
+    number: [
+        'port',
+    ],
+
+    boolean: [
+        'help', 'noAuth', 'createZip', 'generateLogs', 'regAutoReload',
+    ],
+
+    default: {
+        dir: './data/',
+        listenIP: '0.0.0.0',
+        port: 6637,
+    }
+});
+
+if (args.help) {
+    console.log('Usage: jsdb [-h] [-d dir] [-a address] [-p port] [-N] [-Z] [-L] [-R]');
+    console.log('');
+
+    console.log('Options: ');
+    console.log('-h, --help          \tDisplays this table');
+    console.log('-d, --dir           \tWhere JSDB should store the data');
+    console.log('-a, --listenIP      \tWhich IP to listen on');
+    console.log('-p, --port          \tWhat port to listen');
+    console.log('-N, --noAuth        \tDisable authentication');
+    console.log('-Z, --createZip     \tEnable backup system');
+    console.log('-L, --generateLogs  \tEnable Log system');
+    console.log('-R, --regAutoReload \tEnable Registry auto reload');
+
+    console.log('');
+
+    process.exit(0);
+}
+
+config.server.ignAuth = args.noAuth;
+config.server.startDir = args.dir;
+config.server.listenIP = args.listenIP;
+config.server.port = args.port;
+config.db.createZip = args.createZip;
+config.log.generateLogs = args.generateLogs;
+config.registry.instantApplyChanges = args.regAutoReload;
+
+if (config.server.port <= 0 || config.server.port >= 65535) {
+    config.server.port = 6637;
+}
+
+if (config.server.startDir === '') {
+    config.server.startDir = './';
+}
+
+// Ensure startDir ends with /
+if (!config.server.startDir.endsWith('/')) {
+    config.server.startDir += '/';
+}
+
+// Ensure startDir ends with data/ (data dir is where the databases and log files should be)
+if (!config.server.startDir.endsWith('data/')) {
+    config.server.startDir += 'data/';
+}
+
+require('../server');

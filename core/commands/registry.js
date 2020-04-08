@@ -21,13 +21,13 @@
 'use strict';
 
 const {config} = require('../../config');
-const db = require('./db');
+const {checkJSDBIntegrity} = require('./db');
 
 /**
  * @summary Reads the entire registry
  */
-exports.readAll = function readAll() {
-    db.checkJSDBIntegrity();
+exports.readAllEntries = function readAllEntries() {
+    checkJSDBIntegrity();
 
     // Load registry configs
     const Registry = require('../Registry');

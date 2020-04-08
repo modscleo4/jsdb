@@ -1,0 +1,113 @@
+{
+  "$id": "https://modscleo4.github.io/jsdb/core/tablestruct",
+  "title": "JSON schema for the Table Structure (tablestruct.json) file",
+  "type": "object",
+  "definitions": {},
+  "properties": {
+    "columns": {
+      "description": "The columns of the Table",
+      "type": "object",
+      "default": {},
+      "patternProperties": {
+        "": {
+          "description": "A Table column",
+          "type": "object",
+          "properties": {
+            "type": {
+              "description": "Column type",
+              "type": "string",
+              "enum": [
+                "array",
+                "boolean",
+                "integer",
+                "number",
+                "object",
+                "string"
+              ]
+            },
+            "enum": {
+              "description": "If this column is of integer type, this property stores all possible values",
+              "type": "array",
+              "items": true,
+              "uniqueItems": true,
+              "default": []
+            },
+            "unique": {
+              "description": "If this column only accepts unique values",
+              "type": "boolean",
+              "default": false
+            },
+            "notNull": {
+              "description": "If this column only accepts non-null values",
+              "type": "boolean",
+              "default": false
+            },
+            "default": {
+              "description": "The default value of this column",
+              "type": [
+                "array",
+                "boolean",
+                "integer",
+                "null",
+                "number",
+                "object",
+                "string"
+              ]
+            },
+            "minLength": {
+              "description": "The minimum length of the column values",
+              "type": "number",
+              "minimum": 1
+            },
+            "maxLength": {
+              "description": "The maximum length of the column values",
+              "type": "number",
+              "minimum": 1
+            },
+            "minValue": {
+              "description": "The minimum value of the column values",
+              "type": "number"
+            },
+            "maxValue": {
+              "description": "The maximum value of the column values",
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "__metadata": {
+      "description": "Table Metadata",
+      "type": "object",
+      "default": {
+        "primaryKey": []
+      },
+      "properties": {
+        "primaryKey": {
+          "description": "The Primary Keys of the Table",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "primaryKey"
+      ]
+    }
+  },
+  "patternProperties": {},
+  "required": [
+    "columns",
+    "__metadata"
+  ],
+  "default": {
+    "columns": {
+    },
+    "__metadata": {
+      "primaryKey": []
+    }
+  }
+}

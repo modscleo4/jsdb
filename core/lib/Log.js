@@ -32,17 +32,13 @@ Number.prototype.pad = function (size) {
     return s;
 };
 
-exports.OK = 0;
-exports.WARNING = 1;
-exports.ERROR = 2;
-
 /**
  * @summary Logs to file
  *
- * @param status {number} The status code (0 - Info, 1 - Warning, 2 - Error)
+ * @param status {number} The status code (0 - DEBUG, 1 - Info, 2 - Warning, 3 - Error)
  * @param str {string} What to log
  */
-exports.log = function log(status, str) {
+function log(status, str) {
     if (typeof status !== 'number') {
         throw new TypeError(`status is not number.`);
     }
@@ -55,33 +51,61 @@ exports.log = function log(status, str) {
         return;
     }
 
+    if (status < config.log.minLevel) {
+        return;
+    }
+
     const d = new Date();
     const h = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString();
     if (!fs.existsSync(`${config.server.startDir}logs/`)) {
         fs.mkdirSync(`${config.server.startDir}logs/`);
     }
+
     if (!str.endsWith('\n')) {
         str += '\n';
     }
+
     str = `${h}: ${str}`;
 
     switch (status) {
-        case exports.OK:
+        case 0:
+            str = `(DEBUG) ${str}`;
+            break;
+
+        case 1:
             str = `(-) ${str}`;
             break;
 
-        case exports.WARNING:
+        case 2:
             str = `(!) ${str}`;
             break;
 
-        case exports.ERROR:
+        case 3:
             str = `(*) ${str}`;
             break;
 
         default:
-            throw new RangeError(`status out of range (1-3)`);
+            throw new RangeError(`status out of range (0-3)`);
     }
 
     const file = `${config.server.startDir}logs/${date.getFullYear()}-${(date.getMonth() + 1).pad()}-${date.getDate().pad()}_${date.getHours().pad()}_${date.getMinutes().pad()}_${date.getSeconds().pad()}.log`;
     fs.appendFileSync(file, str);
+}
+
+module.exports = {
+    debug: (str) => {
+        log(0, str);
+    },
+
+    info: (str) => {
+        log(1, str);
+    },
+
+    warning: (str) => {
+        log(2, str);
+    },
+
+    error: (str) => {
+        log(3, str);
+    },
 };
