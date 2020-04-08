@@ -34,7 +34,7 @@
     "md5": "^2.2.1",
     "perf_hooks": "0.0.1",
     "sql-parser": "^0.5.0",
-    "minimist": "^0.0.8"
+    "minimist": "^1.2.5"
   },
   "devDependencies": {
     "mocha": "^5.2.0"
