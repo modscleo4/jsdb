@@ -35,3 +35,9 @@ exports.rmdirRSync = function rmdirRSync(path) {
         fs.rmdirSync(path);
     }
 };
+
+exports.callableClass = () => Class => {
+    const _Class = (...rest) => new Class(...rest);
+    _Class.prototype = Class.prototype;
+    return _Class;
+};

@@ -30,14 +30,17 @@
     "core/"
   ],
   "dependencies": {
-    "adm-zip": "^0.4.13",
+    "adm-zip": "^0.4.14",
     "md5": "^2.2.1",
-    "perf_hooks": "0.0.1",
+    "perf_hooks": "^0.0.1",
     "sql-parser": "^0.5.0",
     "minimist": "^1.2.5"
   },
   "devDependencies": {
-    "mocha": "^5.2.0"
+    "mocha": "^7.1.1"
+  },
+  "engines": {
+    "node": ">=12.0.0"
   },
   "repository": {
     "type": "git",
