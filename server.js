@@ -72,7 +72,7 @@ const server = net.createServer(socket => {
                     socket.destroy();
                 } else {
                     const credentials = JSON.parse(sqlCmd.replace(/credentials: /, ''));
-                    if (typeof credentials.username !== "string" || typeof credentials.password !== "string") {
+                    if (typeof credentials.username !== 'string' || typeof credentials.password !== 'string') {
                         const message = 'Username and/or password not informed';
                         Log.warning(`[${socket.remoteAddress}] Authentication error: ${message}`);
                         socket.write(message);
@@ -135,7 +135,7 @@ if (config.server.listenIP !== '' && config.server.port !== 0 && config.server.s
     }
 
     if (!config.server.ignAuth) {
-        if (new DB('jsdb').table('users').select(['*'], {where: '\`username\` == \'jsdbadmin\''}).length === 0) {
+        if (new DB('jsdb').table('users').select(['*'], {where: "`username` == 'jsdbadmin'"}).length === 0) {
             const stdin = process.openStdin();
 
             process.stdout.write('Insert jsdbadmin password: ');

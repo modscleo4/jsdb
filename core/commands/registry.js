@@ -38,4 +38,5 @@ exports.readAllEntries = function readAllEntries() {
     config.server.port = new Registry('jsdb.server.port').read();
     config.registry.instantApplyChanges = new Registry('jsdb.registry.instantApplyChanges').read();
     config.log.generateLogs = new Registry('jsdb.log.generateLogs').read();
+    config.log.minLevel = new Registry('jsdb.log.minLevel').read();
 };

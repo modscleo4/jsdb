@@ -24,7 +24,7 @@ const commands = require('./commands/sequence');
 
 const Schema = require('./Schema');
 
-module.exports = class Sequence {
+class Sequence {
     #name;
     #schema;
 
@@ -52,7 +52,7 @@ module.exports = class Sequence {
 
     /**
      *
-     * @returns {Schema}
+     * @return {Schema}
      */
     get schema() {
         return this.#schema;
@@ -72,7 +72,7 @@ module.exports = class Sequence {
 
     /**
      *
-     * @returns {string}
+     * @return {string}
      */
     get name() {
         return this.#name;
@@ -103,7 +103,7 @@ module.exports = class Sequence {
      * @param {Schema} schema
      * @param {string} name
      * @param {Object} options
-     * @returns {Sequence}
+     * @return {Sequence}
      */
     static create(schema, name, options = {start: 1, inc: 1}) {
         if (!(schema instanceof Schema)) {
@@ -115,12 +115,15 @@ module.exports = class Sequence {
         }
 
         let list = commands.readFile(schema.db.name, schema.name);
-        if (list.hasOwnProperty(name)) {
+        if (list.sequences.hasOwnProperty(name)) {
             throw new Error(`Sequence ${schema.db.name}.${schema.name}.${name} already exists.`);
         }
 
-        list[name] = options;
-        commands.writeFile(schema.db.name, schema.name, list);
+        list.sequences[name] = options;
+        commands.writeFile(schema.db.name, schema.name, {
+            $schema: "https://raw.githubusercontent.com/modscleo4/jsdb/master/core/schemas/seqlist.schema.json",
+            sequences: list.sequences
+        });
 
         return new Sequence(schema, name);
     }
@@ -129,7 +132,7 @@ module.exports = class Sequence {
      *
      * @param {Schema} schema
      * @param {string} name
-     * @returns {boolean}
+     * @return {boolean}
      */
     static exists(schema, name) {
         if (!(schema instanceof Schema)) {
@@ -141,7 +144,7 @@ module.exports = class Sequence {
         }
 
         const list = commands.readFile(schema.db.name, schema.name);
-        return list.hasOwnProperty(name);
+        return list.sequences.hasOwnProperty(name);
     }
 
     /**
@@ -153,7 +156,7 @@ module.exports = class Sequence {
             throw new Error(`Sequence ${this.schema.db.name}.${this.schema.name}.${this.name} does not exist.`);
         }
 
-        return commands.readFile(this.schema.db.name, this.schema.name)[this.name];
+        return commands.readFile(this.schema.db.name, this.schema.name).sequences[this.name];
     }
 
     /**
@@ -165,7 +168,7 @@ module.exports = class Sequence {
             throw new Error(`Sequence ${this.schema.db.name}.${this.schema.name}.${this.name} does not exist.`);
         }
 
-        const content = commands.readFile(this.schema.db.name, this.schema.name)[this.name];
+        const content = commands.readFile(this.schema.db.name, this.schema.name).sequences[this.name];
         return this.update({start: content.start += content.inc, inc: content.inc});
     }
 
@@ -181,8 +184,8 @@ module.exports = class Sequence {
         }
 
         let list = commands.readFile(this.schema.db.name, this.schema.name);
-        const ret = list[this.name].start;
-        list[this.name] = {start, inc};
+        const ret = list.sequences[this.name].start;
+        list.sequences[this.name] = {start, inc};
         commands.writeFile(this.schema.db.name, this.schema.name, list);
 
         return ret;
@@ -198,9 +201,11 @@ module.exports = class Sequence {
         }
 
         let list = commands.readFile(this.schema.db.name, this.schema.name);
-        delete list[this.name];
+        delete list.sequences[this.name];
         commands.writeFile(this.schema.db.name, this.schema.name, list);
 
         return true;
     }
-};
+}
+
+module.exports = Sequence;

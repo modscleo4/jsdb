@@ -34,7 +34,7 @@ const f_seqlist = 'seqlist.json';
  * @param db {string} The name of DB
  * @param schema {string} The name of the schema
  *
- * @returns {Object} Returns a named Object containing all the sequences
+ * @return {{sequences: Object}} Returns a named Object containing all the sequences
  * @throws {Error} If the schema does not exist, throw an error
  * */
 exports.readFile = function readFile(db, schema) {
@@ -51,8 +51,11 @@ exports.readFile = function readFile(db, schema) {
     }
 
     if (!fs.existsSync(`${config.server.startDir}dbs/${db}/${schema}/${f_seqlist}`)) {
-        exports.writeFile(db, schema, {});
-        return {};
+        exports.writeFile(db, schema, {
+            $schema: "https://raw.githubusercontent.com/modscleo4/jsdb/master/core/schemas/seqlist.schema.json",
+            sequences: {}
+        });
+        return {sequences: {}};
     }
 
     try {

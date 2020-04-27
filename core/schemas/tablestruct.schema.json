@@ -1,5 +1,6 @@
 {
-  "$id": "https://modscleo4.github.io/jsdb/core/tablestruct",
+  "$id": "https://raw.githubusercontent.com/modscleo4/jsdb/master/core/schemas/tablestruct.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "JSON schema for the Table Structure (tablestruct.json) file",
   "type": "object",
   "definitions": {},

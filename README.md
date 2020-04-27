@@ -1,8 +1,6 @@
 # JSDB - JSON Database Manager
 
-<a href="https://travis-ci.org/modscleo4/jsdb">
-    <img src="https://travis-ci.org/modscleo4/jsdb.svg?branch=master" />
-</a>
+[![Build Status](https://travis-ci.org/modscleo4/jsdb.svg?branch=master)](https://travis-ci.org/modscleo4/jsdbc)
 
 ## What is JSDB?
 JSDB is a project to create a Node.js database manager which supports SQL.

@@ -20,7 +20,7 @@
 
 'use strict';
 
-module.exports = class Connection {
+class Connection {
     #socket;
     #dbName;
     #schemaName;
@@ -64,4 +64,6 @@ module.exports = class Connection {
     set Username(username) {
         this.#username = username;
     }
-};
+}
+
+module.exports = Connection;

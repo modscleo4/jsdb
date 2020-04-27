@@ -22,7 +22,7 @@
 
 const commands = require('./commands/db');
 
-module.exports = class DB {
+class DB {
     #name;
 
     /**
@@ -39,7 +39,7 @@ module.exports = class DB {
 
     /**
      *
-     * @returns {string}
+     * @return {string}
      */
     get name() {
         return this.#name;
@@ -83,29 +83,8 @@ module.exports = class DB {
 
     /**
      *
-     * @returns {boolean}
-     */
-    drop() {
-        if (this.name === 'jsdb') {
-            throw new Error('JSDB database cannot be dropped.');
-        }
-
-        if (!DB.exists(this.name)) {
-            throw new Error(`Database ${this.name} does not exist.`);
-        }
-
-        let List = commands.readFile();
-        List.splice(List.indexOf(this.name), 1);
-        commands.writeFile(List);
-        commands.deleteFolder(this.name);
-
-        return true;
-    }
-
-    /**
-     *
      * @param {string} name
-     * @returns {DB}
+     * @return {DB}
      */
     static create(name) {
         if (typeof name !== 'string') {
@@ -129,7 +108,7 @@ module.exports = class DB {
     /**
      *
      * @param {string} name
-     * @returns {boolean}
+     * @return {boolean}
      */
     static exists(name) {
         if (typeof name !== 'string') {
@@ -139,4 +118,27 @@ module.exports = class DB {
         const list = commands.readFile();
         return list.includes(name);
     }
-};
+
+    /**
+     *
+     * @return {boolean}
+     */
+    drop() {
+        if (this.name === 'jsdb') {
+            throw new Error('JSDB database cannot be dropped.');
+        }
+
+        if (!DB.exists(this.name)) {
+            throw new Error(`Database ${this.name} does not exist.`);
+        }
+
+        let List = commands.readFile();
+        List.splice(List.indexOf(this.name), 1);
+        commands.writeFile(List);
+        commands.deleteFolder(this.name);
+
+        return true;
+    }
+}
+
+module.exports = DB;

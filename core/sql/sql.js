@@ -721,7 +721,7 @@ module.exports = ((sql, connectionIndex) => {
                     }
 
                     // Get options
-                    let options = {'where': 'true'};
+                    let options = {where: 'true'};
                     for (let i = a + 1; i < t.length; i++) {
                         if (t[i][0] === 'WHERE') {
                             options.where = '';
@@ -933,7 +933,7 @@ module.exports = ((sql, connectionIndex) => {
                     }
 
                     // Get options
-                    let options = {'where': 'true'};
+                    let options = {where: 'true'};
                     for (let i = a + 1; i < t.length; i++) {
                         if (t[i][0] === 'WHERE') {
                             options.where = '';
@@ -1274,7 +1274,7 @@ module.exports = ((sql, connectionIndex) => {
                                 output.code = 1;
                                 output.message = 'Not enough permissions';
                             } else {
-                                output.data = sequence.readFile(dbName.get(), schemaName.get());
+                                output.data = sequence.readFile(dbName.get(), schemaName.get()).sequences;
                             }
 
                             dbName.set(d);
@@ -1378,6 +1378,19 @@ module.exports = ((sql, connectionIndex) => {
                                 output.data.__metadata.primaryKey.forEach(pk => output.data.columns[pk].primaryKey = true);
                                 output.data = output.data.columns;
                             }
+                        } catch (e) {
+                            output.code = 1;
+                            output.message = e.message;
+                        }
+                    } else {
+                        output.code = 2;
+                        output.message = `Unrecognized command: ${output.sql}`;
+                    }
+                } else if (t[0][1].toUpperCase() === 'RELOAD') {
+                    if (t[1][1].toUpperCase() === 'CONFIG') {
+                        try {
+                            registry.readAllEntries();
+                            output.data = 'All entries were reloaded.';
                         } catch (e) {
                             output.code = 1;
                             output.message = e.message;

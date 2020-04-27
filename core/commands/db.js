@@ -277,11 +277,11 @@ exports.checkJSDBIntegrity = function checkJSDBIntegrity() {
                          },
                      },
 
-            {
+                     {
                          primaryKey: [
                              'entryName'
                          ]
-            }
+                     }
         );
     }
 
@@ -311,5 +311,9 @@ exports.checkJSDBIntegrity = function checkJSDBIntegrity() {
 
     if (!Registry.exists('jsdb.log.generateLogs')) {
         Registry.create('jsdb.log.generateLogs', 'boolean', true);
+    }
+
+    if (!Registry.exists('jsdb.log.minLevel')) {
+        Registry.create('jsdb.log.minLevel', 'integer', 0);
     }
 };

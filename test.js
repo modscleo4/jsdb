@@ -20,7 +20,7 @@ const {describe, it, before, after} = require('mocha');
 describe('DB', function () {
     describe('#create()', function () {
         it('Should return a DB instance', function () {
-            assert.deepEqual(DB.create('a'), new DB('a'));
+            assert.deepStrictEqual(DB.create('a'), new DB('a'));
         });
     });
 
@@ -74,7 +74,7 @@ describe('Schema', function () {
 
     describe('#create()', function () {
         it('Should return a Schema instance', function () {
-            assert.deepEqual(Schema.create(new DB('a'), 'a'), new DB('a').schema('a'));
+            assert.deepStrictEqual(Schema.create(new DB('a'), 'a'), new DB('a').schema('a'));
         });
     });
 
@@ -116,7 +116,7 @@ describe('Sequence', function () {
 
     describe('#create()', function () {
         it('Should return a Sequence Instance', function () {
-            assert.deepEqual(Sequence.create(new DB('a').schema('public'), 'a_seq'), new DB('a').schema('public').sequence('a_seq'));
+            assert.deepStrictEqual(Sequence.create(new DB('a').schema('public'), 'a_seq'), new DB('a').schema('public').sequence('a_seq'));
         });
     });
 
@@ -136,7 +136,7 @@ describe('Sequence', function () {
 
     describe('#read()', function () {
         it('Should return the sequence in a named array', function () {
-            assert.deepEqual(new DB('a').schema('public').sequence('a_seq').read(), {
+            assert.deepStrictEqual(new DB('a').schema('public').sequence('a_seq').read(), {
                 start: 1,
                 inc: 1,
             });
@@ -145,16 +145,17 @@ describe('Sequence', function () {
 
     describe('#update()', function () {
         it('Should return 1', function () {
-            assert.strictEqual(new DB('a').schema('public').sequence('a_seq').update({
-                                                                                         start: 2,
-                                                                                         inc: 1
-                                                                                     }), 1);
+            assert.strictEqual(new DB('a').schema('public').sequence('a_seq').update(
+                {
+                    start: 2,
+                    inc: 1
+                }), 1);
         });
     });
 
     describe('#read()', function () {
         it('Should return the sequence in a named array', function () {
-            assert.deepEqual(new DB('a').schema('public').sequence('a_seq').read(), {
+            assert.deepStrictEqual(new DB('a').schema('public').sequence('a_seq').read(), {
                 start: 2,
                 inc: 1
             });
@@ -186,10 +187,11 @@ describe('Sequence', function () {
     describe('#update()', function () {
         it('Should throw \'Sequence jsdb.public.a_seq does not exist.\'', function () {
             assert.throws(() => {
-                new DB('a').schema('public').sequence('a_seq').update({
-                                                                          start: 2,
-                                                                          inc: 1,
-                                                                      })
+                new DB('a').schema('public').sequence('a_seq').update(
+                    {
+                        start: 2,
+                        inc: 1,
+                    })
             });
         });
     });
@@ -206,7 +208,7 @@ describe('Table', function () {
 
     describe('#create()', function () {
         it('Should return a Table instance', function () {
-            assert.deepEqual(Table.create(new DB('a').schema('public'), 'a', {
+            assert.deepStrictEqual(Table.create(new DB('a').schema('public'), 'a', {
                 id: {
                     type: 'integer',
                     unique: true,
@@ -277,19 +279,19 @@ describe('Table', function () {
 
     describe('#select()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.deepEqual(new DB('a').schema('public').table('a').select(['*'], {}), [{id: 1}, {id: 2}]);
+            assert.deepStrictEqual(new DB('a').schema('public').table('a').select(['*'], {}), [{id: 1}, {id: 2}]);
         });
     });
 
     describe('#select()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.deepEqual(new DB('a').schema('public').table('a').select(['*'], {where: '`id` == 1'}), [{id: 1}]);
+            assert.deepStrictEqual(new DB('a').schema('public').table('a').select(['*'], {where: '`id` == 1'}), [{id: 1}]);
         });
     });
 
     describe('#select()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.deepEqual(new DB('a').schema('public').table('a').select(['*'], {
+            assert.deepStrictEqual(new DB('a').schema('public').table('a').select(['*'], {
                 orderBy: [{
                     column: 'id',
                     mode: 'DESC'
@@ -306,7 +308,7 @@ describe('Table', function () {
 
     describe('#select()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.deepEqual(new DB('a').schema('public').table('a').select(['*'], {}), [{id: 3}, {id: 4}]);
+            assert.deepStrictEqual(new DB('a').schema('public').table('a').select(['*'], {}), [{id: 3}, {id: 4}]);
         });
     });
 
@@ -318,7 +320,7 @@ describe('Table', function () {
 
     describe('#select()', function () {
         it('Should return the table data in a indexed array', function () {
-            assert.deepEqual(new DB('a').schema('public').table('a').select(['*'], {}), []);
+            assert.deepStrictEqual(new DB('a').schema('public').table('a').select(['*'], {}), []);
         });
     });
 
@@ -390,7 +392,7 @@ describe('User', function () {
 
     describe('#create()', function () {
         it('Should return an User instance', function () {
-            assert.deepEqual(User.create('internaluser:test', 'jsdbadmin', {test: 15}), new User('internaluser:test'))
+            assert.deepStrictEqual(User.create('internaluser:test', 'jsdbadmin', {test: 15}), new User('internaluser:test'))
         });
     });
 
@@ -416,7 +418,7 @@ describe('User', function () {
 
     describe('#getPrivileges()', function () {
         it('Should return the user privileges', function () {
-            assert.deepEqual(new User('internaluser:test').privileges(), {test: 15})
+            assert.deepStrictEqual(new User('internaluser:test').privileges(), {test: 15})
         });
     });
 
@@ -460,7 +462,7 @@ describe('Registry', function () {
 
     describe('#create()', function () {
         it('Should return a Registry Entry instance', function () {
-            assert.deepEqual(Registry.create('internalentry:test', 'number', 1), new Registry('internalentry:test'))
+            assert.deepStrictEqual(Registry.create('internalentry:test', 'number', 1), new Registry('internalentry:test'))
         });
     });
 

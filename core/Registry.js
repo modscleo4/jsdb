@@ -21,10 +21,9 @@
 'use strict';
 
 const DB = require('./DB');
-const Schema = require('./Schema');
 const Table = require('./Table');
 
-module.exports = class Registry {
+class Registry {
     #name;
     #table;
 
@@ -43,7 +42,7 @@ module.exports = class Registry {
 
     /**
      *
-     * @returns {Table}
+     * @return {Table}
      */
     get table() {
         return this.#table;
@@ -63,7 +62,7 @@ module.exports = class Registry {
 
     /**
      *
-     * @returns {string}
+     * @return {string}
      */
     get name() {
         return this.#name;
@@ -136,7 +135,7 @@ module.exports = class Registry {
      * @param {string} name
      * @param {string} type
      * @param {*} value
-     * @returns {Registry}
+     * @return {Registry}
      */
     static create(name, type, value) {
         if (typeof name !== 'string') {
@@ -167,7 +166,7 @@ module.exports = class Registry {
     /**
      *
      * @param {string} name
-     * @returns {boolean}
+     * @return {boolean}
      */
     static exists(name) {
         if (typeof name !== 'string') {
@@ -176,4 +175,6 @@ module.exports = class Registry {
 
         return new DB('jsdb').table('registry').select(['*'], {where: `\`entryName\` == '${name}'`}).length > 0;
     }
-};
+}
+
+module.exports = Registry;

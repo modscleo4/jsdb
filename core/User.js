@@ -24,10 +24,9 @@ const {config} = require('../config');
 const md5 = require('md5');
 
 const DB = require('./DB');
-const Schema = require('./Schema');
 const Table = require('./Table');
 
-module.exports = class User {
+class User {
     #table;
     #name;
 
@@ -46,7 +45,7 @@ module.exports = class User {
 
     /**
      *
-     * @returns {Table}
+     * @return {Table}
      */
     get table() {
         return this.#table;
@@ -66,7 +65,7 @@ module.exports = class User {
 
     /**
      *
-     * @returns {string}
+     * @return {string}
      */
     get name() {
         return this.#name;
@@ -206,4 +205,6 @@ module.exports = class User {
 
         return true;
     }
-};
+}
+
+module.exports = User;

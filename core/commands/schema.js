@@ -59,7 +59,7 @@ exports.writeFile = function writeFile(db, list) {
  *
  * @param {string} db The name of DB
  *
- * @returns {Object} Returns a indexed Object containing all the schemas
+ * @return {Object} Returns a indexed Object containing all the schemas
  * @throws {Error} If the DB does not exist, throw an error
  */
 exports.readFile = function readFile(db) {

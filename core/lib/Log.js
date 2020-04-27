@@ -93,18 +93,34 @@ function log(status, str) {
 }
 
 module.exports = {
+    /**
+     *
+     * @param {string} str
+     */
     debug: (str) => {
         log(0, str);
     },
 
+    /**
+     *
+     * @param {string} str
+     */
     info: (str) => {
         log(1, str);
     },
 
+    /**
+     *
+     * @param {string} str
+     */
     warning: (str) => {
         log(2, str);
     },
 
+    /**
+     *
+     * @param {string} str
+     */
     error: (str) => {
         log(3, str);
     },

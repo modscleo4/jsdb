@@ -24,7 +24,7 @@ const DB = require('./DB');
 const Schema = require('./Schema');
 const Sequence = require('./Sequence');
 
-module.exports = class Table {
+class Table {
     #name;
     #schema;
 
@@ -52,7 +52,7 @@ module.exports = class Table {
 
     /**
      *
-     * @returns {Schema}
+     * @return {Schema}
      */
     get schema() {
         return this.#schema;
@@ -72,7 +72,7 @@ module.exports = class Table {
 
     /**
      *
-     * @returns {string}
+     * @return {string}
      */
     get name() {
         return this.#name;
@@ -91,12 +91,25 @@ module.exports = class Table {
     }
 
     /**
+     * @return {number}
+     */
+    get numberOfRows() {
+        const TableContent = commands.readContent(this.schema.db.name, this.schema.name, this.name);
+        return TableContent.length;
+    }
+
+    get numberOfColumns() {
+        const TableStruct = commands.readStructure(this.schema.db.name, this.schema.name, this.name);
+        return Object.keys(TableStruct.columns).length;
+    }
+
+    /**
      *
      * @param {Schema} schema
      * @param {string} name
      * @param {object} columns
      * @param {object} metadata
-     * @returns {Table}
+     * @return {Table}
      */
     static create(schema, name, columns, metadata = {primaryKey: []}) {
         if (!(schema instanceof Schema)) {
@@ -171,7 +184,7 @@ module.exports = class Table {
                     throw new Error('Only columns of type integer can have the autoincrement property.');
                 }
 
-                delete (columns[key].autoIncrement);
+                delete columns[key].autoIncrement;
                 columns[key].default = `nextval(${name}_${key}_seq)`;
 
                 Sequence.create(schema, `${name}_${key}_seq`);
@@ -179,6 +192,7 @@ module.exports = class Table {
         }
 
         commands.writeStructure(schema.db.name, schema.name, name, {
+            $schema: "https://raw.githubusercontent.com/modscleo4/jsdb/master/core/schemas/tablestruct.schema.json",
             columns: columns,
             __metadata: metadata
         });
@@ -192,7 +206,7 @@ module.exports = class Table {
      * @param {Schema} schema
      * @param {string} name
      *
-     * @returns {boolean}
+     * @return {boolean}
      */
     static exists(schema, name) {
         if (!(schema instanceof Schema)) {
@@ -209,7 +223,7 @@ module.exports = class Table {
 
     /**
      *
-     * @returns {number}
+     * @return {number}
      */
     insert(content, columns = null) {
         if (!(Table.exists(this.schema, this.name))) {
@@ -374,7 +388,7 @@ module.exports = class Table {
      *
      * @param {Array} columns
      * @param {object} options
-     * @returns {Array}
+     * @return {Array}
      */
     select(columns, options = {where: null, groupBy: null, orderBy: null, limitOffset: {limit: -1, offset: -1}}) {
         if (!(Table.exists(this.schema, this.name))) {
@@ -478,6 +492,7 @@ module.exports = class Table {
                         return TableStruct.__metadata.primaryKey[0];
                     } else {
                         let key;
+                        // noinspection LoopStatementThatDoesntLoopJS
                         for (key in TableStruct.columns) {
                             break;
                         }
@@ -539,7 +554,7 @@ module.exports = class Table {
 
     /**
      *
-     * @returns {number}
+     * @return {number}
      */
     update(update, options = {where: null, limitOffset: {limit: -1, offset: -1}}) {
         if (!(Table.exists(this.schema, this.name))) {
@@ -685,7 +700,7 @@ module.exports = class Table {
 
     /**
      *
-     * @returns {number}
+     * @return {number}
      */
     delete(options = {where: null, limitOffset: {limit: -1, offset: -1}}) {
         let TableContent = commands.readContent(this.schema.db.name, this.schema.name, this.name);
@@ -759,7 +774,7 @@ module.exports = class Table {
 
     /**
      *
-     * @returns {boolean}
+     * @return {boolean}
      */
     drop() {
         if (this.schema.db.name === 'jsdb' && this.schema.name === 'public' && (this.name === 'users' || this.name === 'registry' || this.name === 'default')) {
@@ -779,4 +794,6 @@ module.exports = class Table {
 
         return true;
     }
-};
+}
+
+module.exports = Table;

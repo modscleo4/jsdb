@@ -22,175 +22,179 @@
 
 const tokenizer = require('./tokenizer');
 
-module.exports = (function (sqlString) {
-    let ret = null;
-    if (typeof sqlString === "string") {
-        sqlString = sqlString.trim();
-        ret = {};
+/**
+ *
+ * @param {string} sqlString
+ * @return {Object}
+ */
+module.exports = sqlString => {
+    if (typeof sqlString !== "string") {
+        throw new TypeError(`sqlString is not string.`);
+    }
 
-        const tokens = tokenizer(sqlString);
+    sqlString = sqlString.trim();
+    let ret = {};
 
-        if (tokens[0].type !== 'command') {
-            throw new Error(`Invalid command: ${sqlString}`);
-        }
+    const tokens = tokenizer(sqlString);
 
-        ret.command = tokens[0].value;
+    if (tokens[0].type !== 'command') {
+        throw new Error(`Invalid command: ${sqlString}`);
+    }
 
-        switch (ret.command) {
-            case 'SELECT':
-                ret.columns = [];
+    ret.command = tokens[0].value;
 
-                let index = 0;
-                while (tokens[++index].value !== 'FROM') {
-                    if (tokens[index].type === 'function') {
-                        if (tokens[index + 1].value !== '(') {
-                            throw new Error(`Invalid command: ${sqlString}`);
-                        }
+    switch (ret.command) {
+        case 'SELECT':
+            ret.columns = [];
 
-                        let fn = tokens[index].value;
-
-                        while (tokens[++index].value !== ')') {
-                            fn += tokens[index].value;
-                        }
-
-                        fn += ')';
-
-                        ret.columns.push(fn);
-                        continue;
+            let index = 0;
+            while (tokens[++index].value !== 'FROM') {
+                if (tokens[index].type === 'function') {
+                    if (tokens[index + 1].value !== '(') {
+                        throw new Error(`Invalid command: ${sqlString}`);
                     }
 
-                    if (tokens[index].value !== ',') {
-                        ret.columns.push(tokens[index].value);
+                    let fn = tokens[index].value;
+
+                    while (tokens[++index].value !== ')') {
+                        fn += tokens[index].value;
                     }
+
+                    fn += ')';
+
+                    ret.columns.push(fn);
+                    continue;
                 }
 
-                ret.schema = (tokens[index + 2].value === '.') ? tokens[index + 1].value : 'public';
-                ret.table = (tokens[index + 2].value === '.') ? tokens[index + 3].value : tokens[index + 1].value;
+                if (tokens[index].value !== ',') {
+                    ret.columns.push(tokens[index].value);
+                }
+            }
 
+            ret.schema = (tokens[index + 2].value === '.') ? tokens[index + 1].value : 'public';
+            ret.table = (tokens[index + 2].value === '.') ? tokens[index + 3].value : tokens[index + 1].value;
+
+            index += 2;
+            if (tokens[index].value === '.') {
                 index += 2;
-                if (tokens[index].value === '.') {
-                    index += 2;
-                }
+            }
 
-                for (let i = index; i < tokens.length; i++) {
-                    if (tokens[i].value === 'LIMIT') {
-                        ret.limitOffset = {};
+            for (let i = index; i < tokens.length; i++) {
+                if (tokens[i].value === 'LIMIT') {
+                    ret.limitOffset = {};
 
-                        while (++index < tokens.length && tokens[index].type !== 'command') {
-                            if (tokens[index].type === 'number') {
-                                ret.limitOffset.limit = tokens[index].value;
-                                ret.limitOffset.offset = 0;
-                            } else if (tokens[index].type === 'separator') {
-                                if (tokens[index - 1].type !== 'number' || tokens[index + 1].type !== 'number') {
-                                    throw new Error(`Invalid command: ${sqlString}`);
-                                }
-
-                                ret.limitOffset.limit = tokens[index + 1].value;
-                                ret.limitOffset.offset = tokens[index - 1].value;
-                                index++;
-                                break;
-                            } else if (tokens[index].value === 'OFFSET') {
-                                if (tokens[index - 1].type !== 'number' || tokens[index + 1].type !== 'number') {
-                                    throw new Error(`Invalid command: ${sqlString}`);
-                                }
-
-                                ret.limitOffset.limit = tokens[index - 1].value;
-                                ret.limitOffset.offset = tokens[++index].value;
-                                break;
-                            } else {
+                    while (++index < tokens.length && tokens[index].type !== 'command') {
+                        if (tokens[index].type === 'number') {
+                            ret.limitOffset.limit = tokens[index].value;
+                            ret.limitOffset.offset = 0;
+                        } else if (tokens[index].type === 'separator') {
+                            if (tokens[index - 1].type !== 'number' || tokens[index + 1].type !== 'number') {
                                 throw new Error(`Invalid command: ${sqlString}`);
                             }
+
+                            ret.limitOffset.limit = tokens[index + 1].value;
+                            ret.limitOffset.offset = tokens[index - 1].value;
+                            index++;
+                            break;
+                        } else if (tokens[index].value === 'OFFSET') {
+                            if (tokens[index - 1].type !== 'number' || tokens[index + 1].type !== 'number') {
+                                throw new Error(`Invalid command: ${sqlString}`);
+                            }
+
+                            ret.limitOffset.limit = tokens[index - 1].value;
+                            ret.limitOffset.offset = tokens[++index].value;
+                            break;
+                        } else {
+                            throw new Error(`Invalid command: ${sqlString}`);
                         }
                     }
+                }
 
-                    if (tokens[i].value === 'WHERE') {
-                        ret.where = '';
-                        while (++index < tokens.length && tokens[index].type !== 'command') {
-                            ret.where += `${tokens[index].value} `;
-                        }
-
-                        ret.where = ret.where.trim();
+                if (tokens[i].value === 'WHERE') {
+                    ret.where = '';
+                    while (++index < tokens.length && tokens[index].type !== 'command') {
+                        ret.where += `${tokens[index].value} `;
                     }
 
-                    if (tokens[i].value === 'GROUP') {
-                        if (tokens[++index].value !== 'BY') {
+                    ret.where = ret.where.trim();
+                }
+
+                if (tokens[i].value === 'GROUP') {
+                    if (tokens[++index].value !== 'BY') {
+                        throw new Error(`Invalid command: ${sqlString}`);
+                    }
+
+                    ret.groupBy = [];
+
+                    let comma = true;
+
+                    while (++index < tokens.length && tokens[index].type !== 'command') {
+                        if (tokens[index].type !== 'literal' && tokens[index].type !== 'separator') {
                             throw new Error(`Invalid command: ${sqlString}`);
                         }
 
-                        ret.groupBy = [];
+                        if (tokens[index].type === 'separator') {
+                            comma = true;
+                            continue;
+                        }
 
-                        let comma = true;
-
-                        while (++index < tokens.length && tokens[index].type !== 'command') {
-                            if (tokens[index].type !== 'literal' && tokens[index].type !== 'separator') {
-                                throw new Error(`Invalid command: ${sqlString}`);
-                            }
-
-                            if (tokens[index].type === 'separator') {
-                                comma = true;
-                                continue;
-                            }
-
-                            if (!comma) {
-                                throw new Error(`Invalid command: ${sqlString}`);
-                            } else {
-                                ret.groupBy.push({column: tokens[index].value});
-                                comma = false;
-                            }
+                        if (!comma) {
+                            throw new Error(`Invalid command: ${sqlString}`);
+                        } else {
+                            ret.groupBy.push({column: tokens[index].value});
+                            comma = false;
                         }
                     }
+                }
 
-                    if (tokens[i].value === 'ORDER') {
-                        if (tokens[++index].value !== 'BY') {
+                if (tokens[i].value === 'ORDER') {
+                    if (tokens[++index].value !== 'BY') {
+                        throw new Error(`Invalid command: ${sqlString}`);
+                    }
+
+                    ret.orderBy = [];
+
+                    let comma = true;
+
+                    while (++index < tokens.length && tokens[index].type !== 'command') {
+                        if (tokens[index].type !== 'literal' && tokens[index].type !== 'separator') {
                             throw new Error(`Invalid command: ${sqlString}`);
                         }
 
-                        ret.orderBy = [];
+                        let col = {column: tokens[index].value, mode: 'ASC'};
 
-                        let comma = true;
+                        if (index + 1 < tokens.length && (tokens[index + 1].value === 'ASC' || tokens[index + 1].value === 'DESC')) {
+                            col.mode = tokens[index + 1].value;
+                            index++;
+                        }
 
-                        while (++index < tokens.length && tokens[index].type !== 'command') {
-                            if (tokens[index].type !== 'literal' && tokens[index].type !== 'separator') {
-                                throw new Error(`Invalid command: ${sqlString}`);
-                            }
+                        if (tokens[index].type === 'separator') {
+                            comma = true;
+                            continue;
+                        }
 
-                            let col = {column: tokens[index].value, mode: 'ASC'};
-
-                            if (index + 1 < tokens.length && (tokens[index + 1].value === 'ASC' || tokens[index + 1].value === 'DESC')) {
-                                col.mode = tokens[index + 1].value;
-                                index++;
-                            }
-
-                            if (tokens[index].type === 'separator') {
-                                comma = true;
-                                continue;
-                            }
-
-                            if (!comma) {
-                                throw new Error(`Invalid command: ${sqlString}`);
-                            } else {
-                                ret.orderBy.push(col);
-                                comma = false;
-                            }
+                        if (!comma) {
+                            throw new Error(`Invalid command: ${sqlString}`);
+                        } else {
+                            ret.orderBy.push(col);
+                            comma = false;
                         }
                     }
                 }
+            }
 
-                break;
+            break;
 
-            case 'INSERT':
-                if (tokens[1].value !== 'INTO') {
-                    throw new Error(`Invalid command: ${sqlString}`);
-                }
-
-                break;
-
-            default:
+        case 'INSERT':
+            if (tokens[1].value !== 'INTO') {
                 throw new Error(`Invalid command: ${sqlString}`);
-        }
-    } else {
-        throw new Error(`Invalid type`);
+            }
+
+            break;
+
+        default:
+            throw new Error(`Invalid command: ${sqlString}`);
     }
 
     return ret;
-});
+};

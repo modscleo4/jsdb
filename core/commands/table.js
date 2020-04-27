@@ -40,7 +40,7 @@ const f_tabledata = 'tabledata.json';
  * @param schema {string} The name of the schema
  * @param table {string} The table name
  *
- * @returns {Object} Return the structure of the table in a named Object
+ * @return {{columns: Object, __metadata: Object}} Return the structure of the table in a named Object
  * @throws {Error} If the table does not exist, throw an error
  * */
 exports.readStructure = function readStructure(db, schema, table) {
@@ -108,7 +108,7 @@ exports.writeStructure = function writeStructure(db, schema, table, structure) {
  * @param db {string} The name of DB
  * @param schema {string} The name of the schema
  *
- * @returns {Object} Returns a indexed Object containing all the tables
+ * @return {Object} Returns a indexed Object containing all the tables
  * @throws {Error} If the schema does not exist, throw an error
  */
 exports.readFile = function readFile(db, schema) {
@@ -236,7 +236,7 @@ exports.deleteFolder = function deleteFolder(db, schema, table) {
  * @param schema {string} The name of the schema
  * @param table {string} The table name
  *
- * @returns {Object} Returns a indexed Object containing the data in the table
+ * @return {Array[]} Returns an indexed Array containing the data in the table
  * @throws {Error} If the table does not exist, throw an error
  * */
 exports.readContent = function readContent(db, schema, table) {
@@ -269,10 +269,10 @@ exports.readContent = function readContent(db, schema, table) {
  * @param db {string} The name of DB
  * @param schema {string} The name of the schema
  * @param table {string} The table name
- * @param content {Array} Indexed Array containing the data in the table
+ * @param content {Array[]} Indexed Array containing the data in the table
  * @param override {boolean} If true, overrides the existing table data
  *
- * @returns {number} Returns the number of lines written
+ * @return {number} Returns the number of lines written
  * */
 exports.writeContent = function writeContent(db, schema, table, content, override = false) {
     if (typeof db !== 'string') {
