@@ -77,7 +77,7 @@ exports.readStructure = function readStructure(db, schema, table) {
  * @param db {string} The name of DB
  * @param schema {string} The name of the schema
  * @param table {string} The table name
- * @param structure {object} Named Object containing the structure for the table
+ * @param structure {Object} Named Object containing the structure for the table
  * */
 exports.writeStructure = function writeStructure(db, schema, table, structure) {
     if (typeof db !== 'string') {
@@ -162,7 +162,7 @@ exports.readFile = function readFile(db, schema) {
  *
  * @param db {string} The name of DB
  * @param schema {string} The name of the schema
- * @param content {object} an object containing all the tables
+ * @param content {Object} an object containing all the tables
  *
  * @throws {Error} If the schema does not exist, throw an error
  */

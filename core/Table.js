@@ -107,8 +107,8 @@ class Table {
      *
      * @param {Schema} schema
      * @param {string} name
-     * @param {object} columns
-     * @param {object} metadata
+     * @param {Object} columns
+     * @param {Object} metadata
      * @return {Table}
      */
     static create(schema, name, columns, metadata = {primaryKey: []}) {
@@ -222,7 +222,8 @@ class Table {
     }
 
     /**
-     *
+     * @param {Object[]} content
+     * @param {string[]} columns
      * @return {number}
      */
     insert(content, columns = null) {
@@ -386,9 +387,9 @@ class Table {
 
     /**
      *
-     * @param {Array} columns
-     * @param {object} options
-     * @return {Array}
+     * @param {string[]} columns
+     * @param {Object} options
+     * @return {Object[]}
      */
     select(columns, options = {where: null, groupBy: null, orderBy: null, limitOffset: {limit: -1, offset: -1}}) {
         if (!(Table.exists(this.schema, this.name))) {
@@ -553,7 +554,8 @@ class Table {
     }
 
     /**
-     *
+     * @param {Object[]} update
+     * @param {Object} options
      * @return {number}
      */
     update(update, options = {where: null, limitOffset: {limit: -1, offset: -1}}) {
@@ -699,7 +701,7 @@ class Table {
     }
 
     /**
-     *
+     * @param {Object} options
      * @return {number}
      */
     delete(options = {where: null, limitOffset: {limit: -1, offset: -1}}) {

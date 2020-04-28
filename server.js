@@ -29,8 +29,6 @@ const sql = require('./core/sql/sql');
 const net = require('net');
 
 const DB = require('./core/DB');
-const Schema = require('./core/Schema');
-const Table = require('./core/Table');
 const User = require('./core/User');
 
 //console.log(require('./core/sql/parser')('SELECT name, MAX(id) FROM users WHERE TRUE GROUP BY name ORDER BY name DESC, password LIMIT 1, 1'));
@@ -55,7 +53,7 @@ const server = net.createServer(socket => {
             return;
         }
 
-        if (config.server.ignAuth && sqlCmd.includes('credentials: ')) {
+        if (config.server.ignAuth && connection.Username === null) {
             connection.Username = 'grantall::jsdbadmin';
             connections.add(connection);
             socket.write('AUTHOK');
@@ -65,29 +63,26 @@ const server = net.createServer(socket => {
 
         if (connection.Username === null && !config.server.ignAuth) {
             try {
-                if (!sqlCmd.includes('credentials: ')) {
-                    const message = 'Username and password not informed';
-                    Log.warning(`[${socket.remoteAddress}] Authentication error: ${message}`);
-                    socket.write(message);
-                    socket.destroy();
+                const {database, username, password} = JSON.parse(sqlCmd);
+                if (typeof database !== 'string' || typeof username !== 'string' || typeof password !== 'string') {
+                    // noinspection ExceptionCaughtLocallyJS
+                    throw new Error('Username, password and/or database not informed');
+                } else if (!DB.exists(database)) {
+                    // noinspection ExceptionCaughtLocallyJS
+                    throw new Error('Invalid database.');
                 } else {
-                    const credentials = JSON.parse(sqlCmd.replace(/credentials: /, ''));
-                    if (typeof credentials.username !== 'string' || typeof credentials.password !== 'string') {
-                        const message = 'Username and/or password not informed';
-                        Log.warning(`[${socket.remoteAddress}] Authentication error: ${message}`);
-                        socket.write(message);
-                        socket.destroy();
-                    } else {
-                        if (!User.auth(credentials.username, credentials.password)) {
-                            throw new Error(`AUTHERR: Wrong password.`);
-                        }
-
-                        connection.Username = credentials.username;
-                        connections.add(connection);
-
-                        socket.write('AUTHOK');
-                        Log.info(`[${socket.remoteAddress}] User authenticated, username: ${credentials.username}`);
+                    if (!User.auth(username, password)) {
+                        // noinspection ExceptionCaughtLocallyJS
+                        throw new Error(`Wrong password.`);
                     }
+
+                    connection.Username = username;
+                    connections.add(connection);
+
+                    socket.write('AUTHOK');
+                    Log.info(`[${socket.remoteAddress}] User authenticated, username: ${username}, database: ${database}`);
+
+                    connection.DBName = database;
                 }
             } catch (e) {
                 Log.warning(`[${socket.remoteAddress}] Authentication error: ${e.message}`);
@@ -138,12 +133,12 @@ if (config.server.listenIP !== '' && config.server.port !== 0 && config.server.s
         if (new DB('jsdb').table('users').select(['*'], {where: "`username` == 'jsdbadmin'"}).length === 0) {
             const stdin = process.openStdin();
 
-            process.stdout.write('Insert jsdbadmin password: ');
+            process.stdout.write('Insert new jsdbadmin password: ');
 
             stdin.addListener('data', password => {
                 password = password.toLocaleString().trim();
                 if (password.length <= 8) {
-                    console.log('jsdbadmin password must be greater than 8 characters!');
+                    console.log('jsdbadmin password must be greater than 8 characters.');
                 } else {
                     stdin.removeAllListeners('data');
 

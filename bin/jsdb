@@ -10,7 +10,7 @@ readAllEntries();
 
 /**
  *
- * @type {{help, dir, listenIP, port, noAuth, createZip, generateLogs, regAutoReload}}
+ * @type {{help, dir, listenIP, port, noAuth, createZip, generateLogs, regAutoReload, sql}}
  */
 const args = minimist(process.argv.slice(2), {
     alias: {
@@ -25,7 +25,7 @@ const args = minimist(process.argv.slice(2), {
     },
 
     string: [
-        'dir', 'listenIP',
+        'dir', 'listenIP', 'sql'
     ],
 
     number: [
@@ -56,6 +56,7 @@ if (args.help) {
     console.log('-Z, --createZip     \tEnable backup system');
     console.log('-L, --generateLogs  \tEnable Log system');
     console.log('-R, --regAutoReload \tEnable Registry auto reload');
+    console.log('--sql               \tRuns a SQL statement as admin');
 
     console.log('');
 
@@ -86,6 +87,25 @@ if (!config.server.startDir.endsWith('/')) {
 // Ensure startDir ends with data/ (data dir is where the databases and log files should be)
 if (!config.server.startDir.endsWith('data/')) {
     config.server.startDir += 'data/';
+}
+
+if (args.sql) {
+    try {
+        let r = require('../core/sql/sql')(args.sql, -1);
+
+        if (typeof r === 'object') {
+            if (r.code !== 0) {
+                // noinspection ExceptionCaughtLocallyJS
+                throw new Error(r.message);
+            }
+
+            console.log(r.data);
+        } else {
+            console.log(r);
+        }
+    } catch (e) {
+        console.error(e.message);
+    }
 }
 
 require('../server');

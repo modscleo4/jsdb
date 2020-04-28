@@ -44,6 +44,7 @@ Where the possible arguments are:
 | -Z, --createZip     | Enable backup system             |
 | -L, --generateLogs  | Enable Log system                |
 | -R, --regAutoReload | Enable Registry auto reload      |
+| --sql               | Runs a SQL statement as admin    |
 
 ## Issues and suggestions
 Use the <a href="https://github.com/modscleo4/jsdb/issues">Issues page</a> to send bug reports and suggestions for new features

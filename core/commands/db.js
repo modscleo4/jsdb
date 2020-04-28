@@ -314,6 +314,6 @@ exports.checkJSDBIntegrity = function checkJSDBIntegrity() {
     }
 
     if (!Registry.exists('jsdb.log.minLevel')) {
-        Registry.create('jsdb.log.minLevel', 'integer', 0);
+        Registry.create('jsdb.log.minLevel', 'number', 0);
     }
 };
